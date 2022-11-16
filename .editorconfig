@@ -5,3 +5,6 @@ dotnet_diagnostic.IDE0058.severity = none
 
 # CA2016: Перенаправьте параметр "CancellationToken" в методы
 dotnet_diagnostic.CA2016.severity = silent
+
+# CA1416: Проверка совместимости платформы
+dotnet_diagnostic.CA1416.severity = none

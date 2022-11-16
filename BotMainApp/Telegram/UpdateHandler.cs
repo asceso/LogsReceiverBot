@@ -7,7 +7,6 @@ using Models.Database;
 using Models.Enums;
 using Prism.Events;
 using Services.Interfaces;
-using SimpleLogger.FileService;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -18,30 +17,25 @@ using Telegram.Bot;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using TelegramSimpleService;
 
 namespace BotMainApp.Telegram
 {
     public class UpdateHandler : IUpdateHandler
     {
-        private static readonly ReplyKeyboardRemove emptyKeyboard = new();
-        private static List<LocaleStringModel> locales;
-        private static Dictionary<string, ReplyKeyboardMarkup> keyboards;
-        private static ObservableCollection<OperationModel> operations;
-        private IFileLogger logger;
-        private IEventAggregator aggregator;
-        private static TelegramBotClient botClient;
+        private readonly ReplyKeyboardRemove emptyKeyboard = new();
+        private TelegramBotClient botClient;
+        private List<LocaleStringModel> locales;
+        private Dictionary<string, ReplyKeyboardMarkup> keyboards;
+        private ObservableCollection<OperationModel> operations;
+        private readonly IEventAggregator aggregator;
 
-        public async Task ConfigureServicesAsync(IFileLogger logger, IJsonAdapter jsonAdapter, IKeyboardService keyboardService, IEventAggregator aggregator, TelegramBotClient botClient)
+        public UpdateHandler(IEventAggregator aggregator, IMemorySaver memory)
         {
-            this.logger = logger;
             this.aggregator = aggregator;
-            UpdateHandler.botClient = botClient;
-            operations = await jsonAdapter.ReadJsonOperationsAsync();
-            locales = await jsonAdapter.ReadJsonLocaleStringsAsync();
-            keyboardService.SetStoreFileName("/config/keys.json", null);
-            keyboards = keyboardService.LoadOneRowKeyboards();
-            logger.Info("tg handler init done");
+            botClient = memory.GetItem<TelegramBotClient>("BotClient");
+            locales = memory.GetItem<List<LocaleStringModel>>("Locales");
+            keyboards = memory.GetItem<Dictionary<string, ReplyKeyboardMarkup>>("Keyboards");
+            operations = memory.GetItem<ObservableCollection<OperationModel>>("Operations");
         }
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -85,7 +79,7 @@ namespace BotMainApp.Telegram
                             else
                             {
                                 dbUser.Username = argument;
-                                if (await UsersController.PutUserAsync(dbUser))
+                                if (await UsersController.PutUserAsync(dbUser, aggregator))
                                 {
                                     await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("WelcomeNickname", temp.Language).Replace("@USERNAME", temp.Username), replyMarkup: emptyKeyboard);
                                     operations.Remove(temp.Operation);
@@ -120,7 +114,7 @@ namespace BotMainApp.Telegram
                             {
                                 string currentLocale = dbUser.Language;
                                 dbUser.Language = toLocale;
-                                if (await UsersController.PutUserAsync(dbUser))
+                                if (await UsersController.PutUserAsync(dbUser, aggregator))
                                 {
                                     await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("Start", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
                                 }
@@ -152,7 +146,7 @@ namespace BotMainApp.Telegram
                         IsAccepted = false,
                         RegistrationDate = DateTime.Now,
                         Language = temp.Language
-                    }))
+                    }, aggregator))
                     {
                         await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("WelcomeNoName", temp.Language), replyMarkup: emptyKeyboard);
                         operations.Add(new(temp.Uid, OperationType.NewUserWithoutNickname));
@@ -176,7 +170,7 @@ namespace BotMainApp.Telegram
                         IsAccepted = false,
                         RegistrationDate = DateTime.Now,
                         Language = temp.Language
-                    }))
+                    }, aggregator))
                     {
                         await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("WelcomeNickname", temp.Language).Replace("@USERNAME", temp.Username), replyMarkup: emptyKeyboard);
                         return;
@@ -219,18 +213,17 @@ namespace BotMainApp.Telegram
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("ошибка", TelegramStateModel.RedBrush));
-            logger.Fatal(exception.Message);
             await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
             botClient.StartReceiving(this);
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("работает", TelegramStateModel.GreenBrush));
         }
 
-        public static async Task<bool> AcceptTelegramUserAsync(UserModel dbUser)
+        public async Task<bool> AcceptTelegramUserAsync(UserModel dbUser)
         {
             try
             {
                 dbUser.IsAccepted = true;
-                if (await UsersController.PutUserAsync(dbUser))
+                if (await UsersController.PutUserAsync(dbUser, aggregator))
                 {
                     await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("AdminAcceptNotify", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
                 }
@@ -246,10 +239,10 @@ namespace BotMainApp.Telegram
             }
         }
 
-        public static async Task MoveToBLUserAsync(UserModel dbUser)
+        public async Task MoveToBLUserAsync(UserModel dbUser)
         {
             dbUser.IsBanned = true;
-            if (await UsersController.PutUserAsync(dbUser))
+            if (await UsersController.PutUserAsync(dbUser, aggregator))
             {
                 List<OperationModel> userOperations = operations.Where(u => u.UserId == dbUser.Id).ToList();
                 foreach (OperationModel operation in userOperations)
@@ -260,10 +253,10 @@ namespace BotMainApp.Telegram
             }
         }
 
-        public static async Task MoveFromBLUserAsync(UserModel dbUser)
+        public async Task MoveFromBLUserAsync(UserModel dbUser)
         {
             dbUser.IsBanned = false;
-            if (await UsersController.PutUserAsync(dbUser))
+            if (await UsersController.PutUserAsync(dbUser, aggregator))
             {
                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("AdminMoveFromBlackList", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
             }

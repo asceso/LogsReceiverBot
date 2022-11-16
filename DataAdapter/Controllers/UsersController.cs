@@ -1,5 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AgregatorEvents;
+using Microsoft.EntityFrameworkCore;
 using Models.Database;
+using Prism.Events;
 
 namespace DataAdapter.Controllers
 {
@@ -44,13 +46,14 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<bool> PostUserAsync(UserModel model)
+        public static async Task<bool> PostUserAsync(UserModel model, IEventAggregator aggregator)
         {
             try
             {
                 using DataContext data = new();
                 await data.Users.AddAsync(model);
                 await data.SaveChangesAsync();
+                aggregator.GetEvent<UserUpdateEvent>().Publish(new("post", model));
                 return true;
             }
             catch (Exception)
@@ -59,7 +62,7 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<bool> PutUserAsync(UserModel model)
+        public static async Task<bool> PutUserAsync(UserModel model, IEventAggregator aggregator)
         {
             try
             {
@@ -70,6 +73,7 @@ namespace DataAdapter.Controllers
                 data.Entry(target).CurrentValues.SetValues(model);
                 data.Update(target);
                 await data.SaveChangesAsync();
+                aggregator.GetEvent<UserUpdateEvent>().Publish(new("put", model));
                 return true;
             }
             catch (Exception)

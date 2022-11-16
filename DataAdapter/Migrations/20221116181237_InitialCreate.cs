@@ -28,7 +28,9 @@ namespace DataAdapter.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsAccepted = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsBanned = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    RegistrationDate = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    RegistrationDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    LogsUploaded = table.Column<int>(type: "int", nullable: false),
+                    Balance = table.Column<double>(type: "double", nullable: false)
                 },
                 constraints: table =>
                 {

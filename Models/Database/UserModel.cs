@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Models.Database
 {
-    public class UserModel : BindableBase
+    public class UserModel : BindableBase, ICloneable
     {
         private long id;
         private string username;
@@ -14,6 +14,8 @@ namespace Models.Database
         private bool isAccepted;
         private bool isBanned;
         private DateTime registrationDate;
+        private int logsUploaded;
+        private double balance;
 
         public long Id { get => id; set => SetProperty(ref id, value); }
         public string Username { get => username; set => SetProperty(ref username, value); }
@@ -23,6 +25,8 @@ namespace Models.Database
         public bool IsAccepted { get => isAccepted; set => SetProperty(ref isAccepted, value); }
         public bool IsBanned { get => isBanned; set => SetProperty(ref isBanned, value); }
         public DateTime RegistrationDate { get => registrationDate; set => SetProperty(ref registrationDate, value); }
+        public int LogsUploaded { get => logsUploaded; set => SetProperty(ref logsUploaded, value); }
+        public double Balance { get => balance; set => SetProperty(ref balance, value); }
 
 #if DEBUG
 
@@ -66,5 +70,7 @@ namespace Models.Database
                 return $"{Firstname}_{Lastname}";
             }
         }
+
+        public object Clone() => MemberwiseClone();
     }
 }

@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAdapter", "DataAdapter\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions", "Extensions\Extensions.csproj", "{A4FDD2AE-D07A-44F6-A430-F1CDD9984C7C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CheckerRunner", "CheckerRunner\CheckerRunner.csproj", "{7FEB8C99-C393-4BB9-9767-E1D874D85E6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CheckerRunner", "CheckerRunner\CheckerRunner.csproj", "{7FEB8C99-C393-4BB9-9767-E1D874D85E6B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseEvents", "AgregatorEvents\DatabaseEvents.csproj", "{8E2D2512-2803-47BE-9284-940DDCEEF1C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{7FEB8C99-C393-4BB9-9767-E1D874D85E6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FEB8C99-C393-4BB9-9767-E1D874D85E6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FEB8C99-C393-4BB9-9767-E1D874D85E6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E2D2512-2803-47BE-9284-940DDCEEF1C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E2D2512-2803-47BE-9284-940DDCEEF1C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E2D2512-2803-47BE-9284-940DDCEEF1C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E2D2512-2803-47BE-9284-940DDCEEF1C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,53 +1,25 @@
 ﻿using BotMainApp.Events;
 using BotMainApp.Telegram;
-using Microsoft.Win32;
-using Models.App;
 using Models.Enums;
 using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
 using Services;
 using Services.Interfaces;
-using SimpleLogger.FileService;
-using System;
-using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using Telegram.Bot;
 using TelegramSimpleService;
-using Unity;
 
 namespace BotMainApp.ViewModels
 {
     public class MainViewModel : BindableBase
     {
-        #region services
-
-        private readonly IJsonAdapter jsonAdapter;
-        private readonly IUniqueCreator uniqueCreator;
-        private readonly IFileLogger logger;
-        private readonly IKeyboardService keyboardService;
-        private readonly IEventAggregator aggregator;
-
-        #endregion services
-
-        #region other vm
-
-        private SettingsViewModel settingsVM;
-        private UsersViewModel usersVM;
-
-        public SettingsViewModel SettingsVM { get => settingsVM; set => SetProperty(ref settingsVM, value); }
-        public UsersViewModel UsersVM { get => usersVM; set => SetProperty(ref usersVM, value); }
-
-        #endregion other vm
-
         #region fields
 
-        private TelegramBotClient botClient;
-        private ConfigModel config;
         private TelegramStateModel telegramState;
+
         private ViewsPayload.ViewTypes currentView;
 
         private string title;
@@ -59,9 +31,8 @@ namespace BotMainApp.ViewModels
 
         #region props
 
-        public TelegramBotClient BotClient { get => botClient; set => SetProperty(ref botClient, value); }
-        public ConfigModel Config { get => config; set => SetProperty(ref config, value); }
         public TelegramStateModel TelegramState { get => telegramState; set => SetProperty(ref telegramState, value); }
+
         public ViewsPayload.ViewTypes CurrentView { get => currentView; set => SetProperty(ref currentView, value); }
 
         public string Title { get => title; set => SetProperty(ref title, value); }
@@ -73,55 +44,43 @@ namespace BotMainApp.ViewModels
 
         #region ctor
 
-        public MainViewModel(IUniqueCreator uniqueCreator, IJsonAdapter jsonAdapter, IFileLogger logger, IKeyboardService keyboardService, IEventAggregator aggregator, IUnityContainer container)
+        public MainViewModel(IJsonAdapter jsonAdapter,
+                             IMemorySaver memory,
+                             IKeyboardService keyboardService,
+                             IEventAggregator aggregator)
         {
             Title = "Бот для приема логов";
             TelegramState = new("запуск", TelegramStateModel.BlackBrush);
-
-            this.uniqueCreator = uniqueCreator;
-            this.jsonAdapter = jsonAdapter;
-            this.logger = logger;
-            this.keyboardService = keyboardService;
-            this.aggregator = aggregator;
-
             TrayIconVisibility = Visibility.Collapsed;
             ShowInTaskbar = true;
             CurrentWindowState = WindowState.Maximized;
-            //CurrentView = ViewsPayload.ViewTypes.Settings;
             CurrentView = ViewsPayload.ViewTypes.Users;
 
-            SettingsVM = container.Resolve<SettingsViewModel>();
-            UsersVM = container.Resolve<UsersViewModel>();
+            keyboardService.SetStoreFileName("/config/keys.json", null);
+            var config = jsonAdapter.ReadJsonConfig();
+            var operations = jsonAdapter.ReadJsonOperations();
+            var locales = jsonAdapter.ReadJsonLocaleStrings();
+            var keyboards = keyboardService.LoadOneRowKeyboards();
+
+            memory.StoreItem("Locales", locales);
+            memory.StoreItem("Keyboards", keyboards);
+            memory.StoreItem("Operations", operations);
+
+            TelegramBotClient botClient = new(config.BotToken);
+            memory.StoreItem("BotClient", botClient);
+
+            UpdateHandler handler = new(aggregator, memory);
+            botClient.StartReceiving(handler);
+            memory.StoreItem("Handler", handler);
+
+            if (!Directory.Exists(PathCollection.TempFolderPath)) Directory.CreateDirectory(PathCollection.TempFolderPath);
+            TelegramState.SetInfo("работает");
+            aggregator.GetEvent<TelegramStateEvent>().Subscribe((st) =>
+            {
+                TelegramState.Set(st.Status, st.Color);
+                RaisePropertyChanged(nameof(TelegramState));
+            });
             InitCommands();
-            InitAsync();
-        }
-
-        private async void InitAsync()
-        {
-            try
-            {
-                PathCollection.SetExecutablePath();
-                if (!Directory.Exists(PathCollection.TempFolderPath)) Directory.CreateDirectory(PathCollection.TempFolderPath);
-                Config = await jsonAdapter.ReadJsonConfigAsync();
-                logger.InitLogsFolder();
-
-                BotClient = new(Config.BotToken);
-                UpdateHandler handler = new();
-                await handler.ConfigureServicesAsync(logger, jsonAdapter, keyboardService, aggregator, BotClient);
-                BotClient.StartReceiving(handler);
-
-                TelegramState.SetInfo("работает");
-                aggregator.GetEvent<TelegramStateEvent>().Subscribe((st) =>
-                {
-                    TelegramState.Set(st.Status, st.Color);
-                    RaisePropertyChanged(nameof(TelegramState));
-                });
-                logger.Info("shell init done");
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex.Message);
-            }
         }
 
         #endregion ctor
@@ -160,43 +119,8 @@ namespace BotMainApp.ViewModels
 
         private void OnSwitchView(string obj) => CurrentView = ViewsPayload.GetByName(obj.ToString());
 
-        private async void OnTest()
+        private void OnTest()
         {
-            string testFilePath = Environment.CurrentDirectory + "/TESTFILE.txt";
-            string tempfolder = PathCollection.TempFolderPath + uniqueCreator.GetCurentDateTimeString() + "/";
-
-            Directory.CreateDirectory(tempfolder);
-            foreach (string file in Directory.GetFiles(PathCollection.CheckerBinPath))
-            {
-                FileInfo fi = new(file);
-                File.Copy(file, tempfolder + fi.Name, true);
-            }
-            File.Copy(testFilePath, tempfolder + "/input.txt");
-            testFilePath = tempfolder + "/input.txt";
-
-            ProcessStartInfo psi = new()
-            {
-                FileName = tempfolder + "checkcp.exe",
-                WorkingDirectory = tempfolder,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true,
-                UseShellExecute = false
-            };
-            Process process = new()
-            {
-                StartInfo = psi
-            };
-            process.Start();
-
-            using StreamWriter writer = process.StandardInput;
-            await Task.Delay(TimeSpan.FromSeconds(1));
-            await writer.WriteLineAsync("1");
-            await writer.WriteLineAsync("input.txt");
-            writer.Close();
-
-            await process.WaitForExitAsync();
-            process.Close();
         }
 
         #endregion cmd executors

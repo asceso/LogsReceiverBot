@@ -6,9 +6,10 @@ using Prism.Mvvm;
 using Prism.Unity;
 using Services.Implementation;
 using Services.Interfaces;
-using SimpleLogger.FileService;
 using System.Windows;
+using System.Windows.Threading;
 using TelegramSimpleService;
+using Unity;
 
 namespace BotMainApp
 {
@@ -17,22 +18,22 @@ namespace BotMainApp
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
             containerRegistry.Register<IJsonAdapter, JsonAdapter>();
-            containerRegistry.Register<IUniqueCreator, UniqueCreator>();
-            containerRegistry.Register<IFileLogger, FileLogger>();
+            containerRegistry.Register<IMemorySaver, MemorySaver>();
             containerRegistry.Register<IKeyboardService, KeyboardService>();
-            containerRegistry.Register<IEventAggregator, EventAggregator>();
-
-            containerRegistry.RegisterForNavigation<SettingsView, SettingsViewModel>();
-            containerRegistry.RegisterForNavigation<UsersView, UsersViewModel>();
         }
 
         protected override void ConfigureViewModelLocator()
         {
             base.ConfigureViewModelLocator();
-            ViewModelLocationProvider.Register<MainView>(() => Container.Resolve<MainViewModel>());
-            ViewModelLocationProvider.Register<SettingsView>(() => Container.Resolve<SettingsViewModel>());
+            ViewModelLocationProvider.Register<MainView, MainViewModel>();
+            ViewModelLocationProvider.Register<UsersView, UsersViewModel>();
         }
 
         protected override Window CreateShell() => Container.Resolve<MainView>();
+
+        private void CurrentDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            e.Handled = true;
+        }
     }
 }

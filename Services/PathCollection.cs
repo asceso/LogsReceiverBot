@@ -2,11 +2,6 @@
 {
     public static class PathCollection
     {
-        public static void SetExecutablePath()
-        {
-            Environment.CurrentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-        }
-
         public static string ConfigPath = Environment.CurrentDirectory + "/config/config.json";
         public static string OperationsPath = Environment.CurrentDirectory + "/config/operations.json";
         public static string LocalesPath = Environment.CurrentDirectory + "/config/locales.json";

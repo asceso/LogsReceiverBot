@@ -7,63 +7,39 @@ namespace Services.Implementation
 {
     public class JsonAdapter : IJsonAdapter
     {
-        public async Task<ConfigModel> ReadJsonConfigAsync()
+        public JsonAdapter()
         {
-            if (!File.Exists(PathCollection.ConfigPath))
-            {
-                await SaveJsonConfigAsync(new());
-            }
+            Environment.CurrentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        }
+
+        public ConfigModel ReadJsonConfig()
+        {
             using StreamReader reader = new(PathCollection.ConfigPath);
-            string configData = await reader.ReadToEndAsync();
+            string configData = reader.ReadToEnd();
             reader.Close();
             return JsonConvert.DeserializeObject<ConfigModel>(configData);
         }
 
-        public async Task SaveJsonConfigAsync(ConfigModel config)
+        public ObservableCollection<OperationModel> ReadJsonOperations()
         {
-            using StreamWriter writer = new(PathCollection.ConfigPath);
-            await writer.WriteAsync(JsonConvert.SerializeObject(config, Formatting.Indented));
-            await writer.FlushAsync();
-            writer.Close();
-        }
-
-        public async Task<ObservableCollection<OperationModel>> ReadJsonOperationsAsync()
-        {
-            if (!File.Exists(PathCollection.OperationsPath))
-            {
-                using StreamWriter writer = new(PathCollection.OperationsPath);
-                await writer.WriteAsync("[]");
-                await writer.FlushAsync();
-                writer.Close();
-            }
-
             using StreamReader reader = new(PathCollection.OperationsPath);
-            string operationsData = await reader.ReadToEndAsync();
+            string operationsData = reader.ReadToEnd();
             reader.Close();
             ObservableCollection<OperationModel> operations = JsonConvert.DeserializeObject<ObservableCollection<OperationModel>>(operationsData);
-            operations.CollectionChanged += async (s, e) =>
+            operations.CollectionChanged += (s, e) =>
             {
                 using StreamWriter writer = new(PathCollection.OperationsPath);
                 string buffer = JsonConvert.SerializeObject(operations, Formatting.Indented);
-                await writer.WriteAsync(buffer);
-                await writer.FlushAsync();
+                writer.Write(buffer);
                 writer.Close();
             };
             return operations;
         }
 
-        public async Task<List<LocaleStringModel>> ReadJsonLocaleStringsAsync()
+        public List<LocaleStringModel> ReadJsonLocaleStrings()
         {
-            if (!File.Exists(PathCollection.LocalesPath))
-            {
-                using StreamWriter writer = new(PathCollection.LocalesPath);
-                await writer.WriteAsync("[]");
-                await writer.FlushAsync();
-                writer.Close();
-            }
-
             using StreamReader reader = new(PathCollection.LocalesPath);
-            string localesData = await reader.ReadToEndAsync();
+            string localesData = reader.ReadToEnd();
             reader.Close();
             return JsonConvert.DeserializeObject<List<LocaleStringModel>>(localesData);
         }

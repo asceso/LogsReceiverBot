@@ -6,11 +6,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:hc="https://handyorg.github.io/handycontrol"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:prism="http://prismlibrary.com/"
     xmlns:tb="http://www.hardcodet.net/taskbar"
     xmlns:views="clr-namespace:BotMainApp.Views"
     xmlns:vm="clr-namespace:BotMainApp.ViewModels"
     Title="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
     d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+    prism:ViewModelLocator.AutoWireViewModel="True"
     Closing="WindowClosing"
     FontSize="15"
     ShowInTaskbar="{Binding ShowInTaskbar, UpdateSourceTrigger=PropertyChanged}"
@@ -58,20 +60,6 @@
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
             <hc:SideMenu SelectionChanged="SideMenuSelectionChanged">
-                <!--
-                <hc:SideMenuItem
-                    Command="{Binding SwithViewCommand}"
-                    CommandParameter="Settings"
-                    Header="Настройки"
-                    IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=Settings}">
-                    <hc:SideMenuItem.Icon>
-                        <Image
-                            Width="24"
-                            Height="24"
-                            Source="/Images/settings.png" />
-                    </hc:SideMenuItem.Icon>
-                </hc:SideMenuItem>
-                -->
                 <hc:SideMenuItem
                     Command="{Binding SwithViewCommand}"
                     CommandParameter="Users"
@@ -85,13 +73,8 @@
                     </hc:SideMenuItem.Icon>
                 </hc:SideMenuItem>
             </hc:SideMenu>
-            <!--
-            <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Settings, UpdateSourceTrigger=PropertyChanged}">
-                <views:SettingsView DataContext="{Binding SettingsVM, UpdateSourceTrigger=PropertyChanged}" />
-            </Grid>
-            -->
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Users, UpdateSourceTrigger=PropertyChanged}">
-                <views:UsersView DataContext="{Binding UsersVM, UpdateSourceTrigger=PropertyChanged}" />
+                <views:UsersView />
             </Grid>
         </Grid>
     </Grid>

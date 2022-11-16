@@ -5,12 +5,10 @@ namespace Services.Interfaces
 {
     public interface IJsonAdapter
     {
-        public Task<ConfigModel> ReadJsonConfigAsync();
+        public ConfigModel ReadJsonConfig();
 
-        public Task SaveJsonConfigAsync(ConfigModel config);
+        public ObservableCollection<OperationModel> ReadJsonOperations();
 
-        public Task<ObservableCollection<OperationModel>> ReadJsonOperationsAsync();
-
-        public Task<List<LocaleStringModel>> ReadJsonLocaleStringsAsync();
+        public List<LocaleStringModel> ReadJsonLocaleStrings();
     }
 }
