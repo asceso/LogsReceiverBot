@@ -1,0 +1,98 @@
+﻿<hc:Window
+    x:Class="BotMainApp.Views.MainView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:BotMainApp.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:hc="https://handyorg.github.io/handycontrol"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tb="http://www.hardcodet.net/taskbar"
+    xmlns:views="clr-namespace:BotMainApp.Views"
+    xmlns:vm="clr-namespace:BotMainApp.ViewModels"
+    Title="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
+    d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+    Closing="WindowClosing"
+    FontSize="15"
+    ShowInTaskbar="{Binding ShowInTaskbar, UpdateSourceTrigger=PropertyChanged}"
+    WindowStartupLocation="CenterScreen"
+    WindowState="{Binding CurrentWindowState, UpdateSourceTrigger=PropertyChanged}"
+    mc:Ignorable="d">
+    <Window.Resources>
+        <converters:ViewTypeToVisibilityConverter x:Key="ViewTypeToVisibility" />
+        <converters:ViewTypeToBooleanConverter x:Key="ViewTypeToBoolean" />
+        <ContextMenu x:Key="TrayMenu">
+            <MenuItem Command="{Binding OpenMainWindowCommand}" Header="Открыть интерфейс" />
+            <MenuItem Command="{Binding CloseAppCommand}" Header="Закрыть" />
+        </ContextMenu>
+    </Window.Resources>
+    <Grid Margin="5" ShowGridLines="False">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <tb:TaskbarIcon
+            ContextMenu="{StaticResource TrayMenu}"
+            IconSource="/logs.ico"
+            ToolTipText="Logs receiver bot"
+            Visibility="{Binding TrayIconVisibility, UpdateSourceTrigger=PropertyChanged}" />
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <TextBlock
+                Margin="10"
+                VerticalAlignment="Center"
+                Text="Состояние: " />
+            <TextBlock
+                Margin="10"
+                VerticalAlignment="Center"
+                Foreground="{Binding TelegramState.Color, UpdateSourceTrigger=PropertyChanged}"
+                Text="{Binding TelegramState.Status, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Command="{Binding TestCommand}">
+                Тест
+            </Button>
+        </StackPanel>
+
+        <Grid Grid.Row="1" ShowGridLines="False">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <hc:SideMenu SelectionChanged="SideMenuSelectionChanged">
+                <!--
+                <hc:SideMenuItem
+                    Command="{Binding SwithViewCommand}"
+                    CommandParameter="Settings"
+                    Header="Настройки"
+                    IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=Settings}">
+                    <hc:SideMenuItem.Icon>
+                        <Image
+                            Width="24"
+                            Height="24"
+                            Source="/Images/settings.png" />
+                    </hc:SideMenuItem.Icon>
+                </hc:SideMenuItem>
+                -->
+                <hc:SideMenuItem
+                    Command="{Binding SwithViewCommand}"
+                    CommandParameter="Users"
+                    Header="Пользователи"
+                    IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=Users}">
+                    <hc:SideMenuItem.Icon>
+                        <Image
+                            Width="24"
+                            Height="24"
+                            Source="/Images/users.png" />
+                    </hc:SideMenuItem.Icon>
+                </hc:SideMenuItem>
+            </hc:SideMenu>
+            <!--
+            <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Settings, UpdateSourceTrigger=PropertyChanged}">
+                <views:SettingsView DataContext="{Binding SettingsVM, UpdateSourceTrigger=PropertyChanged}" />
+            </Grid>
+            -->
+            <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Users, UpdateSourceTrigger=PropertyChanged}">
+                <views:UsersView DataContext="{Binding UsersVM, UpdateSourceTrigger=PropertyChanged}" />
+            </Grid>
+        </Grid>
+    </Grid>
+</hc:Window>

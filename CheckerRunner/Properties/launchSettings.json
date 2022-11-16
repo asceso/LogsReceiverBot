@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CheckerRunner": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\Uchidero\\Documents\\!Files\\somefile.txt\r\n123456\r\ncpanel"
+    }
+  }
+}

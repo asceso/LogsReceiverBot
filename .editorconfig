@@ -1,0 +1,7 @@
+﻿[*.cs]
+
+# IDE0058: Значение выражения никогда не используется
+dotnet_diagnostic.IDE0058.severity = none
+
+# CA2016: Перенаправьте параметр "CancellationToken" в методы
+dotnet_diagnostic.CA2016.severity = silent
