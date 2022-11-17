@@ -1,0 +1,89 @@
+﻿<Window
+    x:Class="BotMainApp.Views.Windows.SendMailWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:hc="https://handyorg.github.io/handycontrol"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="Send mail"
+    Width="450"
+    Height="400"
+    AllowsTransparency="True"
+    Background="Transparent"
+    ResizeMode="NoResize"
+    WindowStartupLocation="CenterScreen"
+    WindowStyle="None"
+    mc:Ignorable="d">
+    <Border
+        Background="{StaticResource BackgroundBrush}"
+        BorderBrush="Black"
+        BorderThickness="2"
+        CornerRadius="15">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="5" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="5" />
+                <RowDefinition Height="40" />
+                <RowDefinition />
+                <RowDefinition Height="40" />
+                <RowDefinition Height="5" />
+            </Grid.RowDefinitions>
+
+            <StackPanel
+                Grid.Row="1"
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <TextBlock FontSize="14" Text="Введите сообщение для: " />
+                <TextBlock
+                    Name="HeaderBox"
+                    Margin="5,0,0,0"
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    Text="@USERNAME" />
+            </StackPanel>
+
+            <hc:TextBox
+                Name="InputTextBox"
+                Grid.Row="2"
+                Grid.Column="1"
+                Margin="5"
+                VerticalContentAlignment="Top"
+                hc:BorderElement.CornerRadius="10"
+                AcceptsReturn="True"
+                AcceptsTab="True"
+                FontSize="14"
+                ShowClearButton="True" />
+
+            <Grid Grid.Row="3" Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="10" />
+                </Grid.ColumnDefinitions>
+
+                <Button
+                    Grid.Column="1"
+                    Width="150"
+                    hc:BorderElement.CornerRadius="10"
+                    hc:IconElement.Geometry="{StaticResource SuccessGeometry}"
+                    Click="OkButtonClick"
+                    Content="Отправить" />
+                <Button
+                    Grid.Column="3"
+                    Width="150"
+                    hc:BorderElement.CornerRadius="10"
+                    hc:IconElement.Geometry="{StaticResource CloseGeometry}"
+                    Click="CancelButtonClick"
+                    Content="Отмена" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

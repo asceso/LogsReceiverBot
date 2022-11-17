@@ -1,0 +1,197 @@
+﻿<Window
+    x:Class="BotMainApp.Views.Windows.ChangeBalanceWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:hc="https://handyorg.github.io/handycontrol"
+    xmlns:local="clr-namespace:BotMainApp.Views.Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="Change balance"
+    Width="350"
+    Height="300"
+    AllowsTransparency="True"
+    Background="Transparent"
+    ResizeMode="NoResize"
+    WindowStartupLocation="CenterScreen"
+    WindowStyle="None"
+    mc:Ignorable="d">
+    <Border
+        Background="{StaticResource BackgroundBrush}"
+        BorderBrush="Black"
+        BorderThickness="2"
+        CornerRadius="15">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="5" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="5" />
+                <RowDefinition Height="40" />
+                <RowDefinition />
+                <RowDefinition Height="40" />
+                <RowDefinition Height="5" />
+            </Grid.RowDefinitions>
+
+            <StackPanel
+                Grid.Row="1"
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <TextBlock FontSize="14" Text="Редактирование баланса для: " />
+                <TextBlock
+                    Name="HeaderBox"
+                    Margin="5,0,0,0"
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    Text="@USERNAME" />
+            </StackPanel>
+
+            <StackPanel
+                Grid.Row="2"
+                Grid.Column="1"
+                Orientation="Vertical">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="125" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        Grid.Column="0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Text="Текущий баланс :" />
+                    <TextBlock
+                        Name="Balance"
+                        Grid.Column="1"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Text="@BALANCE" />
+                    <TextBlock
+                        Name="BalanceCurrency"
+                        Grid.Column="2"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Text="@CURRENCY" />
+                </Grid>
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="108" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        Grid.Column="0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Text="Добавить :" />
+                    <hc:NumericUpDown
+                        Name="Change"
+                        Grid.Column="1"
+                        Width="100"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Increment="5"
+                        ValueChanged="ChangeNumericValueChanged"
+                        Value="0" />
+                    <TextBlock
+                        Name="ChangeCurrency"
+                        Grid.Column="2"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Text="@CURRENCY" />
+                </Grid>
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="108" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        Grid.Column="0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Text="Новый баланс :" />
+                    <TextBox
+                        Name="Total"
+                        Grid.Column="1"
+                        Width="100"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        FontSize="14"
+                        IsReadOnly="True"
+                        Text="@TOTAL" />
+                    <TextBlock
+                        Name="TotalCurrency"
+                        Grid.Column="2"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Text="@CURRENCY" />
+                </Grid>
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250" />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        Grid.Column="0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Text="Отправить сообщение пользователю? "
+                        ToolTip="Пользователю будет отправлено сообщение: 'Администратор пополнил\снизил ваш баланс, текущий баланс ХХХ'" />
+                    <ToggleButton
+                        Name="IsSendNotification"
+                        Grid.Column="1"
+                        Width="35"
+                        Height="15"
+                        Cursor="Hand"
+                        Style="{StaticResource ToggleButtonSwitch}" />
+                </Grid>
+            </StackPanel>
+
+            <Grid Grid.Row="3" Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="10" />
+                </Grid.ColumnDefinitions>
+
+                <Button
+                    Grid.Column="1"
+                    Width="150"
+                    hc:BorderElement.CornerRadius="10"
+                    hc:IconElement.Geometry="{StaticResource SuccessGeometry}"
+                    Click="OkButtonClick"
+                    Content="Изменить" />
+                <Button
+                    Grid.Column="3"
+                    Width="150"
+                    hc:BorderElement.CornerRadius="10"
+                    hc:IconElement.Geometry="{StaticResource CloseGeometry}"
+                    Click="CancelButtonClick"
+                    Content="Отмена" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

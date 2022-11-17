@@ -15,8 +15,12 @@
   <ItemGroup>
     <None Remove="Images\accept.png" />
     <None Remove="Images\ban.png" />
+    <None Remove="Images\cash.png" />
+    <None Remove="Images\close.png" />
     <None Remove="Images\copy.png" />
+    <None Remove="Images\logs.png" />
     <None Remove="Images\mail.png" />
+    <None Remove="Images\save.png" />
     <None Remove="Images\settings.png" />
     <None Remove="Images\unban.png" />
     <None Remove="Images\upload.png" />
@@ -27,8 +31,12 @@
     <Resource Include="AssemblyInfo.cs" />
     <Resource Include="Images\accept.png" />
     <Resource Include="Images\ban.png" />
+    <Resource Include="Images\cash.png" />
+    <Resource Include="Images\close.png" />
     <Resource Include="Images\copy.png" />
+    <Resource Include="Images\logs.png" />
     <Resource Include="Images\mail.png" />
+    <Resource Include="Images\save.png" />
     <Resource Include="Images\settings.png" />
     <Resource Include="Images\unban.png" />
     <Resource Include="Images\upload.png" />
@@ -45,6 +53,8 @@
   <ItemGroup>
     <PackageReference Include="HandyControl" Version="3.3.0" />
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Notification.Wpf" Version="6.1.0.5" />
     <PackageReference Include="Prism.Unity" Version="8.1.97" />
     <PackageReference Include="Prism.Wpf" Version="8.1.97" />
     <PackageReference Include="SimpleLoggerService" Version="1.0.5" />
@@ -57,6 +67,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CheckerRunner\CheckerRunner.csproj" />
     <ProjectReference Include="..\DataAdapter\DataAdapter.csproj" />
+    <ProjectReference Include="..\DublicateRemoveRunner\DublicateRemoveRunner.csproj" />
     <ProjectReference Include="..\Extensions\Extensions.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
   </ItemGroup>

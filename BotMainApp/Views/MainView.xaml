@@ -49,7 +49,11 @@
                 VerticalAlignment="Center"
                 Foreground="{Binding TelegramState.Color, UpdateSourceTrigger=PropertyChanged}"
                 Text="{Binding TelegramState.Status, UpdateSourceTrigger=PropertyChanged}" />
-            <Button Command="{Binding TestCommand}">
+            <Button Command="{Binding CreateAndStartBot}" Content="Перезапустить" />
+            <Button
+                Name="DebugButton"
+                Command="{Binding TestCommand}"
+                Visibility="Hidden">
                 Тест
             </Button>
         </StackPanel>
@@ -72,9 +76,24 @@
                             Source="/Images/users.png" />
                     </hc:SideMenuItem.Icon>
                 </hc:SideMenuItem>
+                <hc:SideMenuItem
+                    Command="{Binding SwithViewCommand}"
+                    CommandParameter="Logs"
+                    Header="Логи"
+                    IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=Logs}">
+                    <hc:SideMenuItem.Icon>
+                        <Image
+                            Width="24"
+                            Height="24"
+                            Source="/Images/logs.png" />
+                    </hc:SideMenuItem.Icon>
+                </hc:SideMenuItem>
             </hc:SideMenu>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Users, UpdateSourceTrigger=PropertyChanged}">
                 <views:UsersView />
+            </Grid>
+            <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Logs, UpdateSourceTrigger=PropertyChanged}">
+                <views:LogsView />
             </Grid>
         </Grid>
     </Grid>

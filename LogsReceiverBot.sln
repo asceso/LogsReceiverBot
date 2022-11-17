@@ -15,7 +15,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions", "Extensions\Ex
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CheckerRunner", "CheckerRunner\CheckerRunner.csproj", "{7FEB8C99-C393-4BB9-9767-E1D874D85E6B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseEvents", "AgregatorEvents\DatabaseEvents.csproj", "{8E2D2512-2803-47BE-9284-940DDCEEF1C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseEvents", "AgregatorEvents\DatabaseEvents.csproj", "{8E2D2512-2803-47BE-9284-940DDCEEF1C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTestApp", "DataTestApp\DataTestApp.csproj", "{56DDF730-FD88-4FC0-9328-3BE4D87A95DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DublicateRemoveRunner", "DublicateRemoveRunner\DublicateRemoveRunner.csproj", "{3AEEA309-2810-43E9-8862-3BF2115F66D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +55,14 @@ Global
 		{8E2D2512-2803-47BE-9284-940DDCEEF1C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8E2D2512-2803-47BE-9284-940DDCEEF1C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E2D2512-2803-47BE-9284-940DDCEEF1C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56DDF730-FD88-4FC0-9328-3BE4D87A95DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56DDF730-FD88-4FC0-9328-3BE4D87A95DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56DDF730-FD88-4FC0-9328-3BE4D87A95DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56DDF730-FD88-4FC0-9328-3BE4D87A95DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AEEA309-2810-43E9-8862-3BF2115F66D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AEEA309-2810-43E9-8862-3BF2115F66D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AEEA309-2810-43E9-8862-3BF2115F66D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AEEA309-2810-43E9-8862-3BF2115F66D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

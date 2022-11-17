@@ -4,7 +4,7 @@
     {
         public enum ViewTypes
         {
-            None, Settings, Users
+            None, Users, Logs
         }
 
         public static ViewTypes GetByName(string name)

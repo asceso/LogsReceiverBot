@@ -47,6 +47,11 @@ namespace Models.Database
 
 #endif
 
+        private bool isSelected;
+
+        [NotMapped]
+        public bool IsSelected { get => isSelected; set => SetProperty(ref isSelected, value); }
+
         [NotMapped]
         public DelegateCommand<string> OnCopyCommand { get; set; }
 
@@ -58,6 +63,12 @@ namespace Models.Database
 
         [NotMapped]
         public DelegateCommand<UserModel> MoveFromBLCommand { get; set; }
+
+        [NotMapped]
+        public DelegateCommand<UserModel> SendMailCommand { get; set; }
+
+        [NotMapped]
+        public DelegateCommand<UserModel> ChangeCashCommand { get; set; }
 
         public string GetShortName()
         {

@@ -1,0 +1,19 @@
+﻿<UserControl
+    x:Class="BotMainApp.Views.LogsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:BotMainApp.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:BotMainApp.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:prism="http://prismlibrary.com/"
+    xmlns:vm="clr-namespace:BotMainApp.ViewModels"
+    d:DataContext="{d:DesignInstance Type=vm:LogsViewModel}"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+        <converters:IntEqualToVisibilityConverter x:Key="IntEqualToVisibility" />
+    </UserControl.Resources>
+    <Grid />
+</UserControl>

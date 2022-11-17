@@ -62,7 +62,7 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<bool> PutUserAsync(UserModel model, IEventAggregator aggregator)
+        public static async Task<bool> PutUserAsync(UserModel model, IEventAggregator aggregator = null)
         {
             try
             {
@@ -73,12 +73,31 @@ namespace DataAdapter.Controllers
                 data.Entry(target).CurrentValues.SetValues(model);
                 data.Update(target);
                 await data.SaveChangesAsync();
-                aggregator.GetEvent<UserUpdateEvent>().Publish(new("put", model));
+                if (aggregator != null)
+                {
+                    aggregator.GetEvent<UserUpdateEvent>().Publish(new("put", model));
+                }
                 return true;
             }
             catch (Exception)
             {
                 return false;
+            }
+        }
+
+        public static async Task<List<UserModel>> PutUsersAsync(List<UserModel> models, IEventAggregator aggregator)
+        {
+            try
+            {
+                foreach (var user in models)
+                {
+                    await PutUserAsync(user, aggregator);
+                }
+                return models;
+            }
+            catch (Exception)
+            {
+                return new();
             }
         }
     }

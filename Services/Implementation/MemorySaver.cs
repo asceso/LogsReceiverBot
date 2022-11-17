@@ -28,5 +28,9 @@ namespace Services.Implementation
             }
             return default;
         }
+
+        public bool ItemExist(string alias) => cache.Any(c => c.Key == alias);
+
+        public void RemoveItem(string alias) => cache.Remove(alias);
     }
 }

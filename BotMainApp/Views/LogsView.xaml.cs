@@ -3,11 +3,11 @@
 namespace BotMainApp.Views
 {
     /// <summary>
-    /// Логика взаимодействия для SettingsView.xaml
+    /// Логика взаимодействия для LogsView.xaml
     /// </summary>
-    public partial class SettingsView : UserControl
+    public partial class LogsView : UserControl
     {
-        public SettingsView()
+        public LogsView()
         {
             InitializeComponent();
         }

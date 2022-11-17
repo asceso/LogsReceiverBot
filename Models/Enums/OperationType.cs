@@ -3,6 +3,7 @@
     public enum OperationType
     {
         NewUserWithoutNickname,
-        ChangeLanguage
+        ChangeLanguage,
+        WaitFileForChecking
     }
 }

@@ -1,15 +1,20 @@
 ﻿using BotMainApp.Events;
+using BotMainApp.External;
+using BotMainApp.LocalEvents;
 using BotMainApp.ViewModels;
 using DataAdapter.Controllers;
 using Extensions;
 using Models.App;
 using Models.Database;
 using Models.Enums;
+using Newtonsoft.Json.Linq;
 using Prism.Events;
+using Services;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +23,7 @@ using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace BotMainApp.Telegram
+namespace BotMainApp.TelegramServices
 {
     public class UpdateHandler : IUpdateHandler
     {
@@ -27,16 +32,23 @@ namespace BotMainApp.Telegram
         private List<LocaleStringModel> locales;
         private Dictionary<string, ReplyKeyboardMarkup> keyboards;
         private ObservableCollection<OperationModel> operations;
+        private readonly ConfigModel config;
         private readonly IEventAggregator aggregator;
+        private readonly IMemorySaver memory;
 
         public UpdateHandler(IEventAggregator aggregator, IMemorySaver memory)
         {
             this.aggregator = aggregator;
+            this.memory = memory;
             botClient = memory.GetItem<TelegramBotClient>("BotClient");
             locales = memory.GetItem<List<LocaleStringModel>>("Locales");
             keyboards = memory.GetItem<Dictionary<string, ReplyKeyboardMarkup>>("Keyboards");
             operations = memory.GetItem<ObservableCollection<OperationModel>>("Operations");
+            config = memory.GetItem<ConfigModel>("Config");
+            aggregator.GetEvent<BotRestartEvent>().Subscribe(OnRestartBot);
         }
+
+        private void OnRestartBot() => botClient = memory.GetItem<TelegramBotClient>("BotClient");
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
@@ -125,6 +137,48 @@ namespace BotMainApp.Telegram
                                 return;
                             }
                         }
+                    case OperationType.WaitFileForChecking:
+                        {
+                            try
+                            {
+                                Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
+                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
+                                using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
+                                await botClient.DownloadFileAsync(file.FilePath, stream);
+                                stream.Close();
+
+                                operations.Remove(temp.Operation);
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileAcceptedWaitResult", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
+
+                                //todo: тут отправляем созданный файл на проверки и запускаем все в новом потоке
+                                ThreadStart threadStart = new(async () =>
+                                {
+                                    string dublicateData = Runner.RunDublicateChecker(filename, dbUser.Id, config);
+                                    JObject dublicateDataJson = JObject.Parse(dublicateData);
+                                    if (dublicateDataJson.ContainsKey("error"))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language));
+                                            await botClient.SendTextMessageAsync(config.TelegramNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+
+                                    ;
+                                });
+                                Thread checkThread = new(threadStart);
+                                checkThread.Start();
+                            }
+                            catch (Exception)
+                            {
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUploadError", dbUser.Language));
+                            }
+                            return;
+                        }
                 }
             }
 
@@ -182,12 +236,10 @@ namespace BotMainApp.Telegram
                     }
                 }
             }
-
             if (dbUser.IsBanned)
             {
                 return;
             }
-
             if (!dbUser.IsAccepted)
             {
                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("NotAccepted", dbUser.Language), replyMarkup: emptyKeyboard);
@@ -201,11 +253,16 @@ namespace BotMainApp.Telegram
                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("Start", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
                 return;
             }
-
             if (temp.Message.IsAnyEqual("Language 🌎", "Язык 🌎"))
             {
                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("SelectNewLanguage", dbUser.Language), replyMarkup: keyboards.GetByLocale("SelectLanguage", dbUser.Language));
                 operations.Add(new(temp.Uid, OperationType.ChangeLanguage));
+                return;
+            }
+            if (temp.Message.IsAnyEqual("Upload file 📄", "Загрузить файл 📄"))
+            {
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("SendFileInstruction", dbUser.Language), replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language));
+                operations.Add(new(temp.Uid, OperationType.WaitFileForChecking));
                 return;
             }
         }
@@ -239,8 +296,12 @@ namespace BotMainApp.Telegram
             }
         }
 
-        public async Task MoveToBLUserAsync(UserModel dbUser)
+        public async Task<bool> MoveToBLUserAsync(UserModel dbUser)
         {
+            if (dbUser.IsBanned)
+            {
+                return false;
+            }
             dbUser.IsBanned = true;
             if (await UsersController.PutUserAsync(dbUser, aggregator))
             {
@@ -249,16 +310,120 @@ namespace BotMainApp.Telegram
                 {
                     operations.Remove(operation);
                 }
-                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("AdminMoveToBlackList", dbUser.Language), replyMarkup: emptyKeyboard);
+                try
+                {
+                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("AdminMoveToBlackList", dbUser.Language), replyMarkup: emptyKeyboard);
+                }
+                catch (Exception)
+                {
+                }
+                return true;
             }
+            return false;
         }
 
-        public async Task MoveFromBLUserAsync(UserModel dbUser)
+        public async Task<bool> MoveFromBLUserAsync(UserModel dbUser)
         {
+            if (!dbUser.IsBanned)
+            {
+                return false;
+            }
             dbUser.IsBanned = false;
             if (await UsersController.PutUserAsync(dbUser, aggregator))
             {
-                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("AdminMoveFromBlackList", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
+                try
+                {
+                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("AdminMoveFromBlackList", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
+                }
+                catch (Exception)
+                {
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<int> MoveUsersToBL(List<UserModel> users)
+        {
+            List<UserModel> updateUsers = users.Where(u => !u.IsBanned).ToList();
+            foreach (var user in updateUsers)
+            {
+                user.IsBanned = true;
+            }
+            List<UserModel> updatedUsersFromDb = await UsersController.PutUsersAsync(updateUsers, aggregator);
+            foreach (var user in updatedUsersFromDb)
+            {
+                List<OperationModel> userOperations = operations.Where(u => u.UserId == user.Id).ToList();
+                foreach (OperationModel operation in userOperations)
+                {
+                    operations.Remove(operation);
+                }
+                try
+                {
+                    await botClient.SendTextMessageAsync(user.Id, locales.GetByKey("AdminMoveToBlackList", user.Language), replyMarkup: emptyKeyboard);
+                }
+                catch (Exception)
+                {
+                }
+            }
+            return updatedUsersFromDb.Count;
+        }
+
+        public async Task<int> MoveUsersFromBL(List<UserModel> users)
+        {
+            List<UserModel> updateUsers = users.Where(u => u.IsBanned).ToList();
+            foreach (var user in updateUsers)
+            {
+                user.IsBanned = false;
+            }
+            List<UserModel> updatedUsersFromDb = await UsersController.PutUsersAsync(updateUsers, aggregator);
+            foreach (var user in updatedUsersFromDb)
+            {
+                try
+                {
+                    await botClient.SendTextMessageAsync(user.Id, locales.GetByKey("AdminMoveFromBlackList", user.Language), replyMarkup: keyboards.GetByLocale("Main", user.Language));
+                }
+                catch (Exception)
+                {
+                }
+            }
+            return updatedUsersFromDb.Count;
+        }
+
+        public async Task<bool> SendMailToUserAsync(UserModel dbUser, string mail)
+        {
+            try
+            {
+                await botClient.SendTextMessageAsync(dbUser.Id, mail);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task SendBalanceInfoToUser(UserModel dbUser, bool isPositiveBalance)
+        {
+            try
+            {
+                if (isPositiveBalance)
+                {
+                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("AdminUpBalanceNotification", dbUser.Language)
+                                                                           .Replace("@BALANCE", dbUser.Balance.ToString())
+                                                                           .Replace("@CURRENCY", config.Currency),
+                                                                           replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
+                }
+                else
+                {
+                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("AdminDownBalanceNotification", dbUser.Language)
+                                                                           .Replace("@BALANCE", dbUser.Balance.ToString())
+                                                                           .Replace("@CURRENCY", config.Currency),
+                                                                           replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
+                }
+            }
+            catch (Exception)
+            {
             }
         }
     }

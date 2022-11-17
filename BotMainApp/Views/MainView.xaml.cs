@@ -13,6 +13,9 @@ namespace BotMainApp.Views
         public MainView()
         {
             InitializeComponent();
+#if DEBUG
+            DebugButton.Visibility = System.Windows.Visibility.Visible;
+#endif
         }
 
         private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
