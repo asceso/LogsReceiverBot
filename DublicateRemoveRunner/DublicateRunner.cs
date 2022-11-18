@@ -1,5 +1,6 @@
 ﻿using DataAdapter.Controllers;
 using Extensions;
+using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
 object syncObjectUnique = new();
@@ -96,11 +97,17 @@ try
     writerDublicates.Close();
 
     if (File.Exists(tempFolderPath + filename)) File.Delete(tempFolderPath + filename);
-    Console.WriteLine("{" + $"\"unique\":\"{uniqueFilePath.Replace("\\", "\\\\")}\", \"dublicates\":\"{dublicateFilePath.Replace("\\", "\\\\")}\"" + "}");
+    JsonAnswer answer = new()
+    {
+        Unique = uniqueFilePath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\"),
+        Dublicates = dublicateFilePath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\"),
+        FolderPath = resultFolderPath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\")
+    };
+    Console.WriteLine(JsonConvert.SerializeObject(answer));
 }
 catch (Exception ex)
 {
-    Console.WriteLine("{" + $"\"error\":\"{ex.Message}\"" + "}");
+    Console.WriteLine("{" + $"\"Error\":\"{ex.Message}\"" + "}");
 }
 
 void SyncWriteUniques(TextWriter writer, string data) => SyncWrite(syncObjectUnique, writer, data);
@@ -112,4 +119,11 @@ void SyncWrite(object syncObject, TextWriter writer, string data)
         writer.WriteLine(data);
         writer.Flush();
     }
+}
+
+public class JsonAnswer
+{
+    public string Unique { get; set; }
+    public string Dublicates { get; set; }
+    public string FolderPath { get; set; }
 }

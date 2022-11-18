@@ -7,6 +7,7 @@ using Extensions;
 using Models.App;
 using Models.Database;
 using Models.Enums;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Prism.Events;
 using Services;
@@ -137,6 +138,21 @@ namespace BotMainApp.TelegramServices
                                 return;
                             }
                         }
+                    case OperationType.WaitCategoryForChecking:
+                        {
+                            if (argument.IsAnyEqual("Cpanel", "Whm"))
+                            {
+                                operations.Remove(temp.Operation);
+                                operations.Add(new(temp.Uid, OperationType.WaitFileForChecking, new KeyValuePair<string, object>("Category", argument)));
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("SendFileInstruction", dbUser.Language), replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language));
+                                return;
+                            }
+                            else
+                            {
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
+                                return;
+                            }
+                        }
                     case OperationType.WaitFileForChecking:
                         {
                             try
@@ -150,12 +166,41 @@ namespace BotMainApp.TelegramServices
                                 operations.Remove(temp.Operation);
                                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileAcceptedWaitResult", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
 
-                                //todo: тут отправляем созданный файл на проверки и запускаем все в новом потоке
                                 ThreadStart threadStart = new(async () =>
                                 {
+                                    Dictionary<string, string> jsonAnswer = new()
+                                    {
+                                        { "FolderPath", string.Empty },
+                                        { "DublicateFilePath", string.Empty },
+                                        { "UniqueFilePath", string.Empty },
+                                        { "CpanelGoodFilePath", string.Empty },
+                                        { "CpanelBadFilePath", string.Empty },
+                                        { "WhmGoodFilePath", string.Empty },
+                                        { "WhmBadFilePath", string.Empty }
+                                    };
+
                                     string dublicateData = Runner.RunDublicateChecker(filename, dbUser.Id, config);
                                     JObject dublicateDataJson = JObject.Parse(dublicateData);
-                                    if (dublicateDataJson.ContainsKey("error"))
+                                    if (dublicateDataJson.ContainsKey("Error"))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language));
+                                            await botClient.SendTextMessageAsync(config.TelegramNotificationChat, $"Ошибка при поиске дубликатов файла:\r\n{dublicateData}");
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+                                    jsonAnswer["FolderPath"] = dublicateDataJson["FolderPath"].ToString();
+                                    jsonAnswer["DublicateFilePath"] = dublicateDataJson["Dublicates"].ToString();
+                                    jsonAnswer["UniqueFilePath"] = dublicateDataJson["Unique"].ToString();
+
+                                    //todo: разбить на потоки по 1к
+                                    string cpanelData = Runner.RunCpanelChecker(jsonAnswer["FolderPath"], jsonAnswer["UniqueFilePath"], dbUser.Id, temp.Operation.Params["Category"].ToString().ToLower());
+                                    JObject cpanelDataJson = JObject.Parse(cpanelData);
+                                    if (cpanelDataJson.ContainsKey("Error"))
                                     {
                                         try
                                         {
@@ -168,7 +213,12 @@ namespace BotMainApp.TelegramServices
                                         return;
                                     }
 
-                                    ;
+                                    jsonAnswer["CpanelGoodFilePath"] = cpanelDataJson["CpanelGood"].ToString();
+                                    jsonAnswer["CpanelBadFilePath"] = cpanelDataJson["CpanelBad"].ToString();
+                                    jsonAnswer["WhmGoodFilePath"] = cpanelDataJson["WhmGood"].ToString();
+                                    jsonAnswer["WhmBadFilePath"] = cpanelDataJson["WhmBad"].ToString();
+
+                                    await botClient.SendTextMessageAsync(config.TelegramNotificationChat, "Проверка завершена: \r\n" + JsonConvert.SerializeObject(jsonAnswer));
                                 });
                                 Thread checkThread = new(threadStart);
                                 checkThread.Start();
@@ -261,8 +311,8 @@ namespace BotMainApp.TelegramServices
             }
             if (temp.Message.IsAnyEqual("Upload file 📄", "Загрузить файл 📄"))
             {
-                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("SendFileInstruction", dbUser.Language), replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language));
-                operations.Add(new(temp.Uid, OperationType.WaitFileForChecking));
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("SelectCheckerCategory", dbUser.Language), replyMarkup: keyboards.GetByLocale("SelectCategory", dbUser.Language));
+                operations.Add(new(temp.Uid, OperationType.WaitCategoryForChecking));
                 return;
             }
         }

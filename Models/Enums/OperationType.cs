@@ -4,6 +4,7 @@
     {
         NewUserWithoutNickname,
         ChangeLanguage,
+        WaitCategoryForChecking,
         WaitFileForChecking
     }
 }

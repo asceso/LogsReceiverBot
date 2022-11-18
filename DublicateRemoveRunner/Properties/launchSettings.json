@@ -2,7 +2,7 @@
   "profiles": {
     "DublicateRemoveRunner": {
       "commandName": "Project",
-      "commandLineArgs": "1000logs300random.txt\r\n1114923089"
+      "commandLineArgs": "10000logs2000random.txt\r\n1114923089\r\n.*:20.*\r\n.*\r\n.*"
     }
   }
 }
