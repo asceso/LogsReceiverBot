@@ -7,7 +7,6 @@ using Extensions;
 using Models.App;
 using Models.Database;
 using Models.Enums;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Prism.Events;
 using Services;
@@ -15,6 +14,7 @@ using Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -165,9 +165,18 @@ namespace BotMainApp.TelegramServices
 
                                 operations.Remove(temp.Operation);
                                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileAcceptedWaitResult", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
+                                ManualCheckModel manualCheckModel = new()
+                                {
+                                    StartDateTime = DateTime.Now,
+                                    Status = CheckStatus.ManualCheckStatus.Created,
+                                    FromUserId = dbUser.Id,
+                                    FromUsername = dbUser.Username,
+                                };
+                                await ManualCheckController.PostCheckAsync(manualCheckModel, aggregator);
 
                                 ThreadStart threadStart = new(async () =>
                                 {
+                                    Stopwatch ellapsedWatch = Stopwatch.StartNew();
                                     Dictionary<string, string> jsonAnswer = new()
                                     {
                                         { "FolderPath", string.Empty },
@@ -190,6 +199,11 @@ namespace BotMainApp.TelegramServices
                                         }
                                         catch (Exception)
                                         {
+                                            ellapsedWatch.Stop();
+                                            manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                                            manualCheckModel.EndDateTime = DateTime.Now;
+                                            manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
+                                            await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
                                         }
                                         return;
                                     }
@@ -197,7 +211,25 @@ namespace BotMainApp.TelegramServices
                                     jsonAnswer["DublicateFilePath"] = dublicateDataJson["Dublicates"].ToString();
                                     jsonAnswer["UniqueFilePath"] = dublicateDataJson["Unique"].ToString();
 
-                                    //todo: разбить на потоки по 1к
+                                    if (jsonAnswer["UniqueFilePath"] == "")
+                                    {
+                                        ellapsedWatch.Stop();
+                                        manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                                        manualCheckModel.EndDateTime = DateTime.Now;
+                                        manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
+                                        await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                        return;
+                                    }
+
+                                    manualCheckModel.Status = CheckStatus.ManualCheckStatus.DublicateDeleted;
+                                    manualCheckModel.DublicateFilePath = jsonAnswer["DublicateFilePath"];
+                                    manualCheckModel.UniqueFilePath = jsonAnswer["UniqueFilePath"];
+                                    if (System.IO.File.Exists(manualCheckModel.DublicateFilePath))
+                                        manualCheckModel.DublicateFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.DublicateFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                                    if (System.IO.File.Exists(manualCheckModel.UniqueFilePath))
+                                        manualCheckModel.UniqueFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.UniqueFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                                    await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+
                                     string cpanelData = Runner.RunCpanelChecker(jsonAnswer["FolderPath"], jsonAnswer["UniqueFilePath"], dbUser.Id, temp.Operation.Params["Category"].ToString().ToLower());
                                     JObject cpanelDataJson = JObject.Parse(cpanelData);
                                     if (cpanelDataJson.ContainsKey("Error"))
@@ -209,6 +241,11 @@ namespace BotMainApp.TelegramServices
                                         }
                                         catch (Exception)
                                         {
+                                            ellapsedWatch.Stop();
+                                            manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                                            manualCheckModel.EndDateTime = DateTime.Now;
+                                            manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
+                                            await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
                                         }
                                         return;
                                     }
@@ -217,8 +254,18 @@ namespace BotMainApp.TelegramServices
                                     jsonAnswer["CpanelBadFilePath"] = cpanelDataJson["CpanelBad"].ToString();
                                     jsonAnswer["WhmGoodFilePath"] = cpanelDataJson["WhmGood"].ToString();
                                     jsonAnswer["WhmBadFilePath"] = cpanelDataJson["WhmBad"].ToString();
+                                    ;
+                                    ellapsedWatch.Stop();
 
-                                    await botClient.SendTextMessageAsync(config.TelegramNotificationChat, "Проверка завершена: \r\n" + JsonConvert.SerializeObject(jsonAnswer));
+                                    manualCheckModel.Status = CheckStatus.ManualCheckStatus.CopyingFiles;
+                                    manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                                    manualCheckModel.UniqueFilePath = jsonAnswer["UniqueFilePath"];
+                                    manualCheckModel.DublicateFilePath = jsonAnswer["DublicateFilePath"];
+                                    manualCheckModel.CpanelFilePath = jsonAnswer["CpanelGoodFilePath"];
+                                    manualCheckModel.WhmFilePath = jsonAnswer["WhmGoodFilePath"];
+                                    await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                    MoveFilesToChecksIdFolderAndUpatePathes(manualCheckModel, jsonAnswer["FolderPath"]);
+                                    return;
                                 });
                                 Thread checkThread = new(threadStart);
                                 checkThread.Start();
@@ -323,6 +370,45 @@ namespace BotMainApp.TelegramServices
             await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
             botClient.StartReceiving(this);
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("работает", TelegramStateModel.GreenBrush));
+        }
+
+        private async void MoveFilesToChecksIdFolderAndUpatePathes(ManualCheckModel manualCheck, string sourceFolderPath)
+        {
+            string destinationFolderPath = PathCollection.ChecksFolderPath + manualCheck.Id + "/";
+            Directory.CreateDirectory(destinationFolderPath);
+
+            string uniqueFilePath = destinationFolderPath + "unique.txt";
+            string dublicatesFilePath = destinationFolderPath + "dublicates.txt";
+            string cpanelFilePath = destinationFolderPath + "cpanel.txt";
+            string whmFilePath = destinationFolderPath + "whm.txt";
+
+            if (System.IO.File.Exists(manualCheck.UniqueFilePath))
+            {
+                System.IO.File.Copy(manualCheck.UniqueFilePath, uniqueFilePath);
+                manualCheck.UniqueFilePath = uniqueFilePath;
+                manualCheck.UniqueFoundedCount = System.IO.File.ReadAllLines(manualCheck.UniqueFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+            }
+            if (System.IO.File.Exists(manualCheck.DublicateFilePath))
+            {
+                System.IO.File.Copy(manualCheck.DublicateFilePath, dublicatesFilePath);
+                manualCheck.DublicateFilePath = dublicatesFilePath;
+                manualCheck.DublicateFoundedCount = System.IO.File.ReadAllLines(manualCheck.DublicateFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+            }
+            if (System.IO.File.Exists(manualCheck.CpanelFilePath))
+            {
+                System.IO.File.Copy(manualCheck.CpanelFilePath, cpanelFilePath);
+                manualCheck.CpanelFilePath = cpanelFilePath;
+                manualCheck.CpFoundedCount = System.IO.File.ReadAllLines(manualCheck.CpanelFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+            }
+            if (System.IO.File.Exists(manualCheck.WhmFilePath))
+            {
+                System.IO.File.Copy(manualCheck.WhmFilePath, whmFilePath);
+                manualCheck.WhmFilePath = whmFilePath;
+                manualCheck.WhmFoundedCount = System.IO.File.ReadAllLines(manualCheck.WhmFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+            }
+            Directory.Delete(sourceFolderPath, true);
+            manualCheck.Status = CheckStatus.ManualCheckStatus.CheckedBySoft;
+            await ManualCheckController.PutCheckAsync(manualCheck, aggregator);
         }
 
         public async Task<bool> AcceptTelegramUserAsync(UserModel dbUser)

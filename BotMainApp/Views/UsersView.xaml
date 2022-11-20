@@ -7,6 +7,7 @@
     xmlns:hc="https://handyorg.github.io/handycontrol"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:prism="http://prismlibrary.com/"
+    xmlns:styles="clr-namespace:Styles;assembly=Styles"
     xmlns:vm="clr-namespace:BotMainApp.ViewModels"
     d:DataContext="{d:DesignInstance Type=vm:UsersViewModel}"
     prism:ViewModelLocator.AutoWireViewModel="True"
@@ -69,103 +70,59 @@
                     <!--#endregion-->
                     <!--#region headers-->
 
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="60" />
-                            <ColumnDefinition Width="200" />
-                            <ColumnDefinition Width="350" />
-                            <ColumnDefinition Width="140" />
-                            <ColumnDefinition Width="75" />
-                            <ColumnDefinition Width="125" />
-                            <ColumnDefinition Width="125" />
-                            <ColumnDefinition />
-                        </Grid.ColumnDefinitions>
-                        <Border
-                            Grid.Column="0"
-                            BorderBrush="Black"
-                            BorderThickness="2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Выбор" />
-                        </Border>
-                        <Border
-                            Grid.Column="1"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="ID" />
-                        </Border>
-                        <Border
-                            Grid.Column="2"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Никнейм" />
-                        </Border>
-                        <Border
-                            Grid.Column="3"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Дата регистрации" />
-                        </Border>
-                        <Border
-                            Grid.Column="4"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Язык" />
-                        </Border>
-                        <Border
-                            Grid.Column="5"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Баланс" />
-                        </Border>
-                        <Border
-                            Grid.Column="6"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Логов" />
-                        </Border>
-                        <Border
-                            Grid.Column="7"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Управление" />
-                        </Border>
-                    </Grid>
+                    <ScrollViewer
+                        Name="DataScroller"
+                        Grid.Row="1"
+                        HorizontalScrollBarVisibility="Hidden">
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="60" />
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="300" />
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="75" />
+                                <ColumnDefinition Width="125" />
+                                <ColumnDefinition Width="125" />
+                                <ColumnDefinition MinWidth="150" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Grid.Column="0"
+                                Margin="0"
+                                Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Выбор" />
+                            </Border>
+                            <Border Grid.Column="1" Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="ID" />
+                            </Border>
+                            <Border Grid.Column="2" Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Никнейм" />
+                            </Border>
+                            <Border Grid.Column="3" Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Дата регистрации" />
+                            </Border>
+                            <Border Grid.Column="4" Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Язык" />
+                            </Border>
+                            <Border Grid.Column="5" Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Баланс" />
+                            </Border>
+                            <Border Grid.Column="6" Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Логов" />
+                            </Border>
+                            <Border Grid.Column="7" Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Управление" />
+                            </Border>
+                        </Grid>
+                    </ScrollViewer>
 
                     <!--#endregion-->
                     <!--#region data-->
 
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible">
+                    <ScrollViewer
+                        Grid.Row="2"
+                        HorizontalScrollBarVisibility="Visible"
+                        ScrollChanged="ScrollViewerScrollChanged"
+                        VerticalScrollBarVisibility="Visible">
                         <ItemsControl ItemsSource="{Binding DataUsers, UpdateSourceTrigger=PropertyChanged}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -173,12 +130,12 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="60" />
                                             <ColumnDefinition Width="200" />
-                                            <ColumnDefinition Width="350" />
+                                            <ColumnDefinition Width="300" />
                                             <ColumnDefinition Width="140" />
                                             <ColumnDefinition Width="75" />
                                             <ColumnDefinition Width="125" />
                                             <ColumnDefinition Width="125" />
-                                            <ColumnDefinition />
+                                            <ColumnDefinition MinWidth="150" />
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
                                             <RowDefinition />
@@ -209,11 +166,7 @@
                                         <!--#region select box-->
 
                                         <Grid Grid.Column="0">
-                                            <Border
-                                                Width="1"
-                                                HorizontalAlignment="Left"
-                                                Background="Black"
-                                                Opacity="0.2" />
+                                            <Border Style="{StaticResource CellBorder}" />
                                             <Border Background="Transparent" MouseEnter="DataUserAreaMouseEnter">
                                                 <CheckBox
                                                     HorizontalAlignment="Center"
@@ -230,24 +183,19 @@
 
                                         <Grid Grid.Column="1">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="1" />
                                                 <ColumnDefinition />
-                                                <ColumnDefinition Width="40" />
-                                                <ColumnDefinition Width="5" />
+                                                <ColumnDefinition Width="50" />
                                             </Grid.ColumnDefinitions>
-                                            <Border
-                                                Grid.Column="0"
-                                                Background="Black"
-                                                Opacity="0.2" />
+                                            <Border Grid.Column="0" Style="{StaticResource CellBorder}" />
                                             <TextBox
-                                                Grid.Column="1"
+                                                Grid.Column="0"
                                                 HorizontalAlignment="Left"
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 IsReadOnly="True"
                                                 Text="{Binding Id, UpdateSourceTrigger=PropertyChanged}" />
                                             <Button
-                                                Grid.Column="2"
+                                                Grid.Column="1"
                                                 Width="40"
                                                 Height="40"
                                                 hc:BorderElement.CornerRadius="10"
@@ -269,23 +217,18 @@
 
                                         <Grid Grid.Column="2">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="1" />
                                                 <ColumnDefinition />
-                                                <ColumnDefinition Width="40" />
-                                                <ColumnDefinition Width="5" />
+                                                <ColumnDefinition Width="50" />
                                             </Grid.ColumnDefinitions>
-                                            <Border
-                                                Grid.Column="0"
-                                                Background="Black"
-                                                Opacity="0.2" />
+                                            <Border Grid.Column="0" Style="{StaticResource CellBorder}" />
                                             <TextBox
-                                                Grid.Column="1"
+                                                Grid.Column="0"
                                                 HorizontalAlignment="Left"
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
                                             <Button
-                                                Grid.Column="2"
+                                                Grid.Column="1"
                                                 Width="40"
                                                 Height="40"
                                                 hc:BorderElement.CornerRadius="10"
@@ -306,17 +249,8 @@
                                         <!--#region reg date-->
 
                                         <Grid Grid.Column="3">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="1" />
-                                                <ColumnDefinition />
-                                                <ColumnDefinition Width="5" />
-                                            </Grid.ColumnDefinitions>
-                                            <Border
-                                                Grid.Column="0"
-                                                Background="Black"
-                                                Opacity="0.2" />
+                                            <Border Style="{StaticResource CellBorder}" />
                                             <TextBox
-                                                Grid.Column="1"
                                                 HorizontalAlignment="Left"
                                                 Background="Transparent"
                                                 BorderThickness="0"
@@ -327,15 +261,7 @@
                                         <!--#region language-->
 
                                         <Grid Grid.Column="4">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="1" />
-                                                <ColumnDefinition />
-                                                <ColumnDefinition Width="5" />
-                                            </Grid.ColumnDefinitions>
-                                            <Border
-                                                Grid.Column="0"
-                                                Background="Black"
-                                                Opacity="0.2" />
+                                            <Border Style="{StaticResource CellBorder}" />
                                             <TextBox
                                                 Grid.Column="1"
                                                 HorizontalAlignment="Center"
@@ -348,15 +274,7 @@
                                         <!--#region balance-->
 
                                         <Grid Grid.Column="5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="1" />
-                                                <ColumnDefinition />
-                                                <ColumnDefinition Width="5" />
-                                            </Grid.ColumnDefinitions>
-                                            <Border
-                                                Grid.Column="0"
-                                                Background="Black"
-                                                Opacity="0.2" />
+                                            <Border Style="{StaticResource CellBorder}" />
                                             <TextBox
                                                 Grid.Column="1"
                                                 HorizontalAlignment="Center"
@@ -369,15 +287,7 @@
                                         <!--#region total uploaded-->
 
                                         <Grid Grid.Column="6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="1" />
-                                                <ColumnDefinition />
-                                                <ColumnDefinition Width="5" />
-                                            </Grid.ColumnDefinitions>
-                                            <Border
-                                                Grid.Column="0"
-                                                Background="Black"
-                                                Opacity="0.2" />
+                                            <Border Style="{StaticResource CellBorder}" />
                                             <TextBox
                                                 Grid.Column="1"
                                                 HorizontalAlignment="Center"
@@ -395,15 +305,11 @@
                                                 <ColumnDefinition />
                                                 <ColumnDefinition Width="1" />
                                             </Grid.ColumnDefinitions>
-                                            <Border
-                                                Grid.Column="0"
-                                                Background="Black"
-                                                Opacity="0.2" />
+                                            <Border Grid.Column="0" Style="{StaticResource CellBorder}" />
                                             <StackPanel
                                                 Grid.Column="1"
                                                 Margin="5,0,0,0"
                                                 Orientation="Horizontal">
-
                                                 <Button
                                                     Width="40"
                                                     Height="40"
@@ -419,7 +325,6 @@
                                                             ToolTip="Сообщение от бота" />
                                                     </StackPanel>
                                                 </Button>
-
                                                 <Button
                                                     Width="40"
                                                     Height="40"
@@ -437,7 +342,6 @@
                                                             ToolTip="Заблокировать пользователя" />
                                                     </StackPanel>
                                                 </Button>
-
                                                 <Button
                                                     Width="40"
                                                     Height="40"
@@ -455,7 +359,6 @@
                                                             ToolTip="Разблокировать пользователя" />
                                                     </StackPanel>
                                                 </Button>
-
                                                 <Button
                                                     Width="40"
                                                     Height="40"
@@ -473,10 +376,7 @@
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
-                                            <Border
-                                                Grid.Column="2"
-                                                Background="Black"
-                                                Opacity="0.2" />
+                                            <Border Grid.Column="2" Style="{StaticResource CellBorder}" />
                                         </Grid>
 
                                         <!--#endregion-->
@@ -489,19 +389,7 @@
                     <!--#endregion-->
                     <!--#region no data-->
 
-                    <Border
-                        Grid.Row="2"
-                        Height="35"
-                        VerticalAlignment="Top"
-                        BorderBrush="Black"
-                        BorderThickness="2,0,2,2"
-                        Opacity="0.5"
-                        Visibility="{Binding DataUsersCount, Converter={StaticResource IntEqualToVisibility}, ConverterParameter=0}">
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Text="Нечего отображать" />
-                    </Border>
+                    <styles:NoDataControl Grid.Row="2" Visibility="{Binding DataUsersCount, Converter={StaticResource IntEqualToVisibility}, ConverterParameter=0}" />
 
                     <!--#endregion-->
                 </Grid>
@@ -540,73 +428,27 @@
                         </Grid.ColumnDefinitions>
                         <Border
                             Grid.Column="0"
-                            BorderBrush="Black"
-                            BorderThickness="2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="ID" />
+                            Margin="0"
+                            Style="{StaticResource HeaderBorder}">
+                            <TextBlock Style="{StaticResource HeaderTextBlock}" Text="ID" />
                         </Border>
-                        <Border
-                            Grid.Column="1"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Никнейм" />
+                        <Border Grid.Column="1" Style="{StaticResource HeaderBorder}">
+                            <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Никнейм" />
                         </Border>
-                        <Border
-                            Grid.Column="2"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Имя" />
+                        <Border Grid.Column="2" Style="{StaticResource HeaderBorder}">
+                            <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Имя" />
                         </Border>
-                        <Border
-                            Grid.Column="3"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Фамилия" />
+                        <Border Grid.Column="3" Style="{StaticResource HeaderBorder}">
+                            <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Фамилия" />
                         </Border>
-                        <Border
-                            Grid.Column="4"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Дата регистрации" />
+                        <Border Grid.Column="4" Style="{StaticResource HeaderBorder}">
+                            <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Дата регистрации" />
                         </Border>
-                        <Border
-                            Grid.Column="5"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Язык" />
+                        <Border Grid.Column="5" Style="{StaticResource HeaderBorder}">
+                            <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Язык" />
                         </Border>
-                        <Border
-                            Grid.Column="6"
-                            BorderBrush="Black"
-                            BorderThickness="0,2,2,2"
-                            Opacity="0.8">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Text="Управление" />
+                        <Border Grid.Column="6" Style="{StaticResource HeaderBorder}">
+                            <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Управление" />
                         </Border>
                     </Grid>
 
@@ -775,19 +617,7 @@
                     <!--#endregion-->
                     <!--#region no data-->
 
-                    <Border
-                        Grid.Row="1"
-                        Height="35"
-                        VerticalAlignment="Top"
-                        BorderBrush="Black"
-                        BorderThickness="2,0,2,2"
-                        Opacity="0.5"
-                        Visibility="{Binding NotAcceptedUsersCount, Converter={StaticResource IntEqualToVisibility}, ConverterParameter=0}">
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Text="Нечего отображать" />
-                    </Border>
+                    <styles:NoDataControl Grid.Row="2" Visibility="{Binding NotAcceptedUsersCount, Converter={StaticResource IntEqualToVisibility}, ConverterParameter=0}" />
 
                     <!--#endregion-->
                 </Grid>
@@ -830,7 +660,7 @@
                 DotCount="12"
                 DotDelayTime="0"
                 DotDiameter="20"
-                DotSpeed="100"
+                DotSpeed="300"
                 Foreground="Black" />
         </Grid>
 

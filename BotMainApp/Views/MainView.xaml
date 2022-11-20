@@ -63,7 +63,7 @@
                 <ColumnDefinition Width="150" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <hc:SideMenu SelectionChanged="SideMenuSelectionChanged">
+            <hc:SideMenu>
                 <hc:SideMenuItem
                     Command="{Binding SwithViewCommand}"
                     CommandParameter="Users"
@@ -74,6 +74,18 @@
                             Width="24"
                             Height="24"
                             Source="/Images/users.png" />
+                    </hc:SideMenuItem.Icon>
+                </hc:SideMenuItem>
+                <hc:SideMenuItem
+                    Command="{Binding SwithViewCommand}"
+                    CommandParameter="ManualChecks"
+                    Header="Проверки"
+                    IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=ManualChecks}">
+                    <hc:SideMenuItem.Icon>
+                        <Image
+                            Width="24"
+                            Height="24"
+                            Source="/Images/search.png" />
                     </hc:SideMenuItem.Icon>
                 </hc:SideMenuItem>
                 <hc:SideMenuItem
@@ -91,6 +103,9 @@
             </hc:SideMenu>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Users, UpdateSourceTrigger=PropertyChanged}">
                 <views:UsersView />
+            </Grid>
+            <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=ManualChecks, UpdateSourceTrigger=PropertyChanged}">
+                <views:ManualChecksView />
             </Grid>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Logs, UpdateSourceTrigger=PropertyChanged}">
                 <views:LogsView />

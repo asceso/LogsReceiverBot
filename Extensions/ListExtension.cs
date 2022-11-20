@@ -1,4 +1,6 @@
-﻿namespace Extensions
+﻿using System.Collections.ObjectModel;
+
+namespace Extensions
 {
     public static class ListExtension
     {
@@ -20,6 +22,20 @@
                 currentThread++;
             }
             return partitions;
+        }
+
+        public static TData GetRandom<TData>(this ICollection<TData> source)
+        {
+            int randomIndex = Random.Shared.Next(source.Count);
+            if (source is List<TData> ld)
+            {
+                return ld[randomIndex];
+            }
+            if (source is ObservableCollection<TData> od)
+            {
+                return od[randomIndex];
+            }
+            return source.ElementAt(randomIndex);
         }
     }
 }

@@ -17,9 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CheckerRunner", "CheckerRun
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseEvents", "AgregatorEvents\DatabaseEvents.csproj", "{8E2D2512-2803-47BE-9284-940DDCEEF1C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTestApp", "DataTestApp\DataTestApp.csproj", "{56DDF730-FD88-4FC0-9328-3BE4D87A95DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataTestApp", "DataTestApp\DataTestApp.csproj", "{56DDF730-FD88-4FC0-9328-3BE4D87A95DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DublicateRemoveRunner", "DublicateRemoveRunner\DublicateRemoveRunner.csproj", "{3AEEA309-2810-43E9-8862-3BF2115F66D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DublicateRemoveRunner", "DublicateRemoveRunner\DublicateRemoveRunner.csproj", "{3AEEA309-2810-43E9-8862-3BF2115F66D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Styles", "Styles\Styles.csproj", "{E29BB530-423A-4835-A07A-D7263D1D4875}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{3AEEA309-2810-43E9-8862-3BF2115F66D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AEEA309-2810-43E9-8862-3BF2115F66D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3AEEA309-2810-43E9-8862-3BF2115F66D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E29BB530-423A-4835-A07A-D7263D1D4875}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E29BB530-423A-4835-A07A-D7263D1D4875}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E29BB530-423A-4835-A07A-D7263D1D4875}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E29BB530-423A-4835-A07A-D7263D1D4875}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

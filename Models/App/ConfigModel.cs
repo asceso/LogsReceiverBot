@@ -10,6 +10,7 @@ namespace Models.App
         private string urlRegex;
         private string loginRegex;
         private string passwordRegex;
+        private int pageMaxCount;
 
         public string BotToken { get => botToken; set => SetProperty(ref botToken, value); }
         public long TelegramNotificationChat { get => telegramNotificationChat; set => SetProperty(ref telegramNotificationChat, value); }
@@ -17,5 +18,6 @@ namespace Models.App
         public string UrlRegex { get => urlRegex; set => SetProperty(ref urlRegex, value); }
         public string LoginRegex { get => loginRegex; set => SetProperty(ref loginRegex, value); }
         public string PasswordRegex { get => passwordRegex; set => SetProperty(ref passwordRegex, value); }
+        public int PageMaxCount { get => pageMaxCount; set => SetProperty(ref pageMaxCount, value); }
     }
 }

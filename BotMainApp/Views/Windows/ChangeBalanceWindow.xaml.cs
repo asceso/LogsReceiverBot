@@ -10,9 +10,9 @@ namespace BotMainApp.Views.Windows
     /// </summary>
     public partial class ChangeBalanceWindow : Window, IDisposable
     {
-        private readonly SolidColorBrush defaultBrush = new SolidColorBrush(Colors.Black);
-        private readonly SolidColorBrush lessBrush = new SolidColorBrush(Colors.Red);
-        private readonly SolidColorBrush moreBrush = new SolidColorBrush(Colors.Green);
+        private readonly SolidColorBrush defaultBrush = new(Colors.Black);
+        private readonly SolidColorBrush lessBrush = new(Colors.Red);
+        private readonly SolidColorBrush moreBrush = new(Colors.Green);
         private readonly UserModel user;
         public string OutputText { get; set; }
         public bool SendNotification { get; set; }

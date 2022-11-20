@@ -2,7 +2,6 @@
 using BotMainApp.LocalEvents;
 using BotMainApp.TelegramServices;
 using DataAdapter.Controllers;
-using Microsoft.Win32;
 using Models.App;
 using Models.Database;
 using Models.Enums;
@@ -28,7 +27,8 @@ namespace BotMainApp.ViewModels
     {
         #region fields
 
-        private NotificationManager notificationManager;
+        private readonly IEventAggregator aggregator;
+        private readonly NotificationManager notificationManager;
         private CancellationTokenSource cancelationTokenSource;
 
         private TelegramStateModel telegramState;
@@ -58,6 +58,7 @@ namespace BotMainApp.ViewModels
                              IKeyboardService keyboardService,
                              IEventAggregator aggregator)
         {
+            this.aggregator = aggregator;
             Title = "Бот для приема логов";
             TelegramState = new("запуск", TelegramStateModel.BlackBrush);
             TrayIconVisibility = Visibility.Collapsed;
@@ -83,6 +84,7 @@ namespace BotMainApp.ViewModels
             CreateAndStartBot.Execute();
 
             if (!Directory.Exists(PathCollection.TempFolderPath)) Directory.CreateDirectory(PathCollection.TempFolderPath);
+            if (!Directory.Exists(PathCollection.ChecksFolderPath)) Directory.CreateDirectory(PathCollection.ChecksFolderPath);
             TelegramState.SetInfo("работает");
             aggregator.GetEvent<TelegramStateEvent>().Subscribe((st) =>
             {
@@ -127,7 +129,11 @@ namespace BotMainApp.ViewModels
             App.Current.Shutdown();
         }
 
-        private void OnSwitchView(string obj) => CurrentView = ViewsPayload.GetByName(obj.ToString());
+        private void OnSwitchView(string obj)
+        {
+            CurrentView = ViewsPayload.GetByName(obj.ToString());
+            aggregator.GetEvent<SwitchViewTypeEvent>().Publish(CurrentView);
+        }
 
         private async void OnCreateAndStartBot(ConfigModel config, IEventAggregator aggregator, IMemorySaver memory)
         {

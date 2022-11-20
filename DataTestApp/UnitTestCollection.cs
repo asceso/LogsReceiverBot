@@ -1,7 +1,3 @@
-using DataAdapter.Controllers;
-using Extensions;
-using System.Diagnostics;
-
 namespace DataTestApp
 {
     public class Tests
@@ -10,16 +6,20 @@ namespace DataTestApp
         private string[] hosts;
         private string[] domains;
         private string[] ports;
+        private string[] categories;
         private Random random;
+        private List<UserModel> users;
 
         [SetUp]
-        public void Setup()
+        public async Task Setup()
         {
             alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
             hosts = new string[] { "http://", "https://" };
             domains = new string[] { ".ru", ".com", ".bet" };
-            ports = new string[] { ":2063", ":3009", ":2090", ":1090", ":3009" };
+            ports = new string[] { ":2096", ":2095", ":2083", ":3082", ":2086", ":2087", ":4095", ":1083", ":2082", ":2086", ":2087" };
+            categories = new string[] { "Cpanel", "Whm" };
             random = new();
+            users = await UsersController.GetUsersAsync();
         }
 
         private string GetRandomUrl(int len = 10)
@@ -52,13 +52,15 @@ namespace DataTestApp
 
         private LogModel MakeRandomLogModel()
         {
+            UserModel randomUser = users.GetRandom();
             return new()
             {
                 Url = GetRandomUrl(),
                 Login = GetRandomLoginOrPassword(),
                 Password = GetRandomLoginOrPassword(),
-                UploadedByUserId = GetRandomTgId(),
-                UploadedByUsername = GetRandomLoginOrPassword()
+                UploadedByUserId = randomUser.Id,
+                UploadedByUsername = randomUser.Username,
+                Category = categories.GetRandom()
             };
         }
 

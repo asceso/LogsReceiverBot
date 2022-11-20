@@ -1,0 +1,24 @@
+﻿<Window
+    x:Class="BotMainApp.Views.Windows.ManualCheckProcessWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:hc="https://handyorg.github.io/handycontrol"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="Manual check"
+    Width="450"
+    Height="400"
+    AllowsTransparency="True"
+    Background="Transparent"
+    ResizeMode="NoResize"
+    WindowStartupLocation="CenterScreen"
+    WindowStyle="None"
+    mc:Ignorable="d">
+    <Border
+        Background="{StaticResource BackgroundBrush}"
+        BorderBrush="Black"
+        BorderThickness="2"
+        CornerRadius="15">
+        <Grid />
+    </Border>
+</Window>

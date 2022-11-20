@@ -3,9 +3,6 @@ using Extensions;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
-object syncObjectUnique = new();
-object syncObjectDublicates = new();
-
 Environment.CurrentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 string[] arguments = Environment.GetCommandLineArgs();
 string filename;
@@ -14,7 +11,7 @@ string urlRegexPattern;
 string loginRegexPattern;
 string passwordRegexPattern;
 
-if (arguments.Length != 6)
+if (arguments.Length < 6)
 {
     return;
 }
@@ -24,6 +21,8 @@ userId = arguments[2];
 urlRegexPattern = arguments[3];
 loginRegexPattern = arguments[4];
 passwordRegexPattern = arguments[5];
+bool showOutput = arguments.Length > 6 && arguments[6] == "true";
+int threadCount = 10;
 
 try
 {
@@ -36,11 +35,6 @@ try
     List<string> data = new();
     string uniqueFilePath = resultFolderPath + "unique.txt";
     string dublicateFilePath = resultFolderPath + "dublicates.txt";
-
-    var fs = File.Create(uniqueFilePath);
-    fs.Close();
-    fs = File.Create(dublicateFilePath);
-    fs.Close();
 
     Regex urlRegex = new(urlRegexPattern);
     Regex loginRegex = new(loginRegexPattern);
@@ -70,10 +64,10 @@ try
     reader.Close();
 
     List<string> dbLogsData = await LogsController.GetLogsDataAsync();
-    TextWriter writerUnique = new StreamWriter(uniqueFilePath);
-    TextWriter writerDublicates = new StreamWriter(dublicateFilePath);
+    List<string> uniqueList = new();
+    List<string> dublicateList = new();
 
-    var chunks = data.Partitions(20);
+    var chunks = data.Partitions(threadCount);
     List<Task> waitingTasks = new();
     foreach (var chunk in chunks)
     {
@@ -83,25 +77,37 @@ try
             {
                 if (dbLogsData.Any(l => l == log))
                 {
-                    SyncWriteDublicates(writerDublicates, log);
+                    dublicateList.Add(log);
                 }
                 else
                 {
-                    SyncWriteUniques(writerUnique, log);
+                    uniqueList.Add(log);
                 }
             }
         }));
     }
     Task.WaitAll(waitingTasks.ToArray());
-    writerUnique.Close();
-    writerDublicates.Close();
+    MakeFileIfAnyExist(uniqueList, uniqueFilePath);
+    MakeFileIfAnyExist(dublicateList, dublicateFilePath);
+    void MakeFileIfAnyExist(List<string> list, string filename)
+    {
+        if (list.Any())
+        {
+            using TextWriter writer = new StreamWriter(filename);
+            foreach (var line in list)
+            {
+                writer.WriteLine(line);
+            }
+            writer.Close();
+        }
+    }
 
     if (File.Exists(tempFolderPath + filename)) File.Delete(tempFolderPath + filename);
     JsonAnswer answer = new()
     {
-        Unique = uniqueFilePath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\"),
-        Dublicates = dublicateFilePath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\"),
-        FolderPath = resultFolderPath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\")
+        FolderPath = resultFolderPath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\"),
+        Unique = File.Exists(uniqueFilePath) ? uniqueFilePath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\") : "",
+        Dublicates = File.Exists(dublicateFilePath) ? dublicateFilePath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\") : ""
     };
     Console.WriteLine(JsonConvert.SerializeObject(answer));
 }
@@ -109,21 +115,14 @@ catch (Exception ex)
 {
     Console.WriteLine("{" + $"\"Error\":\"{ex.Message}\"" + "}");
 }
-
-void SyncWriteUniques(TextWriter writer, string data) => SyncWrite(syncObjectUnique, writer, data);
-void SyncWriteDublicates(TextWriter writer, string data) => SyncWrite(syncObjectDublicates, writer, data);
-void SyncWrite(object syncObject, TextWriter writer, string data)
+if (showOutput)
 {
-    lock (syncObject)
-    {
-        writer.WriteLine(data);
-        writer.Flush();
-    }
+    Console.ReadKey();
 }
 
 public class JsonAnswer
 {
+    public string FolderPath { get; set; }
     public string Unique { get; set; }
     public string Dublicates { get; set; }
-    public string FolderPath { get; set; }
 }

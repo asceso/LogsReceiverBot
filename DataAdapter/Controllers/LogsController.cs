@@ -1,19 +1,45 @@
-﻿using AgregatorEvents;
+﻿using Extensions;
 using Microsoft.EntityFrameworkCore;
 using Models.Database;
-using Prism.Events;
-using System.Security.Cryptography;
 
 namespace DataAdapter.Controllers
 {
     public class LogsController
     {
-        public static async Task<List<LogModel>> GetLogsAsync()
+        public static async Task<List<LogModel>> GetLogsAsync(UserModel user, string category = null)
         {
             try
             {
                 using DataContext data = new();
-                return await data.Logs.ToListAsync();
+                if (user.Id != 0 && category.IsNullOrEmpty())
+                {
+                    return await data.Logs.Where(d => d.UploadedByUserId == user.Id).ToListAsync();
+                }
+                if (user.Id == 0 && !category.IsNullOrEmpty())
+                {
+                    return await data.Logs.Where(d => d.Category == category).ToListAsync();
+                }
+                if (user.Id != 0 && !category.IsNullOrEmpty())
+                {
+                    return await data.Logs.Where(d => d.UploadedByUserId == user.Id && d.Category == category).ToListAsync();
+                }
+                else
+                {
+                    return await data.Logs.ToListAsync();
+                }
+            }
+            catch (Exception)
+            {
+                return new List<LogModel>();
+            }
+        }
+
+        public static async Task<List<LogModel>> TakeLogsByPage(int pageNum, int countInPage)
+        {
+            try
+            {
+                using DataContext data = new();
+                return await data.Logs.Skip(countInPage * (pageNum - 1)).Take(countInPage * pageNum).ToListAsync();
             }
             catch (Exception)
             {
@@ -29,6 +55,21 @@ namespace DataAdapter.Controllers
                 var logsData = from l in data.Logs
                                select l.ToString();
                 return logsData.ToList();
+            }
+            catch (Exception)
+            {
+                return new List<string>();
+            }
+        }
+
+        public static async Task<List<string>> GetLogsCategoriesAsync()
+        {
+            try
+            {
+                using DataContext data = new();
+                var logsData = from l in data.Logs
+                               select l.Category;
+                return logsData.Distinct().ToList();
             }
             catch (Exception)
             {
@@ -103,7 +144,7 @@ namespace DataAdapter.Controllers
             try
             {
                 using DataContext data = new();
-                if (logs == null) logs = await GetLogsAsync();
+                if (logs == null) logs = await GetLogsAsync(new());
                 data.Logs.RemoveRange(logs);
                 return await data.SaveChangesAsync();
             }

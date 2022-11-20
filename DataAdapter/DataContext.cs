@@ -7,6 +7,7 @@ namespace DataAdapter
     {
         public DbSet<UserModel> Users { get; set; }
         public DbSet<LogModel> Logs { get; set; }
+        public DbSet<ManualCheckModel> ManualChecks { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.UseMySql(
                 "server=localhost;user=root;password=admin;database=bot_receiver_db;",

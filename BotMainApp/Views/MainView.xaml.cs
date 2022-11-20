@@ -28,12 +28,5 @@ namespace BotMainApp.Views
                 e.Cancel = true;
             }
         }
-
-        private void SideMenuSelectionChanged(object sender, HandyControl.Data.FunctionEventArgs<object> e)
-        {
-            if (DataContext is MainViewModel vm)
-            {
-            }
-        }
     }
 }

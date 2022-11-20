@@ -1,7 +1,4 @@
-﻿using BotMainApp.TelegramServices;
-using Prism.Events;
-using System;
-using Telegram.Bot;
+﻿using Prism.Events;
 
 namespace BotMainApp.LocalEvents
 {

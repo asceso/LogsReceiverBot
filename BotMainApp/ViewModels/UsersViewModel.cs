@@ -6,6 +6,7 @@ using DataAdapter.Controllers;
 using Extensions;
 using Models.App;
 using Models.Database;
+using Models.Enums;
 using Notification.Wpf;
 using Prism.Commands;
 using Prism.Events;
@@ -63,9 +64,18 @@ namespace BotMainApp.ViewModels
 
             aggregator.GetEvent<UserUpdateEvent>().Subscribe(OnUserUpdates);
             aggregator.GetEvent<BotRestartEvent>().Subscribe(OnBotRestart);
+            aggregator.GetEvent<SwitchViewTypeEvent>().Subscribe(OnSwitchMainView);
 
             InitVmCommands();
             RefreshCommand.Execute();
+        }
+
+        private void OnSwitchMainView(ViewsPayload.ViewTypes selectedType)
+        {
+            if (selectedType is ViewsPayload.ViewTypes.Users)
+            {
+                RefreshCommand.Execute();
+            }
         }
 
         private void OnUserUpdates(KeyValuePair<string, UserModel> update)

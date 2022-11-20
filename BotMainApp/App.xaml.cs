@@ -28,6 +28,7 @@ namespace BotMainApp
             ViewModelLocationProvider.Register<MainView, MainViewModel>();
             ViewModelLocationProvider.Register<UsersView, UsersViewModel>();
             ViewModelLocationProvider.Register<LogsView, LogsViewModel>();
+            ViewModelLocationProvider.Register<ManualChecksView, ManualChecksViewModel>();
         }
 
         protected override Window CreateShell()

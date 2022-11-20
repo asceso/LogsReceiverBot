@@ -34,5 +34,10 @@ namespace BotMainApp.Views
                 }
             }
         }
+
+        private void ScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            DataScroller.ScrollToHorizontalOffset(e.HorizontalOffset);
+        }
     }
 }
