@@ -177,16 +177,6 @@ namespace BotMainApp.TelegramServices
                                 ThreadStart threadStart = new(async () =>
                                 {
                                     Stopwatch ellapsedWatch = Stopwatch.StartNew();
-                                    Dictionary<string, string> jsonAnswer = new()
-                                    {
-                                        { "FolderPath", string.Empty },
-                                        { "DublicateFilePath", string.Empty },
-                                        { "UniqueFilePath", string.Empty },
-                                        { "CpanelGoodFilePath", string.Empty },
-                                        { "CpanelBadFilePath", string.Empty },
-                                        { "WhmGoodFilePath", string.Empty },
-                                        { "WhmBadFilePath", string.Empty }
-                                    };
 
                                     string dublicateData = Runner.RunDublicateChecker(filename, dbUser.Id, config);
                                     JObject dublicateDataJson = JObject.Parse(dublicateData);
@@ -207,11 +197,63 @@ namespace BotMainApp.TelegramServices
                                         }
                                         return;
                                     }
-                                    jsonAnswer["FolderPath"] = dublicateDataJson["FolderPath"].ToString();
-                                    jsonAnswer["DublicateFilePath"] = dublicateDataJson["Dublicates"].ToString();
-                                    jsonAnswer["UniqueFilePath"] = dublicateDataJson["Unique"].ToString();
 
-                                    if (jsonAnswer["UniqueFilePath"] == "")
+                                    manualCheckModel.DublicateFilePath = dublicateDataJson["Dublicates"].ToString();
+                                    if (System.IO.File.Exists(manualCheckModel.DublicateFilePath))
+                                    {
+                                        manualCheckModel.DublicateFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.DublicateFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                                    }
+                                    manualCheckModel.WebmailFilePath = dublicateDataJson["Webmail"].ToString();
+                                    if (System.IO.File.Exists(manualCheckModel.WebmailFilePath))
+                                    {
+                                        manualCheckModel.WebmailFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.WebmailFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                                    }
+                                    string cpanelDataFilePath = dublicateDataJson["Cpanel"].ToString();
+                                    string whmDataFilePath = dublicateDataJson["Whm"].ToString();
+
+                                    manualCheckModel.Status = CheckStatus.ManualCheckStatus.FillingDb;
+                                    await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                    string fillData = Runner.RunDublicateFiller(dbUser.Id, manualCheckModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath);
+                                    JObject fillDataJson = JObject.Parse(fillData);
+                                    if (fillDataJson.ContainsKey("Error"))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language));
+                                            await botClient.SendTextMessageAsync(config.TelegramNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                                        }
+                                        catch (Exception)
+                                        {
+                                            ellapsedWatch.Stop();
+                                            manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                                            manualCheckModel.EndDateTime = DateTime.Now;
+                                            manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
+                                            await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                        }
+                                        return;
+                                    }
+
+                                    if (config.NotifyWhenDatabaseFillNewLogRecords)
+                                    {
+                                        try
+                                        {
+                                            int webmailAddedCount = fillDataJson.Value<int>("WebmailAddedCount");
+                                            int cpanelAddedCount = fillDataJson.Value<int>("CpanelAddedCount");
+                                            int whmAddedCount = fillDataJson.Value<int>("WhmAddedCount");
+                                            int totalAddedCount = webmailAddedCount + cpanelAddedCount + webmailAddedCount;
+
+                                            await botClient.SendTextMessageAsync(config.TelegramNotificationChat,
+                                                $"В базу данных было добавлено {totalAddedCount} записей:\r\n" +
+                                                $"Новый записей в категории webmail: {webmailAddedCount}\r\n" +
+                                                $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
+                                                $"Новый записей в категории whm: {whmAddedCount}\r\n");
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                    }
+
+                                    if (cpanelDataFilePath == "" && whmDataFilePath == "")
                                     {
                                         ellapsedWatch.Stop();
                                         manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
@@ -222,15 +264,9 @@ namespace BotMainApp.TelegramServices
                                     }
 
                                     manualCheckModel.Status = CheckStatus.ManualCheckStatus.DublicateDeleted;
-                                    manualCheckModel.DublicateFilePath = jsonAnswer["DublicateFilePath"];
-                                    manualCheckModel.UniqueFilePath = jsonAnswer["UniqueFilePath"];
-                                    if (System.IO.File.Exists(manualCheckModel.DublicateFilePath))
-                                        manualCheckModel.DublicateFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.DublicateFilePath).Where(l => !l.IsNullOrEmpty()).Count();
-                                    if (System.IO.File.Exists(manualCheckModel.UniqueFilePath))
-                                        manualCheckModel.UniqueFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.UniqueFilePath).Where(l => !l.IsNullOrEmpty()).Count();
                                     await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
 
-                                    string cpanelData = Runner.RunCpanelChecker(jsonAnswer["FolderPath"], jsonAnswer["UniqueFilePath"], dbUser.Id, temp.Operation.Params["Category"].ToString().ToLower());
+                                    string cpanelData = Runner.RunCpanelChecker(dbUser.Id, dublicateDataJson["FolderPath"].ToString(), cpanelDataFilePath, whmDataFilePath);
                                     JObject cpanelDataJson = JObject.Parse(cpanelData);
                                     if (cpanelDataJson.ContainsKey("Error"))
                                     {
@@ -250,21 +286,18 @@ namespace BotMainApp.TelegramServices
                                         return;
                                     }
 
-                                    jsonAnswer["CpanelGoodFilePath"] = cpanelDataJson["CpanelGood"].ToString();
-                                    jsonAnswer["CpanelBadFilePath"] = cpanelDataJson["CpanelBad"].ToString();
-                                    jsonAnswer["WhmGoodFilePath"] = cpanelDataJson["WhmGood"].ToString();
-                                    jsonAnswer["WhmBadFilePath"] = cpanelDataJson["WhmBad"].ToString();
-                                    ;
                                     ellapsedWatch.Stop();
-
-                                    manualCheckModel.Status = CheckStatus.ManualCheckStatus.CopyingFiles;
                                     manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
-                                    manualCheckModel.UniqueFilePath = jsonAnswer["UniqueFilePath"];
-                                    manualCheckModel.DublicateFilePath = jsonAnswer["DublicateFilePath"];
-                                    manualCheckModel.CpanelFilePath = jsonAnswer["CpanelGoodFilePath"];
-                                    manualCheckModel.WhmFilePath = jsonAnswer["WhmGoodFilePath"];
+                                    manualCheckModel.Status = CheckStatus.ManualCheckStatus.CopyingFiles;
                                     await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
-                                    MoveFilesToChecksIdFolderAndUpatePathes(manualCheckModel, jsonAnswer["FolderPath"]);
+
+                                    manualCheckModel.CpanelGoodFilePath = cpanelDataJson["CpanelGood"].ToString();
+                                    manualCheckModel.CpanelBadFilePath = cpanelDataJson["CpanelBad"].ToString();
+                                    manualCheckModel.WhmGoodFilePath = cpanelDataJson["WhmGood"].ToString();
+                                    manualCheckModel.WhmBadFilePath = cpanelDataJson["WhmBad"].ToString();
+
+                                    await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                    MoveFilesToChecksIdFolderAndUpatePathes(manualCheckModel, dublicateDataJson["FolderPath"].ToString());
                                     return;
                                 });
                                 Thread checkThread = new(threadStart);
@@ -377,34 +410,34 @@ namespace BotMainApp.TelegramServices
             string destinationFolderPath = PathCollection.ChecksFolderPath + manualCheck.Id + "/";
             Directory.CreateDirectory(destinationFolderPath);
 
-            string uniqueFilePath = destinationFolderPath + "unique.txt";
-            string dublicatesFilePath = destinationFolderPath + "dublicates.txt";
-            string cpanelFilePath = destinationFolderPath + "cpanel.txt";
-            string whmFilePath = destinationFolderPath + "whm.txt";
+            string cpanelGoodPath = destinationFolderPath + "cpanel_good.txt";
+            string cpanelBadPath = destinationFolderPath + "cpanel_bad.txt";
+            string whmGoodPath = destinationFolderPath + "whm_good.txt";
+            string whmBadPath = destinationFolderPath + "whm_bad.txt";
 
-            if (System.IO.File.Exists(manualCheck.UniqueFilePath))
+            if (System.IO.File.Exists(manualCheck.CpanelGoodFilePath))
             {
-                System.IO.File.Copy(manualCheck.UniqueFilePath, uniqueFilePath);
-                manualCheck.UniqueFilePath = uniqueFilePath;
-                manualCheck.UniqueFoundedCount = System.IO.File.ReadAllLines(manualCheck.UniqueFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                System.IO.File.Copy(manualCheck.CpanelGoodFilePath, cpanelGoodPath);
+                manualCheck.CpanelGoodFilePath = cpanelGoodPath;
+                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.CpanelGoodFilePath).Where(l => !l.IsNullOrEmpty()).Count();
             }
-            if (System.IO.File.Exists(manualCheck.DublicateFilePath))
+            if (System.IO.File.Exists(manualCheck.CpanelBadFilePath))
             {
-                System.IO.File.Copy(manualCheck.DublicateFilePath, dublicatesFilePath);
-                manualCheck.DublicateFilePath = dublicatesFilePath;
-                manualCheck.DublicateFoundedCount = System.IO.File.ReadAllLines(manualCheck.DublicateFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                System.IO.File.Copy(manualCheck.CpanelBadFilePath, cpanelBadPath);
+                manualCheck.CpanelBadFilePath = cpanelBadPath;
+                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.CpanelBadFilePath).Where(l => !l.IsNullOrEmpty()).Count();
             }
-            if (System.IO.File.Exists(manualCheck.CpanelFilePath))
+            if (System.IO.File.Exists(manualCheck.WhmGoodFilePath))
             {
-                System.IO.File.Copy(manualCheck.CpanelFilePath, cpanelFilePath);
-                manualCheck.CpanelFilePath = cpanelFilePath;
-                manualCheck.CpFoundedCount = System.IO.File.ReadAllLines(manualCheck.CpanelFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                System.IO.File.Copy(manualCheck.WhmGoodFilePath, whmGoodPath);
+                manualCheck.WhmGoodFilePath = whmGoodPath;
+                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.WhmGoodFilePath).Where(l => !l.IsNullOrEmpty()).Count();
             }
-            if (System.IO.File.Exists(manualCheck.WhmFilePath))
+            if (System.IO.File.Exists(manualCheck.WhmBadFilePath))
             {
-                System.IO.File.Copy(manualCheck.WhmFilePath, whmFilePath);
-                manualCheck.WhmFilePath = whmFilePath;
-                manualCheck.WhmFoundedCount = System.IO.File.ReadAllLines(manualCheck.WhmFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                System.IO.File.Copy(manualCheck.WhmBadFilePath, whmBadPath);
+                manualCheck.WhmBadFilePath = whmBadPath;
+                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.WhmBadFilePath).Where(l => !l.IsNullOrEmpty()).Count();
             }
             Directory.Delete(sourceFolderPath, true);
             manualCheck.Status = CheckStatus.ManualCheckStatus.CheckedBySoft;

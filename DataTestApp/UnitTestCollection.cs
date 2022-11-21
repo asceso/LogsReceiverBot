@@ -65,15 +65,6 @@ namespace DataTestApp
         }
 
         [Test]
-        public async Task TestClearLogsDb()
-        {
-            List<LogModel> logs = await LogsController.GetLogsAsync();
-            int logsCount = logs.Count;
-            int deletedCount = await LogsController.DeleteLogsAsync(logs);
-            Assert.That(deletedCount, Is.EqualTo(logsCount));
-        }
-
-        [Test]
         public async Task TestLoad100kLogs()
         {
             List<LogModel> logs = await LogsController.GetLogsAsync();

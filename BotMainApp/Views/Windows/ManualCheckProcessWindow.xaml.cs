@@ -15,6 +15,17 @@ namespace BotMainApp.Views.Windows
         {
             InitializeComponent();
             CheckingModel = model;
+            DataContext = CheckingModel;
+        }
+
+        private void OkButtonClick(object sender, RoutedEventArgs e)
+        {
+            DialogResult = true;
+        }
+
+        private void CancelButtonClick(object sender, RoutedEventArgs e)
+        {
+            Dispose();
         }
 
         public void Dispose()

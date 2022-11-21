@@ -6,6 +6,19 @@ namespace DataAdapter.Controllers
 {
     public class LogsController
     {
+        public static async Task<List<LogModel>> GetLogsAsync()
+        {
+            try
+            {
+                using DataContext data = new();
+                return await data.Logs.ToListAsync();
+            }
+            catch (Exception)
+            {
+                return new List<LogModel>();
+            }
+        }
+
         public static async Task<List<LogModel>> GetLogsAsync(UserModel user, string category = null)
         {
             try

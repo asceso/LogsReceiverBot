@@ -4,7 +4,7 @@
     {
         public enum ManualCheckStatus
         {
-            Created, Error, DublicateDeleted, CopyingFiles, CheckedBySoft, SendToManualChecking, End
+            Created, Error, FillingDb, DublicateDeleted, CopyingFiles, CheckedBySoft, SendToManualChecking, End
         }
 
         public static string GetEnumValue(ManualCheckStatus checkStatus)
@@ -13,6 +13,7 @@
             {
                 ManualCheckStatus.Created => "cоздана",
                 ManualCheckStatus.Error => "ошибка",
+                ManualCheckStatus.FillingDb => "заполняется база",
                 ManualCheckStatus.DublicateDeleted => "удалены дубликаты",
                 ManualCheckStatus.CopyingFiles => "копируются файлы",
                 ManualCheckStatus.CheckedBySoft => "проверена софтом",

@@ -21,7 +21,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataTestApp", "DataTestApp\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DublicateRemoveRunner", "DublicateRemoveRunner\DublicateRemoveRunner.csproj", "{3AEEA309-2810-43E9-8862-3BF2115F66D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Styles", "Styles\Styles.csproj", "{E29BB530-423A-4835-A07A-D7263D1D4875}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Styles", "Styles\Styles.csproj", "{E29BB530-423A-4835-A07A-D7263D1D4875}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "External", "External", "{C477C49B-6A1B-4AF9-AAC0-D06F793E62B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseFillerApp", "DatabaseFillerApp\DatabaseFillerApp.csproj", "{4E9014B1-2F8F-45E9-BB35-A40DCAE10E15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,9 +73,18 @@ Global
 		{E29BB530-423A-4835-A07A-D7263D1D4875}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E29BB530-423A-4835-A07A-D7263D1D4875}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E29BB530-423A-4835-A07A-D7263D1D4875}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E9014B1-2F8F-45E9-BB35-A40DCAE10E15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E9014B1-2F8F-45E9-BB35-A40DCAE10E15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E9014B1-2F8F-45E9-BB35-A40DCAE10E15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E9014B1-2F8F-45E9-BB35-A40DCAE10E15}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7FEB8C99-C393-4BB9-9767-E1D874D85E6B} = {C477C49B-6A1B-4AF9-AAC0-D06F793E62B1}
+		{3AEEA309-2810-43E9-8862-3BF2115F66D0} = {C477C49B-6A1B-4AF9-AAC0-D06F793E62B1}
+		{4E9014B1-2F8F-45E9-BB35-A40DCAE10E15} = {C477C49B-6A1B-4AF9-AAC0-D06F793E62B1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {78C72E7C-235A-484C-B603-FCFFCF6E8BFA}

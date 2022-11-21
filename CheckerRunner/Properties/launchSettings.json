@@ -2,7 +2,7 @@
   "profiles": {
     "CheckerRunner": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Programming\\Work\\LogsReceiverBot\\CheckerRunner\\bin\\Debug\\net6.0\\temp\\\r\nC:\\Programming\\Work\\LogsReceiverBot\\CheckerRunner\\bin\\Debug\\net6.0\\temp\\somefile.txt\r\n123456\r\ncpanel\r\ntrue"
+      "commandLineArgs": "123456\r\nC:\\Programming\\Work\\LogsReceiverBot\\CheckerRunner\\bin\\Debug\\net6.0\\temp\\\r\ncpanel.txt\r\nwhm.txt\r\n1\r\ntrue"
     }
   }
 }

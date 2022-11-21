@@ -6,6 +6,10 @@ namespace Extensions
     {
         public static List<List<TData>> Partitions<TData>(this List<TData> source, int partitionsCount)
         {
+            if (partitionsCount == 0)
+            {
+                partitionsCount = 1;
+            }
             int currentThread = 0;
             List<List<TData>> partitions = new();
             for (int i = 0; i < partitionsCount; i++)

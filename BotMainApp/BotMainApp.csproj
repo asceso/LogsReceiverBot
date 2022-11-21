@@ -74,6 +74,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CheckerRunner\CheckerRunner.csproj" />
     <ProjectReference Include="..\DataAdapter\DataAdapter.csproj" />
+    <ProjectReference Include="..\DatabaseFillerApp\DatabaseFillerApp.csproj" />
     <ProjectReference Include="..\DublicateRemoveRunner\DublicateRemoveRunner.csproj" />
     <ProjectReference Include="..\Extensions\Extensions.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
