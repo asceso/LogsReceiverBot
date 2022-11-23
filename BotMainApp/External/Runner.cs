@@ -1,4 +1,5 @@
-﻿using Models.App;
+﻿using Extensions;
+using Models.App;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -10,19 +11,26 @@ namespace BotMainApp.External
         /// <summary>
         /// Run dublicate checker
         /// </summary>
+        /// <param name="resultDirectoryPath">target directory for check</param>
         /// <param name="filename">filename for check</param>
-        /// <param name="userId">user id</param>
+        /// <param name="config">config with regex</param>
         /// <returns>json with path collection</returns>
-        public static string RunDublicateChecker(string filename, long userId, ConfigModel config)
+        public static string RunDublicateChecker(string resultDirectoryPath, string filename, ConfigModel config)
         {
             ProcessStartInfo psi = new()
             {
                 WorkingDirectory = Environment.CurrentDirectory,
                 FileName = "DublicateRemoveRunner.exe",
-                Arguments = $"{filename} {userId} {config.CpanelRegex} {config.WhmRegex} {config.WebmailRegex}",
+                Arguments =
+                $"\"{resultDirectoryPath}\" " +
+                $"\"{filename}\" " +
+                $"\"{config.CpanelRegex}\" " +
+                $"\"{config.WhmRegex}\" " +
+                $"\"{config.WebmailRegex}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
             };
             Process process = Process.Start(psi);
             process.WaitForExit();
@@ -40,17 +48,57 @@ namespace BotMainApp.External
         /// <param name="folderPath">main folder for check</param>
         /// <param name="cpanelFilepath">cpanel file</param>
         /// <param name="whmFilepath">whm file</param>
+        /// <param name="maxForThread">max for thread count</param>
         /// <returns>json collection</returns>
-        public static string RunCpanelChecker(long userId, string folderPath, string cpanelFilepath, string whmFilepath)
+        public static string RunCpanelChecker(long userId, string folderPath, string cpanelFilepath, string whmFilepath, int maxForThread)
         {
             ProcessStartInfo psi = new()
             {
                 WorkingDirectory = Environment.CurrentDirectory,
                 FileName = "CheckerRunner.exe",
-                Arguments = $"{userId} {folderPath} {cpanelFilepath ?? "none"}  {whmFilepath ?? "none"}",
+                Arguments =
+                $"{userId} " +
+                $"{folderPath} " +
+                $"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)} " +
+                $"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)} " +
+                $"{maxForThread}",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            Process process = Process.Start(psi);
+            process.WaitForExit();
+            StreamReader reader = process.StandardOutput;
+            string jsonResult = reader.ReadToEnd();
+            reader.Close();
+            process.Close();
+            return jsonResult;
+        }
+
+        /// <summary>
+        /// Run checker app
+        /// </summary>
+        /// <param name="cpanelFilepath">cpanel file</param>
+        /// <param name="whmFilepath">whm file</param>
+        /// <param name="folderPath">main folder for check</param>
+        /// <param name="maxForThread">max for thread count</param>
+        /// <returns>json collection</returns>
+        public static string RunOwnCpanelChecker(string cpanelFilepath, string whmFilepath, string folderPath, int maxForThread)
+        {
+            ProcessStartInfo psi = new()
+            {
+                WorkingDirectory = Environment.CurrentDirectory,
+                FileName = "CpanelChecker.exe",
+                Arguments =
+                $"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)} " +
+                $"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)} " +
+                $"{folderPath} " +
+                $"{maxForThread}",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
             };
             Process process = Process.Start(psi);
             process.WaitForExit();
@@ -75,10 +123,15 @@ namespace BotMainApp.External
             {
                 WorkingDirectory = Environment.CurrentDirectory,
                 FileName = "DatabaseFillerApp.exe",
-                Arguments = $"{userId} {webmailFilePath ?? "none"} {cpanelFilePath ?? "none"} {whmFilePath ?? "none"}",
+                Arguments =
+                $"{userId} " +
+                $"{(webmailFilePath.IsNullOrEmptyString() ? "none" : webmailFilePath)} " +
+                $"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)} " +
+                $"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
             };
             Process process = Process.Start(psi);
             process.WaitForExit();

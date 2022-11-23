@@ -57,10 +57,16 @@ namespace DataAdapter.Migrations
                     b.Property<TimeSpan>("CheckingTimeEllapsed")
                         .HasColumnType("time(6)");
 
-                    b.Property<int>("CpFoundedCount")
+                    b.Property<int>("CpanelBadCount")
                         .HasColumnType("int");
 
-                    b.Property<string>("CpanelFilePath")
+                    b.Property<string>("CpanelBadFilePath")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("CpanelGoodCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CpanelGoodFilePath")
                         .HasColumnType("longtext");
 
                     b.Property<string>("DublicateFilePath")
@@ -84,17 +90,23 @@ namespace DataAdapter.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<string>("UniqueFilePath")
+                    b.Property<string>("WebmailFilePath")
                         .HasColumnType("longtext");
 
-                    b.Property<int>("UniqueFoundedCount")
+                    b.Property<int>("WebmailFoundedCount")
                         .HasColumnType("int");
 
-                    b.Property<string>("WhmFilePath")
+                    b.Property<int>("WhmBadCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WhmBadFilePath")
                         .HasColumnType("longtext");
 
-                    b.Property<int>("WhmFoundedCount")
+                    b.Property<int>("WhmGoodCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("WhmGoodFilePath")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 

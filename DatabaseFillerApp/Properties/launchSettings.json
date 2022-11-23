@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DatabaseFillerApp": {
+      "commandName": "Project",
+      "commandLineArgs": "1114923089\r\nC:\\Programming/Work/LogsReceiverBot/BotMainApp/bin/Debug/net6.0-windows/temp/u_1114923089_check_23_11_2022_16_36_00/webmail.txt\r\nC:\\Programming/Work/LogsReceiverBot/BotMainApp/bin/Debug/net6.0-windows/temp/u_1114923089_check_23_11_2022_16_36_00/cpanel.txt\r\nnone"
+    }
+  }
+}

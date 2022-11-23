@@ -150,7 +150,7 @@ namespace DataTestApp
         }
 
         [Test]
-        public async Task TestPartitionsExtension()
+        public void TestPartitionsExtension()
         {
             string[] words = new string[] { "abc", "efg", "uuu", "lol", "tet" };
 
@@ -236,7 +236,7 @@ namespace DataTestApp
             Console.WriteLine($"All data ({logs.Count}) loaded with {stopwatch.Elapsed.TotalSeconds} sec");
 
             stopwatch.Restart();
-            var logsData = await LogsController.GetLogsDataAsync();
+            var logsData = LogsController.GetLogsData();
             Console.WriteLine($"Url data ({logsData.Count}) loaded with {stopwatch.Elapsed.TotalSeconds} sec");
         }
     }

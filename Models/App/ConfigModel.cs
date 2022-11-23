@@ -11,7 +11,11 @@ namespace Models.App
         private string whmRegex;
         private string webmailRegex;
         private int pageMaxCount;
-        private bool notifyWhenDatabaseFillNewLogRecords;
+        private int checkerMaxForThread;
+        private bool useOwnCpanelChecker;
+        private long errorNotificationChat;
+        private long notifyWhenDatabaseFillNewLogRecordsChat;
+        private long notifyWhenCheckerEndWorkChat;
 
         public string BotToken { get => botToken; set => SetProperty(ref botToken, value); }
         public long TelegramNotificationChat { get => telegramNotificationChat; set => SetProperty(ref telegramNotificationChat, value); }
@@ -20,6 +24,10 @@ namespace Models.App
         public string WhmRegex { get => whmRegex; set => SetProperty(ref whmRegex, value); }
         public string WebmailRegex { get => webmailRegex; set => SetProperty(ref webmailRegex, value); }
         public int PageMaxCount { get => pageMaxCount; set => SetProperty(ref pageMaxCount, value); }
-        public bool NotifyWhenDatabaseFillNewLogRecords { get => notifyWhenDatabaseFillNewLogRecords; set => SetProperty(ref notifyWhenDatabaseFillNewLogRecords, value); }
+        public int CheckerMaxForThread { get => checkerMaxForThread; set => SetProperty(ref checkerMaxForThread, value); }
+        public bool UseOwnCpanelChecker { get => useOwnCpanelChecker; set => SetProperty(ref useOwnCpanelChecker, value); }
+        public long ErrorNotificationChat { get => errorNotificationChat; set => SetProperty(ref errorNotificationChat, value); }
+        public long NotifyWhenDatabaseFillNewLogRecordsChat { get => notifyWhenDatabaseFillNewLogRecordsChat; set => SetProperty(ref notifyWhenDatabaseFillNewLogRecordsChat, value); }
+        public long NotifyWhenCheckerEndWorkChat { get => notifyWhenCheckerEndWorkChat; set => SetProperty(ref notifyWhenCheckerEndWorkChat, value); }
     }
 }

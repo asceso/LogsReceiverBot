@@ -39,8 +39,8 @@
                         <ColumnDefinition Width="150" />
                         <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="200" />
                         <ColumnDefinition MinWidth="175" />
                     </Grid.ColumnDefinitions>
                     <Border
@@ -69,23 +69,22 @@
                             ToolTip="Дубликатов найдено" />
                     </Border>
                     <Border Grid.Column="6" Style="{StaticResource HeaderBorder}">
-                        <Image
-                            Width="24"
-                            Height="24"
-                            Source="/Images/unique.png"
-                            ToolTip="Уникальных строк найдено" />
+                        <TextBlock
+                            Style="{StaticResource HeaderTextBlock}"
+                            Text="Webmail"
+                            ToolTip="Webmail найдено" />
                     </Border>
                     <Border Grid.Column="7" Style="{StaticResource HeaderBorder}">
                         <TextBlock
                             Style="{StaticResource HeaderTextBlock}"
                             Text="Cpanel"
-                            ToolTip="Cpanel успешных проверок" />
+                            ToolTip="Cpanel успешных | неуспешных проверок" />
                     </Border>
                     <Border Grid.Column="8" Style="{StaticResource HeaderBorder}">
                         <TextBlock
                             Style="{StaticResource HeaderTextBlock}"
                             Text="Whm"
-                            ToolTip="Whm успешных проверок" />
+                            ToolTip="Whm успешных | неуспешных проверок" />
                     </Border>
                     <Border Grid.Column="9" Style="{StaticResource HeaderBorder}">
                         <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Управление" />
@@ -111,6 +110,8 @@
                                     <ColumnDefinition Width="300" />
                                     <ColumnDefinition Width="200" />
                                     <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="100" />
@@ -250,7 +251,7 @@
                                 </Grid>
 
                                 <!--#endregion-->
-                                <!--#region unique-->
+                                <!--#region webmail-->
 
                                 <Grid Grid.Column="6">
                                     <Border Style="{StaticResource CellBorder}" />
@@ -259,11 +260,11 @@
                                         Background="Transparent"
                                         BorderThickness="0"
                                         IsReadOnly="True"
-                                        Text="{Binding UniqueFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding WebmailFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
                                 </Grid>
 
                                 <!--#endregion-->
-                                <!--#region unique-->
+                                <!--#region cpanel-->
 
                                 <Grid Grid.Column="7">
                                     <Border Style="{StaticResource CellBorder}" />
@@ -271,12 +272,10 @@
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
                                         BorderThickness="0"
+                                        Foreground="Green"
                                         IsReadOnly="True"
-                                        Text="{Binding CpFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding CpanelGoodCount, UpdateSourceTrigger=PropertyChanged}" />
                                 </Grid>
-
-                                <!--#endregion-->
-                                <!--#region whm-->
 
                                 <Grid Grid.Column="8">
                                     <Border Style="{StaticResource CellBorder}" />
@@ -284,14 +283,40 @@
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
                                         BorderThickness="0"
+                                        Foreground="Red"
                                         IsReadOnly="True"
-                                        Text="{Binding WhmFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding CpanelBadCount, UpdateSourceTrigger=PropertyChanged}" />
+                                </Grid>
+
+                                <!--#endregion-->
+                                <!--#region whm-->
+
+                                <Grid Grid.Column="9">
+                                    <Border Style="{StaticResource CellBorder}" />
+                                    <TextBox
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Foreground="Green"
+                                        IsReadOnly="True"
+                                        Text="{Binding WhmGoodCount, UpdateSourceTrigger=PropertyChanged}" />
+                                </Grid>
+
+                                <Grid Grid.Column="10">
+                                    <Border Style="{StaticResource CellBorder}" />
+                                    <TextBox
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Foreground="Red"
+                                        IsReadOnly="True"
+                                        Text="{Binding WhmBadCount, UpdateSourceTrigger=PropertyChanged}" />
                                 </Grid>
 
                                 <!--#endregion-->
                                 <!--#region manage buttons-->
 
-                                <Grid Grid.Column="9">
+                                <Grid Grid.Column="11">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1" />
                                         <ColumnDefinition />

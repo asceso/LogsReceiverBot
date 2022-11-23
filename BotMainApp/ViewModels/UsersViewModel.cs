@@ -194,7 +194,7 @@ namespace BotMainApp.ViewModels
                 if (result.HasValue && result.Value)
                 {
                     string mail = smw.OutputText;
-                    if (!mail.IsNullOrEmpty())
+                    if (!mail.IsNullOrEmptyString())
                     {
                         int successCount = 0;
                         foreach (var user in DataUsers.Where(u => u.IsSelected))
@@ -258,7 +258,7 @@ namespace BotMainApp.ViewModels
             if (result.HasValue && result.Value)
             {
                 string mail = smw.OutputText;
-                if (!mail.IsNullOrEmpty())
+                if (!mail.IsNullOrEmptyString())
                 {
                     if (await handler.SendMailToUserAsync(user, mail))
                     {

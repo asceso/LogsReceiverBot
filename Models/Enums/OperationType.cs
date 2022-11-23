@@ -5,6 +5,7 @@
         NewUserWithoutNickname,
         ChangeLanguage,
         WaitCategoryForChecking,
+        WaitSubCategoryForChecking,
         WaitFileForChecking
     }
 }

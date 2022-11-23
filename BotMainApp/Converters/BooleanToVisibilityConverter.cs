@@ -12,7 +12,7 @@ namespace BotMainApp.Converters
         {
             if (value is bool b_value && parameter is string s_arg)
             {
-                if (!s_arg.IsNullOrEmpty() && s_arg == "revert")
+                if (!s_arg.IsNullOrEmptyString() && s_arg == "revert")
                 {
                     return b_value ? Visibility.Collapsed : Visibility.Visible;
                 }

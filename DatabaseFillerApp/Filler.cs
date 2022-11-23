@@ -5,13 +5,6 @@ using Newtonsoft.Json;
 
 namespace DatabaseFillerApp
 {
-    public class JsonAnswer
-    {
-        public int WebmailAddedCount { get; set; }
-        public int CpanelAddedCount { get; set; }
-        public int WhmAddedCount { get; set; }
-    }
-
     public class ExternalFiller
     {
         private static async Task Main()
@@ -61,31 +54,58 @@ namespace DatabaseFillerApp
                 return 0;
             }
             using StreamReader reader = new(filePath);
-            IEnumerable<string> rows = reader.ReadToEnd().Split(Environment.NewLine).Where(s => !s.IsNullOrEmpty());
+            IEnumerable<string> rows = reader.ReadToEnd().Split(Environment.NewLine).Where(s => !s.IsNullOrEmptyString());
             reader.Close();
             int addedCount = 0;
             foreach (var row in rows)
             {
                 string[] parts = row.Split('|');
-                if (parts.Length != 3)
+                LogModel model;
+                if (category == "webmail")
                 {
-                    continue;
+                    if (parts.Length != 4)
+                    {
+                        continue;
+                    }
+
+                    string url, port, login, password;
+                    url = parts[0];
+                    port = parts[1];
+                    login = parts[2];
+                    password = parts[3];
+
+                    model = new()
+                    {
+                        Url = url + "|" + port,
+                        Login = login,
+                        Password = password,
+                        Category = category,
+                        UploadedByUserId = user.Id,
+                        UploadedByUsername = user.Username
+                    };
                 }
-
-                string url, login, password;
-                url = parts[0];
-                login = parts[1];
-                password = parts[2];
-
-                LogModel model = new()
+                else
                 {
-                    Url = url,
-                    Login = login,
-                    Password = password,
-                    Category = category,
-                    UploadedByUserId = user.Id,
-                    UploadedByUsername = user.Username
-                };
+                    if (parts.Length != 3)
+                    {
+                        continue;
+                    }
+
+                    string url, login, password;
+                    url = parts[0];
+                    login = parts[1];
+                    password = parts[2];
+
+                    model = new()
+                    {
+                        Url = url,
+                        Login = login,
+                        Password = password,
+                        Category = category,
+                        UploadedByUserId = user.Id,
+                        UploadedByUsername = user.Username
+                    };
+                }
                 if (await LogsController.PostLogAsync(model))
                 {
                     addedCount++;
@@ -93,5 +113,12 @@ namespace DatabaseFillerApp
             }
             return addedCount;
         }
+    }
+
+    public class JsonAnswer
+    {
+        public int WebmailAddedCount { get; set; }
+        public int CpanelAddedCount { get; set; }
+        public int WhmAddedCount { get; set; }
     }
 }

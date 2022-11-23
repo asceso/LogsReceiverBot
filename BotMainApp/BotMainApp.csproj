@@ -73,6 +73,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CheckerRunner\CheckerRunner.csproj" />
+    <ProjectReference Include="..\CpanelChecker\CpanelChecker.csproj" />
     <ProjectReference Include="..\DataAdapter\DataAdapter.csproj" />
     <ProjectReference Include="..\DatabaseFillerApp\DatabaseFillerApp.csproj" />
     <ProjectReference Include="..\DublicateRemoveRunner\DublicateRemoveRunner.csproj" />

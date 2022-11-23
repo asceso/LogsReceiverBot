@@ -6,7 +6,6 @@ namespace DublicateRemoveRunner
 {
     public class JsonAnswer
     {
-        public string FolderPath { get; set; }
         public string Dublicates { get; set; }
         public string Cpanel { get; set; }
         public string Whm { get; set; }
@@ -15,12 +14,12 @@ namespace DublicateRemoveRunner
 
     public class ExternalDublicateRemover
     {
-        private static async Task Main()
+        private static void Main()
         {
             Environment.CurrentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             string[] arguments = Environment.GetCommandLineArgs();
+            string resultDirPath;
             string filename;
-            string userId;
             string cpanelRegexFormat;
             string whmRegexFormat;
             string webmailRegexFormat;
@@ -30,8 +29,8 @@ namespace DublicateRemoveRunner
                 return;
             }
 
-            filename = arguments[1];
-            userId = arguments[2];
+            resultDirPath = arguments[1];
+            filename = arguments[2];
             cpanelRegexFormat = arguments[3];
             whmRegexFormat = arguments[4];
             webmailRegexFormat = arguments[5];
@@ -40,22 +39,20 @@ namespace DublicateRemoveRunner
             try
             {
                 string tempFolderPath = Environment.CurrentDirectory + "/temp/";
-                string resultFolderPath = tempFolderPath + $"u_{userId}_check_{DateTime.Now:dd_MM_yyyy_HH_mm_ss}/";
-
                 if (!Directory.Exists(tempFolderPath)) Directory.CreateDirectory(tempFolderPath);
-                Directory.CreateDirectory(resultFolderPath);
+                DirectoryInfo di = new(resultDirPath);
 
-                string dublicateFilePath = resultFolderPath + "dublicates.txt";
-                string cpanelFilePath = resultFolderPath + "cpanel.txt";
-                string whmFilePath = resultFolderPath + "whm.txt";
-                string webmailFilePath = resultFolderPath + "webmail.txt";
+                string dublicateFilePath = di.FullName + "/dublicates.txt";
+                string cpanelFilePath = di.FullName + "/cpanel.txt";
+                string whmFilePath = di.FullName + "/whm.txt";
+                string webmailFilePath = di.FullName + "/webmail.txt";
 
                 Regex cpanelRegex = new(cpanelRegexFormat);
                 Regex whmRegex = new(whmRegexFormat);
                 Regex webmailRegex = new(webmailRegexFormat);
-                using StreamReader reader = new(tempFolderPath + filename);
+                using StreamReader reader = new(filename);
 
-                List<string> dbLogsData = await LogsController.GetLogsDataAsync();
+                List<string> dbLogsData = LogsController.GetLogsData();
                 List<string> dublicateList = new();
                 List<string> cpanelList = new();
                 List<string> whmList = new();
@@ -99,8 +96,15 @@ namespace DublicateRemoveRunner
                     else if (webmailRegex.IsMatch(url))
                     {
                         Uri uri = new(url);
-                        string parsedLog = $"{uri.Authority}|{login}|{password}";
-                        if (!webmailList.Any(d => d == parsedLog))
+                        string parsedLog = $"{uri.DnsSafeHost}|587|{login}|{password}";
+                        if (dbLogsData.Any(db => db == parsedLog))
+                        {
+                            if (!dublicateList.Any(d => d == parsedLog))
+                            {
+                                dublicateList.Add(parsedLog);
+                            }
+                        }
+                        else if (!webmailList.Any(d => d == parsedLog))
                         {
                             webmailList.Add(parsedLog);
                         }
@@ -130,10 +134,9 @@ namespace DublicateRemoveRunner
                     }
                 }
 
-                if (File.Exists(tempFolderPath + filename)) File.Delete(tempFolderPath + filename);
+                if (File.Exists(filename)) File.Delete(filename);
                 JsonAnswer answer = new()
                 {
-                    FolderPath = resultFolderPath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\"),
                     Dublicates = File.Exists(dublicateFilePath) ? dublicateFilePath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\") : "",
                     Cpanel = File.Exists(cpanelFilePath) ? cpanelFilePath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\") : "",
                     Whm = File.Exists(whmFilePath) ? whmFilePath.Replace("\\", "/").Remove(2, 1).Insert(2, "\\") : "",

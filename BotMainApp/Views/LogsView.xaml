@@ -297,6 +297,23 @@
             </ListBox>
 
             <!--#endregion-->
+            <!--#region no data-->
+
+            <Border
+                Grid.Row="2"
+                Height="35"
+                VerticalAlignment="Top"
+                BorderBrush="Black"
+                BorderThickness="2,0,2,2"
+                Opacity="0.5"
+                Visibility="{Binding ModelsCount, Converter={StaticResource IntEqualToVisibility}, ConverterParameter=0}">
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Text="Нечего отображать" />
+            </Border>
+
+            <!--#endregion-->
             <!--#region pagination-->
 
             <hc:Pagination

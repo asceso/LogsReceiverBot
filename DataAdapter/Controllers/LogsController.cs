@@ -24,15 +24,15 @@ namespace DataAdapter.Controllers
             try
             {
                 using DataContext data = new();
-                if (user.Id != 0 && category.IsNullOrEmpty())
+                if (user.Id != 0 && category.IsNullOrEmptyString())
                 {
                     return await data.Logs.Where(d => d.UploadedByUserId == user.Id).ToListAsync();
                 }
-                if (user.Id == 0 && !category.IsNullOrEmpty())
+                if (user.Id == 0 && !category.IsNullOrEmptyString())
                 {
                     return await data.Logs.Where(d => d.Category == category).ToListAsync();
                 }
-                if (user.Id != 0 && !category.IsNullOrEmpty())
+                if (user.Id != 0 && !category.IsNullOrEmptyString())
                 {
                     return await data.Logs.Where(d => d.UploadedByUserId == user.Id && d.Category == category).ToListAsync();
                 }
@@ -60,7 +60,7 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<List<string>> GetLogsDataAsync()
+        public static List<string> GetLogsData()
         {
             try
             {
@@ -75,7 +75,7 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<List<string>> GetLogsCategoriesAsync()
+        public static List<string> GetLogsCategories()
         {
             try
             {

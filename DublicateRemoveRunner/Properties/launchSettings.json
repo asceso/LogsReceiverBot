@@ -2,7 +2,7 @@
   "profiles": {
     "DublicateRemoveRunner": {
       "commandName": "Project",
-      "commandLineArgs": "@denis.txt\r\n1114923089\r\n.*(:2083|:2082|\\/cpanel).*\r\n.*(:2086|:2087).*\r\n.*(:2096|:2095).*\r\ntrue"
+      "commandLineArgs": "C:\\Programming\\Work\\LogsReceiverBot\\BotMainApp\\bin\\Debug\\net6.0-windows/temp/u_1114923089_d_23_11_2022_17_18_19/\r\nu_1114923089_check_23_11_02022_17_18_18.txt\r\n.*(:2083|:2082|/cpanel).*\r\n.*(:2086|:2087).*\r\n.*(:2096|:2095).*\r\ntrue"
     }
   }
 }

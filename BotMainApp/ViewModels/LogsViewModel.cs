@@ -155,6 +155,7 @@ namespace BotMainApp.ViewModels
                     ModelsForView.Source = AllData.Skip(config.PageMaxCount * (toPage - 1)).Take(config.PageMaxCount * toPage);
                     MaxPageCount = AllData.Count / config.PageMaxCount;
                     ModelsForView.View?.Refresh();
+                    ModelsCount = AllData.Count;
                 });
                 currentPage = toPage;
             }
@@ -196,7 +197,7 @@ namespace BotMainApp.ViewModels
 
                 SelectedCategoryForFilter = null;
                 CategoriesForFilter.Clear();
-                CategoriesForFilter.AddRange(await LogsController.GetLogsCategoriesAsync());
+                CategoriesForFilter.AddRange(LogsController.GetLogsCategories());
                 RaisePropertyChanged(nameof(CategoriesForFilter));
             });
         }

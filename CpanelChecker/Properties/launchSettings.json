@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CpanelChecker": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Programming/Work/LogsReceiverBot/BotMainApp/bin/Debug/net6.0-windows/temp/u_1114923089_check_23_11_2022_16_20_27/cpanel.txt\r\nnone\r\nC:\\Programming/Work/LogsReceiverBot/BotMainApp/bin/Debug/net6.0-windows/temp/u_1114923089_check_23_11_2022_16_20_27/\r\n10"
+    }
+  }
+}

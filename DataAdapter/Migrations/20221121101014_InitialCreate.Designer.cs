@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAdapter.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20221116181822_AddLogsTable")]
-    partial class AddLogsTable
+    [Migration("20221121101014_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -26,6 +26,9 @@ namespace DataAdapter.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Login")
                         .HasColumnType("longtext");
@@ -45,6 +48,71 @@ namespace DataAdapter.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Logs");
+                });
+
+            modelBuilder.Entity("Models.Database.ManualCheckModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan>("CheckingTimeEllapsed")
+                        .HasColumnType("time(6)");
+
+                    b.Property<int>("CpanelBadCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CpanelBadFilePath")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("CpanelGoodCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CpanelGoodFilePath")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DublicateFilePath")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("DublicateFoundedCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EndDateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("FromUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FromUsername")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("StartDateTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WebmailFilePath")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("WebmailFoundedCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WhmBadCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WhmBadFilePath")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("WhmGoodCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WhmGoodFilePath")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ManualChecks");
                 });
 
             modelBuilder.Entity("Models.Database.UserModel", b =>

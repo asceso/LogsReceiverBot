@@ -4,23 +4,9 @@ using System.Diagnostics;
 
 namespace CheckerRunner
 {
-    public class JsonAnswer
-    {
-        public string CpanelGood { get; set; }
-        public string CpanelBad { get; set; }
-        public string WhmGood { get; set; }
-        public string WhmBad { get; set; }
-    }
-
-    public class CheckerResponce
-    {
-        public List<string> GoodFiles { get; set; }
-        public List<string> BadFiles { get; set; }
-    }
-
     public class ExternalChecker
     {
-        private static int splitByCount = 5000;
+        private static int splitByCount = 1000;
 
         private static async Task Main()
         {
@@ -40,11 +26,18 @@ namespace CheckerRunner
             folderName = arguments[2];
             cpanelFilePath = arguments[3];
             whmFilePath = arguments[4];
-            bool isOtherThreadCount = int.TryParse(arguments[5], out int inThreadCount);
-            bool showOutput = arguments.Length > 6 && arguments[6] == "true";
-            if (isOtherThreadCount)
+            if (arguments.Length > 5)
             {
-                splitByCount = inThreadCount;
+                bool isOtherThreadCount = int.TryParse(arguments[5], out int inThreadCount);
+                if (isOtherThreadCount)
+                {
+                    splitByCount = inThreadCount;
+                }
+            }
+            bool showOutput = false;
+            if (arguments.Length > 6)
+            {
+                showOutput = arguments.Length > 6 && arguments[6] == "true";
             }
 
             try
@@ -54,17 +47,17 @@ namespace CheckerRunner
                 List<string> mainCpanelList = new();
                 List<string> mainWhmList = new();
 
-                if (File.Exists(folderName + cpanelFilePath))
+                if (File.Exists(cpanelFilePath))
                 {
-                    using StreamReader reader = new(folderName + cpanelFilePath);
-                    string[] buffer = (await reader.ReadToEndAsync()).Split(Environment.NewLine).Where(s => !s.IsNullOrEmpty()).ToArray();
+                    using StreamReader reader = new(cpanelFilePath);
+                    string[] buffer = (await reader.ReadToEndAsync()).Split(Environment.NewLine).Where(s => !s.IsNullOrEmptyString()).ToArray();
                     reader.Close();
                     mainCpanelList.AddRange(buffer);
                 }
-                if (File.Exists(folderName + whmFilePath))
+                if (File.Exists(whmFilePath))
                 {
-                    using StreamReader reader = new(folderName + whmFilePath);
-                    string[] buffer = (await reader.ReadToEndAsync()).Split(Environment.NewLine).Where(s => !s.IsNullOrEmpty()).ToArray();
+                    using StreamReader reader = new(whmFilePath);
+                    string[] buffer = (await reader.ReadToEndAsync()).Split(Environment.NewLine).Where(s => !s.IsNullOrEmptyString()).ToArray();
                     reader.Close();
                     mainWhmList.AddRange(buffer);
                 }
@@ -219,7 +212,7 @@ namespace CheckerRunner
                 if (File.Exists(filename))
                 {
                     using StreamReader reader = new(filename);
-                    listForGood.AddRange((await reader.ReadToEndAsync()).Split(Environment.NewLine).Where(s => !s.IsNullOrEmpty()));
+                    listForGood.AddRange((await reader.ReadToEndAsync()).Split(Environment.NewLine).Where(s => !s.IsNullOrEmptyString()));
                 }
             }
             foreach (string filename in responce.BadFiles)
@@ -227,7 +220,7 @@ namespace CheckerRunner
                 if (File.Exists(filename))
                 {
                     using StreamReader reader = new(filename);
-                    listForBad.AddRange((await reader.ReadToEndAsync()).Split(Environment.NewLine).Where(s => !s.IsNullOrEmpty()));
+                    listForBad.AddRange((await reader.ReadToEndAsync()).Split(Environment.NewLine).Where(s => !s.IsNullOrEmptyString()));
                 }
             }
         }
@@ -250,5 +243,19 @@ namespace CheckerRunner
                 return "";
             }
         }
+    }
+
+    public class JsonAnswer
+    {
+        public string CpanelGood { get; set; }
+        public string CpanelBad { get; set; }
+        public string WhmGood { get; set; }
+        public string WhmBad { get; set; }
+    }
+
+    public class CheckerResponce
+    {
+        public List<string> GoodFiles { get; set; }
+        public List<string> BadFiles { get; set; }
     }
 }

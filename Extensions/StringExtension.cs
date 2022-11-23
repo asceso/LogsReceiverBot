@@ -2,7 +2,7 @@
 {
     public static class StringExtension
     {
-        public static bool IsNullOrEmpty(this string source) => string.IsNullOrEmpty(source);
+        public static bool IsNullOrEmptyString(this string source) => string.IsNullOrEmpty(source);
 
         public static string ToPascalCase(this string source)
         {
@@ -24,6 +24,16 @@
                 }
             }
             return false;
+        }
+
+        public static string ToFString(this bool? source)
+        {
+            return source switch
+            {
+                null => "null",
+                true => "true",
+                false => "false"
+            };
         }
     }
 }

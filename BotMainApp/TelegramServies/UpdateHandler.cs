@@ -140,10 +140,32 @@ namespace BotMainApp.TelegramServices
                         }
                     case OperationType.WaitCategoryForChecking:
                         {
-                            if (argument.IsAnyEqual("Cpanel", "Whm"))
+                            if (argument.IsAnyEqual("Private requests", "Приватные запросы"))
                             {
                                 operations.Remove(temp.Operation);
-                                operations.Add(new(temp.Uid, OperationType.WaitFileForChecking, new KeyValuePair<string, object>("Category", argument)));
+                                operations.Add(new(temp.Uid, OperationType.WaitSubCategoryForChecking, new KeyValuePair<string, object>("Category", argument)));
+                                await botClient.SendTextMessageAsync(
+                                    dbUser.Id,
+                                    locales.GetByKey("SelectCheckerCategory", dbUser.Language),
+                                    replyMarkup: keyboards.GetByLocale("SelectSubCategory", dbUser.Language)
+                                    );
+                                return;
+                            }
+                            else
+                            {
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
+                                return;
+                            }
+                        }
+                    case OperationType.WaitSubCategoryForChecking:
+                        {
+                            if (argument.IsAnyEqual(":20"))
+                            {
+                                operations.Remove(temp.Operation);
+                                operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
+                                    new KeyValuePair<string, object>("Category", temp.Operation.Params["Category"].ToString()),
+                                    new KeyValuePair<string, object>("SubCategory", argument)
+                                    ));
                                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("SendFileInstruction", dbUser.Language), replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language));
                                 return;
                             }
@@ -157,151 +179,228 @@ namespace BotMainApp.TelegramServices
                         {
                             try
                             {
-                                Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
-                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
-                                using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
-                                await botClient.DownloadFileAsync(file.FilePath, stream);
-                                stream.Close();
-
-                                operations.Remove(temp.Operation);
-                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileAcceptedWaitResult", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
-                                ManualCheckModel manualCheckModel = new()
+                                if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Private requests", "Приватные запросы") &&
+                                    temp.Operation.Params["SubCategory"].ToString().IsAnyEqual(":20"))
                                 {
-                                    StartDateTime = DateTime.Now,
-                                    Status = CheckStatus.ManualCheckStatus.Created,
-                                    FromUserId = dbUser.Id,
-                                    FromUsername = dbUser.Username,
-                                };
-                                await ManualCheckController.PostCheckAsync(manualCheckModel, aggregator);
+                                    Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
+                                    string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
+                                    using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
+                                    await botClient.DownloadFileAsync(file.FilePath, stream);
+                                    stream.Close();
 
-                                ThreadStart threadStart = new(async () =>
-                                {
-                                    Stopwatch ellapsedWatch = Stopwatch.StartNew();
-
-                                    string dublicateData = Runner.RunDublicateChecker(filename, dbUser.Id, config);
-                                    JObject dublicateDataJson = JObject.Parse(dublicateData);
-                                    if (dublicateDataJson.ContainsKey("Error"))
+                                    operations.Remove(temp.Operation);
+                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileAcceptedWaitResult", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
+                                    ManualCheckModel manualCheckModel = new()
                                     {
-                                        try
+                                        StartDateTime = DateTime.Now,
+                                        Status = CheckStatus.ManualCheckStatus.Created,
+                                        FromUserId = dbUser.Id,
+                                        FromUsername = dbUser.Username,
+                                    };
+                                    await ManualCheckController.PostCheckAsync(manualCheckModel, aggregator);
+
+                                    ThreadStart threadStart = new(async () =>
+                                    {
+                                        string inputFilename = PathCollection.TempFolderPath + "/" + filename;
+                                        string folderPath = PathCollection.TempFolderPath + $"u_{dbUser.Id}_d_{DateTime.Now:dd_MM_yyyy_HH_mm_ss}/";
+                                        Directory.CreateDirectory(folderPath);
+                                        Stopwatch ellapsedWatch = Stopwatch.StartNew();
+
+                                        string dublicateData = Runner.RunDublicateChecker(folderPath, inputFilename, config);
+                                        JObject dublicateDataJson = JObject.Parse(dublicateData);
+                                        if (dublicateDataJson.ContainsKey("Error"))
                                         {
-                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language));
-                                            await botClient.SendTextMessageAsync(config.TelegramNotificationChat, $"Ошибка при поиске дубликатов файла:\r\n{dublicateData}");
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language));
+                                                await botClient.SendTextMessageAsync(config.TelegramNotificationChat, $"Ошибка при поиске дубликатов файла:\r\n{dublicateData}");
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                ellapsedWatch.Stop();
+                                                manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                                                manualCheckModel.EndDateTime = DateTime.Now;
+                                                manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
+                                                Directory.Delete(folderPath, true);
+                                                await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                                try
+                                                {
+                                                    await botClient.SendTextMessageAsync(config.ErrorNotificationChat, $"Ошибка в процессе проверки:\r\n{ex.Message}");
+                                                }
+                                                catch (Exception)
+                                                {
+                                                }
+                                            }
+                                            return;
                                         }
-                                        catch (Exception)
+
+                                        manualCheckModel.DublicateFilePath = dublicateDataJson["Dublicates"].ToString();
+                                        if (System.IO.File.Exists(manualCheckModel.DublicateFilePath))
+                                        {
+                                            manualCheckModel.DublicateFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.DublicateFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+                                        }
+                                        manualCheckModel.WebmailFilePath = dublicateDataJson["Webmail"].ToString();
+                                        if (System.IO.File.Exists(manualCheckModel.WebmailFilePath))
+                                        {
+                                            manualCheckModel.WebmailFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.WebmailFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+                                        }
+                                        string cpanelDataFilePath = dublicateDataJson["Cpanel"].ToString();
+                                        string whmDataFilePath = dublicateDataJson["Whm"].ToString();
+
+                                        manualCheckModel.Status = CheckStatus.ManualCheckStatus.FillingDb;
+                                        await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+
+                                        string fillData = Runner.RunDublicateFiller(dbUser.Id, manualCheckModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath);
+                                        JObject fillDataJson = JObject.Parse(fillData);
+                                        if (fillDataJson.ContainsKey("Error"))
+                                        {
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language));
+                                                await botClient.SendTextMessageAsync(config.TelegramNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                ellapsedWatch.Stop();
+                                                manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                                                manualCheckModel.EndDateTime = DateTime.Now;
+                                                manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
+                                                Directory.Delete(folderPath, true);
+                                                await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                                try
+                                                {
+                                                    await botClient.SendTextMessageAsync(config.ErrorNotificationChat, $"Ошибка в процессе проверки:\r\n{ex.Message}");
+                                                }
+                                                catch (Exception)
+                                                {
+                                                }
+                                            }
+                                            return;
+                                        }
+
+                                        int webmailAddedCount = fillDataJson.Value<int>("WebmailAddedCount");
+                                        int cpanelAddedCount = fillDataJson.Value<int>("CpanelAddedCount");
+                                        int whmAddedCount = fillDataJson.Value<int>("WhmAddedCount");
+                                        int totalAddedCount = webmailAddedCount + cpanelAddedCount + whmAddedCount;
+                                        if (totalAddedCount == 0)
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language));
+                                            ellapsedWatch.Stop();
+                                            manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                                            manualCheckModel.EndDateTime = DateTime.Now;
+                                            manualCheckModel.Status = CheckStatus.ManualCheckStatus.NoAnyUnique;
+                                            Directory.Delete(folderPath, true);
+                                            await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                            return;
+                                        }
+
+                                        if (config.NotifyWhenDatabaseFillNewLogRecordsChat != 0)
+                                        {
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(config.NotifyWhenDatabaseFillNewLogRecordsChat,
+                                                    $"В базу данных было добавлено {totalAddedCount} записей:\r\n" +
+                                                    $"Новый записей в категории webmail: {webmailAddedCount}\r\n" +
+                                                    $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
+                                                    $"Новый записей в категории whm: {whmAddedCount}\r\n");
+                                            }
+                                            catch (Exception)
+                                            {
+                                            }
+                                        }
+
+                                        if (cpanelDataFilePath == "" && whmDataFilePath == "")
                                         {
                                             ellapsedWatch.Stop();
                                             manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
                                             manualCheckModel.EndDateTime = DateTime.Now;
-                                            manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
+                                            manualCheckModel.Status = CheckStatus.ManualCheckStatus.NoAnyUnique;
+                                            Directory.Delete(folderPath, true);
                                             await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                            return;
                                         }
-                                        return;
-                                    }
 
-                                    manualCheckModel.DublicateFilePath = dublicateDataJson["Dublicates"].ToString();
-                                    if (System.IO.File.Exists(manualCheckModel.DublicateFilePath))
-                                    {
-                                        manualCheckModel.DublicateFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.DublicateFilePath).Where(l => !l.IsNullOrEmpty()).Count();
-                                    }
-                                    manualCheckModel.WebmailFilePath = dublicateDataJson["Webmail"].ToString();
-                                    if (System.IO.File.Exists(manualCheckModel.WebmailFilePath))
-                                    {
-                                        manualCheckModel.WebmailFoundedCount = System.IO.File.ReadAllLines(manualCheckModel.WebmailFilePath).Where(l => !l.IsNullOrEmpty()).Count();
-                                    }
-                                    string cpanelDataFilePath = dublicateDataJson["Cpanel"].ToString();
-                                    string whmDataFilePath = dublicateDataJson["Whm"].ToString();
+                                        manualCheckModel.Status = CheckStatus.ManualCheckStatus.DublicateDeleted;
+                                        await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
 
-                                    manualCheckModel.Status = CheckStatus.ManualCheckStatus.FillingDb;
-                                    await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
-                                    string fillData = Runner.RunDublicateFiller(dbUser.Id, manualCheckModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath);
-                                    JObject fillDataJson = JObject.Parse(fillData);
-                                    if (fillDataJson.ContainsKey("Error"))
-                                    {
-                                        try
+                                        string cpanelData;
+                                        if (config.UseOwnCpanelChecker)
                                         {
-                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language));
-                                            await botClient.SendTextMessageAsync(config.TelegramNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                                            cpanelData = Runner.RunOwnCpanelChecker(cpanelDataFilePath, whmDataFilePath, folderPath, config.CheckerMaxForThread);
                                         }
-                                        catch (Exception)
+                                        else
                                         {
-                                            ellapsedWatch.Stop();
-                                            manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
-                                            manualCheckModel.EndDateTime = DateTime.Now;
-                                            manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
-                                            await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                            cpanelData = Runner.RunCpanelChecker(dbUser.Id, folderPath, cpanelDataFilePath, whmDataFilePath, config.CheckerMaxForThread);
                                         }
-                                        return;
-                                    }
-
-                                    if (config.NotifyWhenDatabaseFillNewLogRecords)
-                                    {
-                                        try
+                                        JObject cpanelDataJson = JObject.Parse(cpanelData);
+                                        if (cpanelDataJson.ContainsKey("Error"))
                                         {
-                                            int webmailAddedCount = fillDataJson.Value<int>("WebmailAddedCount");
-                                            int cpanelAddedCount = fillDataJson.Value<int>("CpanelAddedCount");
-                                            int whmAddedCount = fillDataJson.Value<int>("WhmAddedCount");
-                                            int totalAddedCount = webmailAddedCount + cpanelAddedCount + webmailAddedCount;
-
-                                            await botClient.SendTextMessageAsync(config.TelegramNotificationChat,
-                                                $"В базу данных было добавлено {totalAddedCount} записей:\r\n" +
-                                                $"Новый записей в категории webmail: {webmailAddedCount}\r\n" +
-                                                $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
-                                                $"Новый записей в категории whm: {whmAddedCount}\r\n");
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language));
+                                                await botClient.SendTextMessageAsync(config.TelegramNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                ellapsedWatch.Stop();
+                                                manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                                                manualCheckModel.EndDateTime = DateTime.Now;
+                                                manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
+                                                Directory.Delete(folderPath, true);
+                                                await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                                try
+                                                {
+                                                    await botClient.SendTextMessageAsync(config.ErrorNotificationChat, $"Ошибка в процессе проверки:\r\n{ex.Message}");
+                                                }
+                                                catch (Exception)
+                                                {
+                                                }
+                                            }
+                                            return;
                                         }
-                                        catch (Exception)
-                                        {
-                                        }
-                                    }
 
-                                    if (cpanelDataFilePath == "" && whmDataFilePath == "")
-                                    {
                                         ellapsedWatch.Stop();
                                         manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
-                                        manualCheckModel.EndDateTime = DateTime.Now;
-                                        manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
+                                        manualCheckModel.Status = CheckStatus.ManualCheckStatus.CopyingFiles;
                                         await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
-                                        return;
-                                    }
 
-                                    manualCheckModel.Status = CheckStatus.ManualCheckStatus.DublicateDeleted;
-                                    await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                        manualCheckModel.CpanelGoodFilePath = cpanelDataJson["CpanelGood"].ToString();
+                                        manualCheckModel.CpanelBadFilePath = cpanelDataJson["CpanelBad"].ToString();
+                                        manualCheckModel.WhmGoodFilePath = cpanelDataJson["WhmGood"].ToString();
+                                        manualCheckModel.WhmBadFilePath = cpanelDataJson["WhmBad"].ToString();
 
-                                    string cpanelData = Runner.RunCpanelChecker(dbUser.Id, dublicateDataJson["FolderPath"].ToString(), cpanelDataFilePath, whmDataFilePath);
-                                    JObject cpanelDataJson = JObject.Parse(cpanelData);
-                                    if (cpanelDataJson.ContainsKey("Error"))
-                                    {
-                                        try
+                                        await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                        MoveFilesToChecksIdFolderAndUpatePathes(manualCheckModel, folderPath);
+                                        if (config.NotifyWhenCheckerEndWorkChat != 0)
                                         {
-                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language));
-                                            await botClient.SendTextMessageAsync(config.TelegramNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
-                                        }
-                                        catch (Exception)
-                                        {
-                                            ellapsedWatch.Stop();
-                                            manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
-                                            manualCheckModel.EndDateTime = DateTime.Now;
-                                            manualCheckModel.Status = CheckStatus.ManualCheckStatus.Error;
-                                            await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(config.NotifyWhenCheckerEndWorkChat,
+                                                    $"Закончена проверка файла от {manualCheckModel.StartDateTime:dd.MM.yyyy HH:mm:ss} :\r\n" +
+                                                    $"Загрузил : @{manualCheckModel.FromUsername}\r\n" +
+                                                    $"Затрачено всего : {Math.Round(manualCheckModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
+                                                    $"Дубликатов найдено: {manualCheckModel.DublicateFoundedCount}\r\n" +
+                                                    $"Webmail найдено: {manualCheckModel.WebmailFoundedCount}\r\n" +
+                                                    $"Cpanel (good) найдено: {manualCheckModel.CpanelGoodCount}\r\n" +
+                                                    $"Cpanel (bad) найдено: {manualCheckModel.CpanelBadCount}\r\n" +
+                                                    $"Whm (good) найдено: {manualCheckModel.WhmGoodCount}\r\n" +
+                                                    $"Whm (bad) найдено: {manualCheckModel.WhmBadCount}");
+                                            }
+                                            catch (Exception)
+                                            {
+                                            }
                                         }
                                         return;
-                                    }
-
-                                    ellapsedWatch.Stop();
-                                    manualCheckModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
-                                    manualCheckModel.Status = CheckStatus.ManualCheckStatus.CopyingFiles;
-                                    await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
-
-                                    manualCheckModel.CpanelGoodFilePath = cpanelDataJson["CpanelGood"].ToString();
-                                    manualCheckModel.CpanelBadFilePath = cpanelDataJson["CpanelBad"].ToString();
-                                    manualCheckModel.WhmGoodFilePath = cpanelDataJson["WhmGood"].ToString();
-                                    manualCheckModel.WhmBadFilePath = cpanelDataJson["WhmBad"].ToString();
-
-                                    await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
-                                    MoveFilesToChecksIdFolderAndUpatePathes(manualCheckModel, dublicateDataJson["FolderPath"].ToString());
+                                    });
+                                    Thread checkThread = new(threadStart);
+                                    checkThread.Start();
+                                }
+                                else
+                                {
+                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CanceledOpertaion", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language));
+                                    operations.Remove(temp.Operation);
                                     return;
-                                });
-                                Thread checkThread = new(threadStart);
-                                checkThread.Start();
+                                }
                             }
                             catch (Exception)
                             {
@@ -318,7 +417,7 @@ namespace BotMainApp.TelegramServices
 
             if (dbUser == null)
             {
-                if (temp.Username.IsNullOrEmpty())
+                if (temp.Username.IsNullOrEmptyString())
                 {
                     if (await UsersController.PostUserAsync(new()
                     {
@@ -389,7 +488,7 @@ namespace BotMainApp.TelegramServices
                 operations.Add(new(temp.Uid, OperationType.ChangeLanguage));
                 return;
             }
-            if (temp.Message.IsAnyEqual("Upload file 📄", "Загрузить файл 📄"))
+            if (temp.Message.IsAnyEqual("Upload logs 📄", "Загрузить логи 📄"))
             {
                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("SelectCheckerCategory", dbUser.Language), replyMarkup: keyboards.GetByLocale("SelectCategory", dbUser.Language));
                 operations.Add(new(temp.Uid, OperationType.WaitCategoryForChecking));
@@ -408,6 +507,7 @@ namespace BotMainApp.TelegramServices
         private async void MoveFilesToChecksIdFolderAndUpatePathes(ManualCheckModel manualCheck, string sourceFolderPath)
         {
             string destinationFolderPath = PathCollection.ChecksFolderPath + manualCheck.Id + "/";
+            if (Directory.Exists(destinationFolderPath)) Directory.Delete(destinationFolderPath, true);
             Directory.CreateDirectory(destinationFolderPath);
 
             string cpanelGoodPath = destinationFolderPath + "cpanel_good.txt";
@@ -417,27 +517,27 @@ namespace BotMainApp.TelegramServices
 
             if (System.IO.File.Exists(manualCheck.CpanelGoodFilePath))
             {
-                System.IO.File.Copy(manualCheck.CpanelGoodFilePath, cpanelGoodPath);
+                System.IO.File.Copy(manualCheck.CpanelGoodFilePath, cpanelGoodPath, true);
                 manualCheck.CpanelGoodFilePath = cpanelGoodPath;
-                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.CpanelGoodFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.CpanelGoodFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
             if (System.IO.File.Exists(manualCheck.CpanelBadFilePath))
             {
-                System.IO.File.Copy(manualCheck.CpanelBadFilePath, cpanelBadPath);
+                System.IO.File.Copy(manualCheck.CpanelBadFilePath, cpanelBadPath, true);
                 manualCheck.CpanelBadFilePath = cpanelBadPath;
-                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.CpanelBadFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                manualCheck.CpanelBadCount = System.IO.File.ReadAllLines(manualCheck.CpanelBadFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
             if (System.IO.File.Exists(manualCheck.WhmGoodFilePath))
             {
-                System.IO.File.Copy(manualCheck.WhmGoodFilePath, whmGoodPath);
+                System.IO.File.Copy(manualCheck.WhmGoodFilePath, whmGoodPath, true);
                 manualCheck.WhmGoodFilePath = whmGoodPath;
-                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.WhmGoodFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                manualCheck.WhmGoodCount = System.IO.File.ReadAllLines(manualCheck.WhmGoodFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
             if (System.IO.File.Exists(manualCheck.WhmBadFilePath))
             {
-                System.IO.File.Copy(manualCheck.WhmBadFilePath, whmBadPath);
+                System.IO.File.Copy(manualCheck.WhmBadFilePath, whmBadPath, true);
                 manualCheck.WhmBadFilePath = whmBadPath;
-                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.WhmBadFilePath).Where(l => !l.IsNullOrEmpty()).Count();
+                manualCheck.WhmBadCount = System.IO.File.ReadAllLines(manualCheck.WhmBadFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
             Directory.Delete(sourceFolderPath, true);
             manualCheck.Status = CheckStatus.ManualCheckStatus.CheckedBySoft;

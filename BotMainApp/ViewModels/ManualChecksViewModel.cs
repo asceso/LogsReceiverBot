@@ -116,6 +116,7 @@ namespace BotMainApp.ViewModels
             try
             {
                 IsLoading = true;
+                Models.Clear();
                 List<ManualCheckModel> cacheModels = await ManualCheckController.GetChecksAsync();
                 foreach (ManualCheckModel model in cacheModels)
                 {
