@@ -1,5 +1,4 @@
-﻿using Models.Database;
-using Prism.Events;
+﻿using Prism.Events;
 
 namespace DatabaseEvents
 {

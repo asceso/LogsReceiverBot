@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CheckerResultGrabber": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Programming\\Work\\LogsReceiverBot\\BotMainApp\\bin\\Debug\\net6.0-windows\\temp\\u_1114923089_d_23_11_2022_18_54_15\r\ntrue"
+    }
+  }
+}

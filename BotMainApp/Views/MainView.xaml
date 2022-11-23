@@ -100,6 +100,18 @@
                             Source="/Images/logs.png" />
                     </hc:SideMenuItem.Icon>
                 </hc:SideMenuItem>
+                <hc:SideMenuItem
+                    Command="{Binding SwithViewCommand}"
+                    CommandParameter="Payouts"
+                    Header="Выплаты"
+                    IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=Payouts}">
+                    <hc:SideMenuItem.Icon>
+                        <Image
+                            Width="24"
+                            Height="24"
+                            Source="/Images/cash.png" />
+                    </hc:SideMenuItem.Icon>
+                </hc:SideMenuItem>
             </hc:SideMenu>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Users, UpdateSourceTrigger=PropertyChanged}">
                 <views:UsersView />
@@ -109,6 +121,9 @@
             </Grid>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Logs, UpdateSourceTrigger=PropertyChanged}">
                 <views:LogsView />
+            </Grid>
+            <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Payouts, UpdateSourceTrigger=PropertyChanged}">
+                <views:PayoutsView />
             </Grid>
         </Grid>
     </Grid>

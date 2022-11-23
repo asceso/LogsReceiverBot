@@ -12,7 +12,6 @@ using Prism.Events;
 using Prism.Mvvm;
 using Services.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;

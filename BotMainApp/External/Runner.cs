@@ -3,8 +3,6 @@ using Models.App;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace BotMainApp.External
 {
@@ -51,7 +49,7 @@ namespace BotMainApp.External
         /// <param name="whmFilepath">whm file</param>
         /// <param name="maxForThread">max for thread count</param>
         /// <returns>json collection</returns>
-        public static async Task<string> RunCpanelCheckerAsync(string folderPath, string cpanelFilepath, string whmFilepath, int maxForThread)
+        public static string RunCpanelChecker(string folderPath, string cpanelFilepath, string whmFilepath, int maxForThread)
         {
             ProcessStartInfo psi = new()
             {
@@ -69,21 +67,7 @@ namespace BotMainApp.External
             };
             Process process = Process.Start(psi);
             var processId = process.Id;
-            CancellationTokenSource cts = new();
-            await Task.Run(async () =>
-            {
-                while (true)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(5));
-                    if (Process.GetProcessById(processId) == null)
-                    {
-                        cts.Cancel();
-                    }
-                }
-            },
-            cts.Token);
-            await process.WaitForExitAsync(cts.Token);
-            cts.Cancel();
+            process.WaitForExitAsync();
             StreamReader reader = process.StandardOutput;
             string jsonResult = reader.ReadToEnd();
             reader.Close();

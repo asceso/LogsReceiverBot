@@ -5,40 +5,27 @@ using Prism.Events;
 
 namespace DataAdapter.Controllers
 {
-    public class ManualCheckController
+    public class PayoutController
     {
-        public static async Task<List<ManualCheckModel>> GetChecksAsync()
+        public static async Task<List<PayoutModel>> GetPayoutsAsync()
         {
             try
             {
                 using DataContext data = new();
-                return await data.ManualChecks.ToListAsync();
+                return await data.Payouts.ToListAsync();
             }
             catch (Exception)
             {
-                return new List<ManualCheckModel>();
+                return new List<PayoutModel>();
             }
         }
 
-        public static async Task<ManualCheckModel> GetCheckByIdAsync(int id)
+        public static async Task<PayoutModel> GetByIdAsync(int id)
         {
             try
             {
                 using DataContext data = new();
-                return await data.ManualChecks.FirstOrDefaultAsync(m => m.Id == id);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        }
-
-        public static async Task<List<ManualCheckModel>> GetChecksByUserIdAsync(long id)
-        {
-            try
-            {
-                using DataContext data = new();
-                return await data.ManualChecks.Where(m => m.FromUserId == id).ToListAsync();
+                return await data.Payouts.FirstOrDefaultAsync(m => m.Id == id);
             }
             catch (Exception)
             {
@@ -46,14 +33,27 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<bool> PostCheckAsync(ManualCheckModel model, IEventAggregator aggregator)
+        public static async Task<List<PayoutModel>> GetByUserIdAsync(long id)
         {
             try
             {
                 using DataContext data = new();
-                await data.ManualChecks.AddAsync(model);
+                return await data.Payouts.Where(m => m.FromUserId == id).ToListAsync();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static async Task<bool> PostPayoutAsync(PayoutModel model, IEventAggregator aggregator)
+        {
+            try
+            {
+                using DataContext data = new();
+                await data.Payouts.AddAsync(model);
                 await data.SaveChangesAsync();
-                aggregator.GetEvent<ManualCheckUpdateEvent>().Publish(new("post", model));
+                aggregator.GetEvent<PayoutUpdateEvent>().Publish(new("post", model));
                 return true;
             }
             catch (Exception)
@@ -62,11 +62,11 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<bool> PutCheckAsync(ManualCheckModel model, IEventAggregator aggregator)
+        public static async Task<bool> PutPayoutAsync(PayoutModel model, IEventAggregator aggregator = null)
         {
             try
             {
-                ManualCheckModel target = await GetCheckByIdAsync(model.Id);
+                PayoutModel target = await GetByIdAsync(model.Id);
                 if (target == null) throw new Exception("Not found");
 
                 using DataContext data = new();
@@ -75,7 +75,7 @@ namespace DataAdapter.Controllers
                 await data.SaveChangesAsync();
                 if (aggregator != null)
                 {
-                    aggregator.GetEvent<ManualCheckUpdateEvent>().Publish(new("put", model));
+                    aggregator.GetEvent<PayoutUpdateEvent>().Publish(new("put", model));
                 }
                 return true;
             }

@@ -19,6 +19,7 @@ namespace BotMainApp
         {
             containerRegistry.Register<IJsonAdapter, JsonAdapter>();
             containerRegistry.Register<IMemorySaver, MemorySaver>();
+            containerRegistry.Register<ICaptchaService, CaptchaService>();
             containerRegistry.Register<IKeyboardService, KeyboardService>();
         }
 
@@ -29,6 +30,7 @@ namespace BotMainApp
             ViewModelLocationProvider.Register<UsersView, UsersViewModel>();
             ViewModelLocationProvider.Register<LogsView, LogsViewModel>();
             ViewModelLocationProvider.Register<ManualChecksView, ManualChecksViewModel>();
+            ViewModelLocationProvider.Register<PayoutsView, PayoutsViewModel>();
         }
 
         protected override Window CreateShell()

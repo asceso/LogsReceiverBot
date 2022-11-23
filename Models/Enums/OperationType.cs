@@ -6,6 +6,10 @@
         ChangeLanguage,
         WaitCategoryForChecking,
         WaitSubCategoryForChecking,
-        WaitFileForChecking
+        WaitFileForChecking,
+        WaitPayoutMethod,
+        WaitAmount,
+        WaitRequisites,
+        WaitAcceptPayout
     }
 }

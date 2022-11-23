@@ -11,6 +11,7 @@ namespace Models.Database
         private string firstname;
         private string lastname;
         private string language;
+        private string banReason;
         private bool isAccepted;
         private bool isBanned;
         private DateTime registrationDate;
@@ -22,6 +23,7 @@ namespace Models.Database
         public string Firstname { get => firstname; set => SetProperty(ref firstname, value); }
         public string Lastname { get => lastname; set => SetProperty(ref lastname, value); }
         public string Language { get => language; set => SetProperty(ref language, value); }
+        public string BanReason { get => banReason; set => SetProperty(ref banReason, value); }
         public bool IsAccepted { get => isAccepted; set => SetProperty(ref isAccepted, value); }
         public bool IsBanned { get => isBanned; set => SetProperty(ref isBanned, value); }
         public DateTime RegistrationDate { get => registrationDate; set => SetProperty(ref registrationDate, value); }

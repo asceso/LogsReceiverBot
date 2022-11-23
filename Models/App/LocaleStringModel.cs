@@ -37,9 +37,13 @@ namespace Models.App
             }
         }
 
-        public static ReplyKeyboardMarkup GetByLocale(this Dictionary<string, ReplyKeyboardMarkup> dictionary, string key, string locale)
+        public static ReplyKeyboardMarkup GetByLocale(this Dictionary<string, ReplyKeyboardMarkup> dictionary, string key, string locale, bool payoutEnabled)
         {
             string targetKey = key + locale.ToPascalCase();
+            if (key == "Main" && payoutEnabled)
+            {
+                targetKey = "MainWithPayment" + locale.ToPascalCase();
+            }
             if (dictionary.ContainsKey(targetKey))
             {
                 return dictionary[targetKey];

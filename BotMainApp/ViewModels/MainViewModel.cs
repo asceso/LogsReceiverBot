@@ -1,9 +1,7 @@
 ﻿using BotMainApp.Events;
 using BotMainApp.LocalEvents;
 using BotMainApp.TelegramServices;
-using DataAdapter.Controllers;
 using Models.App;
-using Models.Database;
 using Models.Enums;
 using Notification.Wpf;
 using Prism.Commands;
@@ -12,7 +10,6 @@ using Prism.Mvvm;
 using Services;
 using Services.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +25,7 @@ namespace BotMainApp.ViewModels
         #region fields
 
         private readonly IEventAggregator aggregator;
+        private readonly ICaptchaService captcha;
         private readonly NotificationManager notificationManager;
         private CancellationTokenSource cancelationTokenSource;
 
@@ -56,9 +54,11 @@ namespace BotMainApp.ViewModels
         public MainViewModel(IJsonAdapter jsonAdapter,
                              IMemorySaver memory,
                              IKeyboardService keyboardService,
-                             IEventAggregator aggregator)
+                             IEventAggregator aggregator,
+                             ICaptchaService captcha)
         {
             this.aggregator = aggregator;
+            this.captcha = captcha;
             Title = "Бот для приема логов";
             TelegramState = new("запуск", TelegramStateModel.BlackBrush);
             TrayIconVisibility = Visibility.Collapsed;
@@ -145,7 +145,7 @@ namespace BotMainApp.ViewModels
             if (memory.ItemExist("BotClient")) memory.RemoveItem("BotClient");
             memory.StoreItem("BotClient", botClient);
 
-            UpdateHandler handler = new(aggregator, memory);
+            UpdateHandler handler = new(aggregator, memory, captcha);
             cancelationTokenSource = new();
             botClient.StartReceiving(handler, cancellationToken: cancelationTokenSource.Token);
             if (memory.ItemExist("Handler")) memory.RemoveItem("Handler");
@@ -157,26 +157,6 @@ namespace BotMainApp.ViewModels
 
         private void OnTest()
         {
-            int take = 10000;
-            int rewrite = 2000;
-            List<LogModel> logs = LogsController.TakeShuffleLogs(take);
-            string filename = "C:\\Users\\Uchidero\\Documents\\!Files\\" + take + "logs" + rewrite + "random.txt";
-            using StreamWriter writer = new(filename);
-            int randomCount = 0;
-            foreach (var log in logs)
-            {
-                if (Random.Shared.NextDouble() > 0.65 && randomCount < 300)
-                {
-                    writer.WriteLine(log.ToString().Remove(log.ToString().Length - 4) + Random.Shared.Next(1000, 9999));
-                    randomCount++;
-                }
-                else
-                {
-                    writer.WriteLine(log.ToString());
-                }
-            }
-            writer.Close();
-            notificationManager.Show("Выполнено", "Файл сохранен.", type: NotificationType.Warning);
         }
 
         #endregion cmd executors
