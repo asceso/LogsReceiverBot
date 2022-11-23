@@ -12,32 +12,30 @@ namespace CheckerRunner
         {
             Environment.CurrentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             string[] arguments = Environment.GetCommandLineArgs();
-            string userId;
             string folderName;
             string cpanelFilePath;
             string whmFilePath;
 
-            if (arguments.Length < 5)
+            if (arguments.Length < 4)
             {
                 return;
             }
 
-            userId = arguments[1];
-            folderName = arguments[2];
-            cpanelFilePath = arguments[3];
-            whmFilePath = arguments[4];
-            if (arguments.Length > 5)
+            folderName = arguments[1];
+            cpanelFilePath = arguments[2];
+            whmFilePath = arguments[3];
+            if (arguments.Length > 4)
             {
-                bool isOtherThreadCount = int.TryParse(arguments[5], out int inThreadCount);
+                bool isOtherThreadCount = int.TryParse(arguments[4], out int inThreadCount);
                 if (isOtherThreadCount)
                 {
                     splitByCount = inThreadCount;
                 }
             }
             bool showOutput = false;
-            if (arguments.Length > 6)
+            if (arguments.Length > 5)
             {
-                showOutput = arguments.Length > 6 && arguments[6] == "true";
+                showOutput = arguments[5] == "true";
             }
 
             try

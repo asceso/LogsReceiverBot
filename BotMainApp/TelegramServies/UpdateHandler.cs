@@ -3,6 +3,7 @@ using BotMainApp.External;
 using BotMainApp.LocalEvents;
 using BotMainApp.ViewModels;
 using DataAdapter.Controllers;
+using DatabaseEvents;
 using Extensions;
 using Models.App;
 using Models.Database;
@@ -298,6 +299,7 @@ namespace BotMainApp.TelegramServices
                                         {
                                             try
                                             {
+                                                aggregator.GetEvent<LogUpdateEvent>().Publish();
                                                 await botClient.SendTextMessageAsync(config.NotifyWhenDatabaseFillNewLogRecordsChat,
                                                     $"В базу данных было добавлено {totalAddedCount} записей:\r\n" +
                                                     $"Новый записей в категории webmail: {webmailAddedCount}\r\n" +
@@ -330,7 +332,7 @@ namespace BotMainApp.TelegramServices
                                         }
                                         else
                                         {
-                                            cpanelData = Runner.RunCpanelChecker(dbUser.Id, folderPath, cpanelDataFilePath, whmDataFilePath, config.CheckerMaxForThread);
+                                            cpanelData = await Runner.RunCpanelCheckerAsync(folderPath, cpanelDataFilePath, whmDataFilePath, config.CheckerMaxForThread);
                                         }
                                         JObject cpanelDataJson = JObject.Parse(cpanelData);
                                         if (cpanelDataJson.ContainsKey("Error"))
@@ -376,7 +378,7 @@ namespace BotMainApp.TelegramServices
                                             try
                                             {
                                                 await botClient.SendTextMessageAsync(config.NotifyWhenCheckerEndWorkChat,
-                                                    $"Закончена проверка файла от {manualCheckModel.StartDateTime:dd.MM.yyyy HH:mm:ss} :\r\n" +
+                                                    $"Закончена проверка файла №{manualCheckModel.Id} от {manualCheckModel.StartDateTime:dd.MM.yyyy} :\r\n" +
                                                     $"Загрузил : @{manualCheckModel.FromUsername}\r\n" +
                                                     $"Затрачено всего : {Math.Round(manualCheckModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
                                                     $"Дубликатов найдено: {manualCheckModel.DublicateFoundedCount}\r\n" +

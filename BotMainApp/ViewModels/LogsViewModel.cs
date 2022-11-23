@@ -1,6 +1,7 @@
 ﻿using BotMainApp.LocalEvents;
 using BotMainApp.TelegramServices;
 using DataAdapter.Controllers;
+using DatabaseEvents;
 using Microsoft.Win32;
 using Models.App;
 using Models.Database;
@@ -11,10 +12,10 @@ using Prism.Events;
 using Prism.Mvvm;
 using Services.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
@@ -87,10 +88,27 @@ namespace BotMainApp.ViewModels
             handler = memory.GetItem<UpdateHandler>("Handler");
             notificationManager = memory.GetItem<NotificationManager>("Notification");
             config = memory.GetItem<ConfigModel>("Config");
+
+            aggregator.GetEvent<LogUpdateEvent>().Subscribe(OnLogUpdates);
             aggregator.GetEvent<BotRestartEvent>().Subscribe(OnBotRestart);
             aggregator.GetEvent<SwitchViewTypeEvent>().Subscribe(OnSwitchMainView);
 
             InitVmCommands();
+        }
+
+        private void OnLogUpdates()
+        {
+            try
+            {
+                Application.Current.Dispatcher.Invoke(async () =>
+                {
+                    await LoadLogsAsync();
+                    await ReloadByPage(currentPage);
+                });
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private async void OnSwitchMainView(ViewsPayload.ViewTypes selectedType)
@@ -110,7 +128,11 @@ namespace BotMainApp.ViewModels
 
         private void InitVmCommands()
         {
-            RefreshCommand = new DelegateCommand(async () => await LoadLogsAsync());
+            RefreshCommand = new DelegateCommand(async () =>
+            {
+                await LoadLogsAsync();
+                await ReloadByPage(currentPage);
+            });
             SaveToFileCurrentViewLogs = new DelegateCommand(OnSaveToFileCurrentLogs);
         }
 

@@ -39,6 +39,7 @@
                     <ColumnDefinition Width="310" />
                     <ColumnDefinition Width="150" />
                     <ColumnDefinition />
+                    <ColumnDefinition Width="150" />
                 </Grid.ColumnDefinitions>
                 <TextBlock
                     Grid.Column="0"
@@ -83,6 +84,15 @@
                     Grid.Column="4"
                     Command="{Binding SaveToFileCurrentViewLogs}"
                     Content="Сохранить в файл" />
+                <Button Grid.Column="6" Command="{Binding RefreshCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image
+                            Width="16"
+                            Height="16"
+                            Source="/Images/upload.png" />
+                        <TextBlock Margin="5,0,0,0" Text="Обновить данные" />
+                    </StackPanel>
+                </Button>
             </Grid>
             <!--#region headers-->
 

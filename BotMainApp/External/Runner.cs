@@ -3,6 +3,8 @@ using Models.App;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BotMainApp.External
 {
@@ -44,20 +46,18 @@ namespace BotMainApp.External
         /// <summary>
         /// Run checker app
         /// </summary>
-        /// <param name="userId">user id</param>
         /// <param name="folderPath">main folder for check</param>
         /// <param name="cpanelFilepath">cpanel file</param>
         /// <param name="whmFilepath">whm file</param>
         /// <param name="maxForThread">max for thread count</param>
         /// <returns>json collection</returns>
-        public static string RunCpanelChecker(long userId, string folderPath, string cpanelFilepath, string whmFilepath, int maxForThread)
+        public static async Task<string> RunCpanelCheckerAsync(string folderPath, string cpanelFilepath, string whmFilepath, int maxForThread)
         {
             ProcessStartInfo psi = new()
             {
                 WorkingDirectory = Environment.CurrentDirectory,
                 FileName = "CheckerRunner.exe",
                 Arguments =
-                $"{userId} " +
                 $"{folderPath} " +
                 $"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)} " +
                 $"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)} " +
@@ -68,7 +68,22 @@ namespace BotMainApp.External
                 RedirectStandardError = true,
             };
             Process process = Process.Start(psi);
-            process.WaitForExit();
+            var processId = process.Id;
+            CancellationTokenSource cts = new();
+            await Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    if (Process.GetProcessById(processId) == null)
+                    {
+                        cts.Cancel();
+                    }
+                }
+            },
+            cts.Token);
+            await process.WaitForExitAsync(cts.Token);
+            cts.Cancel();
             StreamReader reader = process.StandardOutput;
             string jsonResult = reader.ReadToEnd();
             reader.Close();
