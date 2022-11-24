@@ -5,6 +5,7 @@ namespace Models.App
     public class ConfigModel : BindableBase
     {
         private string botToken;
+        private string notepadPath;
         private int requestsPerMinuteAutoBan;
         private int captchaTimer;
         private int captchaAttemptNum;
@@ -17,9 +18,11 @@ namespace Models.App
         private int pageMaxCount;
         private int checkerMaxForThread;
         private bool useOwnCpanelChecker;
+        private bool notifyUserWhenAnyErrorOcuredInCheckingProcess;
         private Chats chats;
 
         public string BotToken { get => botToken; set => SetProperty(ref botToken, value); }
+        public string NotepadPath { get => notepadPath; set => SetProperty(ref notepadPath, value); }
         public int RequestsPerMinuteAutoBan { get => requestsPerMinuteAutoBan; set => SetProperty(ref requestsPerMinuteAutoBan, value); }
         public int CaptchaTimer { get => captchaTimer; set => SetProperty(ref captchaTimer, value); }
         public int CaptchaAttemptNum { get => captchaAttemptNum; set => SetProperty(ref captchaAttemptNum, value); }
@@ -32,6 +35,7 @@ namespace Models.App
         public int PageMaxCount { get => pageMaxCount; set => SetProperty(ref pageMaxCount, value); }
         public int CheckerMaxForThread { get => checkerMaxForThread; set => SetProperty(ref checkerMaxForThread, value); }
         public bool UseOwnCpanelChecker { get => useOwnCpanelChecker; set => SetProperty(ref useOwnCpanelChecker, value); }
+        public bool NotifyUserWhenAnyErrorOcuredInCheckingProcess { get => notifyUserWhenAnyErrorOcuredInCheckingProcess; set => SetProperty(ref notifyUserWhenAnyErrorOcuredInCheckingProcess, value); }
         public Chats Chats { get => chats; set => SetProperty(ref chats, value); }
     }
 

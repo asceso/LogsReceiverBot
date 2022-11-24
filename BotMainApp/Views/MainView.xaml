@@ -49,10 +49,16 @@
                 VerticalAlignment="Center"
                 Foreground="{Binding TelegramState.Color, UpdateSourceTrigger=PropertyChanged}"
                 Text="{Binding TelegramState.Status, UpdateSourceTrigger=PropertyChanged}" />
-            <Button Command="{Binding CreateAndStartBot}" Content="Перезапустить" />
+            <Button
+                Command="{Binding CreateAndStartBot}"
+                Content="Перезапустить"
+                Cursor="Hand" />
             <Button
                 Name="DebugButton"
+                Width="200"
+                Background="Red"
                 Command="{Binding TestCommand}"
+                Cursor="Hand"
                 Visibility="Hidden">
                 Тест
             </Button>

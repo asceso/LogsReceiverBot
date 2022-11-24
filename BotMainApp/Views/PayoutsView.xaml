@@ -25,6 +25,28 @@
                 <RowDefinition Height="40" />
                 <RowDefinition />
             </Grid.RowDefinitions>
+            <!--#region manage buttons-->
+
+            <StackPanel
+                Margin="0,0,5,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Orientation="Horizontal">
+                <Button
+                    Width="150"
+                    Command="{Binding RefreshCommand}"
+                    Cursor="Hand">
+                    <StackPanel Orientation="Horizontal">
+                        <Image
+                            Width="16"
+                            Height="16"
+                            Source="/Images/upload.png" />
+                        <TextBlock Margin="5,0,0,0" Text="Обновить данные" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!--#endregion-->
             <!--#region headers-->
 
             <ScrollViewer
@@ -286,7 +308,7 @@
                                             CommandParameter="{Binding}"
                                             Content="Отклонить"
                                             Cursor="Hand"
-                                            Visibility="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource PayoutStatusToVisibility}, ConverterParameter=0}" />
+                                            Visibility="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource StatusToVisibility}, ConverterParameter=0}" />
                                     </StackPanel>
                                     <Border Grid.Column="2" Style="{StaticResource CellBorder}" />
                                 </Grid>

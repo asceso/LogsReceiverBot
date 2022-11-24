@@ -31,10 +31,18 @@ namespace BotMainApp.ViewModels
         private bool isLoading;
         private int modelsCount;
         private ObservableCollection<ManualCheckModel> models;
+        private bool isClosedChecksShow;
+        private bool isErrorChecksShow;
+        private bool isOtherChecksShow;
+        private bool isAfterCheckingDataShow;
 
         public bool IsLoading { get => isLoading; set => SetProperty(ref isLoading, value); }
         public int ModelsCount { get => modelsCount; set => SetProperty(ref modelsCount, value); }
         public ObservableCollection<ManualCheckModel> Models { get => models; set => SetProperty(ref models, value); }
+        public bool IsClosedChecksShow { get => isClosedChecksShow; set => SetProperty(ref isClosedChecksShow, value); }
+        public bool IsErrorChecksShow { get => isErrorChecksShow; set => SetProperty(ref isErrorChecksShow, value); }
+        public bool IsOtherChecksShow { get => isOtherChecksShow; set => SetProperty(ref isOtherChecksShow, value); }
+        public bool IsAfterCheckingDataShow { get => isAfterCheckingDataShow; set => SetProperty(ref isAfterCheckingDataShow, value); }
 
         public DelegateCommand RefreshCommand { get; set; }
 
@@ -42,6 +50,10 @@ namespace BotMainApp.ViewModels
         {
             Models = new();
             Models.CollectionChanged += (s, e) => UpdateModelsCount();
+            IsClosedChecksShow = true;
+            IsErrorChecksShow = true;
+            IsOtherChecksShow = true;
+            IsAfterCheckingDataShow = false;
             this.memory = memory;
             this.aggregator = aggregator;
             handler = memory.GetItem<UpdateHandler>("Handler");
@@ -94,17 +106,53 @@ namespace BotMainApp.ViewModels
 
         private async void OnOpenManualCheck(ManualCheckModel model)
         {
-            model.Status = CheckStatus.ManualCheckStatus.SendToManualChecking;
-            await ManualCheckController.PutCheckAsync(model, aggregator);
-
-            ManualCheckProcessWindow checkWindow = new(model);
+            CheckStatus.ManualCheckStatus cancelStatus = model.Status;
+            if (cancelStatus != CheckStatus.ManualCheckStatus.End)
+            {
+                model.Status = CheckStatus.ManualCheckStatus.SendToManualChecking;
+                await ManualCheckController.PutCheckAsync(model, aggregator);
+            }
+            ManualCheckProcessWindow checkWindow = new(model, config.NotepadPath, notificationManager);
             checkWindow.ShowDialog();
             if (checkWindow.DialogResult.HasValue && checkWindow.DialogResult.Value)
             {
+                if (checkWindow.IsNoAnyValid)
+                {
+                    ManualCheckModel updateModel = checkWindow.CheckingModel;
+                    UserModel checkUser = await UsersController.GetUserByIdAsync(updateModel.FromUserId);
+                    updateModel.IsManualCheckEnd = true;
+                    updateModel.Status = CheckStatus.ManualCheckStatus.EndNoValid;
+                    await ManualCheckController.PutCheckAsync(updateModel, aggregator);
+
+                    await handler.NotifyUserForEndCheckingFileNoValid(checkUser, updateModel.Id);
+                }
+                else
+                {
+                    if (checkWindow.TotalFoundedValid != 0 && checkWindow.AddBalance != 0)
+                    {
+                        ManualCheckModel updateModel = checkWindow.CheckingModel;
+
+                        UserModel checkUser = await UsersController.GetUserByIdAsync(updateModel.FromUserId);
+                        checkUser.LogsUploaded += checkWindow.TotalFoundedValid;
+                        checkUser.Balance += checkWindow.AddBalance;
+                        await UsersController.PutUserAsync(checkUser, aggregator);
+
+                        updateModel.IsManualCheckEnd = true;
+                        updateModel.Status = CheckStatus.ManualCheckStatus.End;
+                        await ManualCheckController.PutCheckAsync(updateModel, aggregator);
+
+                        await handler.NotifyUserForEndCheckingFile(checkUser, updateModel, checkWindow.TotalFoundedValid, checkWindow.AddBalance);
+                    }
+                    else
+                    {
+                        model.Status = cancelStatus;
+                        await ManualCheckController.PutCheckAsync(model, aggregator);
+                    }
+                }
             }
             else
             {
-                model.Status = CheckStatus.ManualCheckStatus.CheckedBySoft;
+                model.Status = cancelStatus;
                 await ManualCheckController.PutCheckAsync(model, aggregator);
             }
         }

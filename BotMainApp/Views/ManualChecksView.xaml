@@ -8,6 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:prism="http://prismlibrary.com/"
     xmlns:vm="clr-namespace:BotMainApp.ViewModels"
+    x:Name="ManualChecksViewControl"
     d:DataContext="{d:DesignInstance Type=vm:ManualChecksViewModel}"
     prism:ViewModelLocator.AutoWireViewModel="True"
     mc:Ignorable="d">
@@ -16,6 +17,7 @@
         <converters:IntEqualToVisibilityConverter x:Key="IntEqualToVisibility" />
         <converters:EnumStatusToVisibilityConverter x:Key="StatusToVisibility" />
         <converters:StatusStringConverter x:Key="StatusToString" />
+        <converters:MultiBooleanToVisibilityConverter x:Key="MultiBooleanToVisibility" />
     </UserControl.Resources>
     <Grid Margin="5,0,0,0">
         <!--#region checks-->
@@ -25,6 +27,59 @@
                 <RowDefinition Height="40" />
                 <RowDefinition />
             </Grid.RowDefinitions>
+            <!--#region manage buttons-->
+
+            <StackPanel
+                Margin="0,0,5,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <CheckBox
+                    Width="180"
+                    Margin="5,0,0,0"
+                    Content="Отображать завершенные"
+                    Cursor="Hand"
+                    IsChecked="{Binding IsClosedChecksShow, UpdateSourceTrigger=PropertyChanged}" />
+                <CheckBox
+                    Width="160"
+                    Margin="5,0,0,0"
+                    Content="Отображать с ошибкой"
+                    Cursor="Hand"
+                    IsChecked="{Binding IsErrorChecksShow, UpdateSourceTrigger=PropertyChanged}" />
+                <CheckBox
+                    Width="140"
+                    Margin="5,0,0,0"
+                    Content="Отображать другие"
+                    Cursor="Hand"
+                    IsChecked="{Binding IsOtherChecksShow, UpdateSourceTrigger=PropertyChanged}" />
+                <CheckBox
+                    Width="225"
+                    Margin="5,0,0,0"
+                    Content="Отобразить данные после проверок"
+                    Cursor="Hand"
+                    IsChecked="{Binding IsAfterCheckingDataShow, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <StackPanel
+                Margin="0,0,5,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <Button
+                    Width="150"
+                    Command="{Binding RefreshCommand}"
+                    Cursor="Hand">
+                    <StackPanel Orientation="Horizontal">
+                        <Image
+                            Width="16"
+                            Height="16"
+                            Source="/Images/upload.png" />
+                        <TextBlock Margin="5,0,0,0" Text="Обновить данные" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!--#endregion-->
             <!--#region headers-->
 
             <ScrollViewer
@@ -36,10 +91,10 @@
                         <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="150" />
                         <ColumnDefinition Width="300" />
-                        <ColumnDefinition Width="200" />
                         <ColumnDefinition Width="150" />
                         <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="200" />
                         <ColumnDefinition Width="200" />
                         <ColumnDefinition Width="200" />
                         <ColumnDefinition MinWidth="175" />
@@ -57,35 +112,35 @@
                         <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Никнейм пользователя" />
                     </Border>
                     <Border Grid.Column="3" Style="{StaticResource HeaderBorder}">
-                        <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Статус" />
-                    </Border>
-                    <Border Grid.Column="4" Style="{StaticResource HeaderBorder}">
                         <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Дата создания" />
                     </Border>
-                    <Border Grid.Column="5" Style="{StaticResource HeaderBorder}">
+                    <Border Grid.Column="4" Style="{StaticResource HeaderBorder}">
                         <Image
                             Width="20"
                             Height="20"
                             Source="/Images/dublicate.png"
                             ToolTip="Дубликатов найдено" />
                     </Border>
-                    <Border Grid.Column="6" Style="{StaticResource HeaderBorder}">
+                    <Border Grid.Column="5" Style="{StaticResource HeaderBorder}">
                         <TextBlock
                             Style="{StaticResource HeaderTextBlock}"
                             Text="Webmail"
                             ToolTip="Webmail найдено" />
                     </Border>
-                    <Border Grid.Column="7" Style="{StaticResource HeaderBorder}">
+                    <Border Grid.Column="6" Style="{StaticResource HeaderBorder}">
                         <TextBlock
                             Style="{StaticResource HeaderTextBlock}"
                             Text="Cpanel"
                             ToolTip="Cpanel успешных | неуспешных проверок" />
                     </Border>
-                    <Border Grid.Column="8" Style="{StaticResource HeaderBorder}">
+                    <Border Grid.Column="7" Style="{StaticResource HeaderBorder}">
                         <TextBlock
                             Style="{StaticResource HeaderTextBlock}"
                             Text="Whm"
                             ToolTip="Whm успешных | неуспешных проверок" />
+                    </Border>
+                    <Border Grid.Column="8" Style="{StaticResource HeaderBorder}">
+                        <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Статус" />
                     </Border>
                     <Border Grid.Column="9" Style="{StaticResource HeaderBorder}">
                         <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Управление" />
@@ -105,11 +160,27 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Grid Height="45">
+                                <Grid.Visibility>
+                                    <MultiBinding Converter="{StaticResource MultiBooleanToVisibility}">
+                                        <Binding Path="Status" UpdateSourceTrigger="PropertyChanged" />
+                                        <Binding
+                                            ElementName="ManualChecksViewControl"
+                                            Path="DataContext.IsClosedChecksShow"
+                                            UpdateSourceTrigger="PropertyChanged" />
+                                        <Binding
+                                            ElementName="ManualChecksViewControl"
+                                            Path="DataContext.IsErrorChecksShow"
+                                            UpdateSourceTrigger="PropertyChanged" />
+                                        <Binding
+                                            ElementName="ManualChecksViewControl"
+                                            Path="DataContext.IsOtherChecksShow"
+                                            UpdateSourceTrigger="PropertyChanged" />
+                                    </MultiBinding>
+                                </Grid.Visibility>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="150" />
                                     <ColumnDefinition Width="300" />
-                                    <ColumnDefinition Width="200" />
                                     <ColumnDefinition Width="150" />
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="100" />
@@ -117,12 +188,33 @@
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="200" />
                                     <ColumnDefinition MinWidth="175" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition />
                                     <RowDefinition Height="1" />
                                 </Grid.RowDefinitions>
+                                <!--#region blocked border-->
+
+                                <Border
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="100"
+                                    Background="Red"
+                                    Opacity="0.2"
+                                    ToolTip="Ошибка в проверке"
+                                    Visibility="{Binding Status, Converter={StaticResource StatusToVisibility}, ConverterParameter=-1 1}" />
+                                <Border
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="100"
+                                    Background="Green"
+                                    Opacity="0.2"
+                                    ToolTip="Завершена"
+                                    Visibility="{Binding Status, Converter={StaticResource StatusToVisibility}, ConverterParameter=-1 9}" />
+
+                                <!--#endregion-->
                                 <!--#region down line-->
 
                                 <Border
@@ -214,22 +306,9 @@
                                 </Grid>
 
                                 <!--#endregion-->
-                                <!--#region status-->
-
-                                <Grid Grid.Column="3">
-                                    <Border Style="{StaticResource CellBorder}" />
-                                    <TextBox
-                                        HorizontalAlignment="Left"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        IsReadOnly="True"
-                                        Text="{Binding Status, Converter={StaticResource StatusToString}, UpdateSourceTrigger=PropertyChanged}" />
-                                </Grid>
-
-                                <!--#endregion-->
                                 <!--#region start date-->
 
-                                <Grid Grid.Column="4">
+                                <Grid Grid.Column="3">
                                     <Border Style="{StaticResource CellBorder}" />
                                     <TextBox
                                         HorizontalAlignment="Left"
@@ -241,18 +320,51 @@
                                 <!--#endregion-->
                                 <!--#region dublicates-->
 
+                                <Grid Grid.Column="4">
+                                    <Border Style="{StaticResource CellBorder}" />
+                                    <TextBox
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontWeight="SemiBold"
+                                        IsReadOnly="True"
+                                        Text="{Binding DublicateFoundedCount, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=revert}" />
+                                    <TextBox
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontWeight="SemiBold"
+                                        IsReadOnly="True"
+                                        Text="{Binding DublicateFoundedCountManual, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=direct}" />
+                                </Grid>
+
+                                <!--#endregion-->
+                                <!--#region webmail-->
+
                                 <Grid Grid.Column="5">
                                     <Border Style="{StaticResource CellBorder}" />
                                     <TextBox
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
                                         BorderThickness="0"
+                                        FontWeight="SemiBold"
                                         IsReadOnly="True"
-                                        Text="{Binding DublicateFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding WebmailFoundedCount, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=revert}" />
+                                    <TextBox
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontWeight="SemiBold"
+                                        IsReadOnly="True"
+                                        Text="{Binding WebmailFoundedCountManual, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=direct}" />
                                 </Grid>
 
                                 <!--#endregion-->
-                                <!--#region webmail-->
+                                <!--#region cpanel-->
 
                                 <Grid Grid.Column="6">
                                     <Border Style="{StaticResource CellBorder}" />
@@ -260,12 +372,21 @@
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
                                         BorderThickness="0"
+                                        FontWeight="SemiBold"
+                                        Foreground="Green"
                                         IsReadOnly="True"
-                                        Text="{Binding WebmailFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding CpanelGoodCount, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=revert}" />
+                                    <TextBox
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontWeight="SemiBold"
+                                        Foreground="Green"
+                                        IsReadOnly="True"
+                                        Text="{Binding CpanelGoodCountManual, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=direct}" />
                                 </Grid>
-
-                                <!--#endregion-->
-                                <!--#region cpanel-->
 
                                 <Grid Grid.Column="7">
                                     <Border Style="{StaticResource CellBorder}" />
@@ -273,10 +394,24 @@
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
                                         BorderThickness="0"
-                                        Foreground="Green"
+                                        FontWeight="SemiBold"
+                                        Foreground="Red"
                                         IsReadOnly="True"
-                                        Text="{Binding CpanelGoodCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding CpanelBadCount, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=revert}" />
+                                    <TextBox
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontWeight="SemiBold"
+                                        Foreground="Red"
+                                        IsReadOnly="True"
+                                        Text="{Binding CpanelBadCountManual, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=direct}" />
                                 </Grid>
+
+                                <!--#endregion-->
+                                <!--#region whm-->
 
                                 <Grid Grid.Column="8">
                                     <Border Style="{StaticResource CellBorder}" />
@@ -284,13 +419,21 @@
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
                                         BorderThickness="0"
-                                        Foreground="Red"
+                                        FontWeight="SemiBold"
+                                        Foreground="Green"
                                         IsReadOnly="True"
-                                        Text="{Binding CpanelBadCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding WhmGoodCount, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=revert}" />
+                                    <TextBox
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontWeight="SemiBold"
+                                        Foreground="Green"
+                                        IsReadOnly="True"
+                                        Text="{Binding WhmGoodCountManual, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=direct}" />
                                 </Grid>
-
-                                <!--#endregion-->
-                                <!--#region whm-->
 
                                 <Grid Grid.Column="9">
                                     <Border Style="{StaticResource CellBorder}" />
@@ -298,10 +441,24 @@
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
                                         BorderThickness="0"
-                                        Foreground="Green"
+                                        FontWeight="SemiBold"
+                                        Foreground="Red"
                                         IsReadOnly="True"
-                                        Text="{Binding WhmGoodCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding WhmBadCount, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=revert}" />
+                                    <TextBox
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontWeight="SemiBold"
+                                        Foreground="Red"
+                                        IsReadOnly="True"
+                                        Text="{Binding WhmBadCountManual, UpdateSourceTrigger=PropertyChanged}"
+                                        Visibility="{Binding DataContext.IsAfterCheckingDataShow, ElementName=ManualChecksViewControl, Converter={StaticResource BooleanToVisibility}, ConverterParameter=direct}" />
                                 </Grid>
+
+                                <!--#endregion-->
+                                <!--#region status-->
 
                                 <Grid Grid.Column="10">
                                     <Border Style="{StaticResource CellBorder}" />
@@ -309,9 +466,8 @@
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
                                         BorderThickness="0"
-                                        Foreground="Red"
                                         IsReadOnly="True"
-                                        Text="{Binding WhmBadCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding Status, Converter={StaticResource StatusToString}, UpdateSourceTrigger=PropertyChanged}" />
                                 </Grid>
 
                                 <!--#endregion-->
@@ -337,7 +493,17 @@
                                             CommandParameter="{Binding}"
                                             Content="Проработать"
                                             Cursor="Hand"
-                                            Visibility="{Binding Status, Converter={StaticResource StatusToVisibility}, ConverterParameter=4 6}" />
+                                            Visibility="{Binding Status, Converter={StaticResource StatusToVisibility}, ConverterParameter=4 7}" />
+                                        <Button
+                                            Width="150"
+                                            Height="40"
+                                            Margin="5,0,0,0"
+                                            hc:BorderElement.CornerRadius="10"
+                                            Command="{Binding OpenManualCheckCommand}"
+                                            CommandParameter="{Binding}"
+                                            Content="Результат проверки"
+                                            Cursor="Hand"
+                                            Visibility="{Binding Status, Converter={StaticResource StatusToVisibility}, ConverterParameter=-1 9}" />
                                     </StackPanel>
                                     <Border Grid.Column="2" Style="{StaticResource CellBorder}" />
                                 </Grid>

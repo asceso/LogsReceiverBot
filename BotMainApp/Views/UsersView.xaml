@@ -47,31 +47,37 @@
                             Width="125"
                             Margin="0"
                             Command="{Binding SelectAllUsersCommand}"
-                            Content="Выбрать все" />
+                            Content="Выбрать все"
+                            Cursor="Hand" />
                         <Button
                             Width="150"
                             Margin="5,0,0,0"
                             Command="{Binding UnselectAllUsersCommand}"
-                            Content="Снять выделение" />
+                            Content="Снять выделение"
+                            Cursor="Hand" />
                         <Button
                             Width="200"
                             Margin="5,0,0,0"
                             Command="{Binding BlockSelectedUsersCommand}"
-                            Content="Заблокировать выделенных" />
+                            Content="Заблокировать выделенных"
+                            Cursor="Hand" />
                         <Button
                             Width="200"
                             Margin="5,0,0,0"
                             Command="{Binding UnblockSelectedUsersCommand}"
-                            Content="Разблокировать выделенных" />
+                            Content="Разблокировать выделенных"
+                            Cursor="Hand" />
                         <Button
                             Width="225"
                             Margin="5,0,0,0"
                             Command="{Binding SendMailToSelectedUsersCommand}"
-                            Content="Отправить сообщение выделенным" />
+                            Content="Отправить сообщение выделенным"
+                            Cursor="Hand" />
                         <CheckBox
                             Width="225"
                             Margin="5,0,0,0"
                             Content="Отображать заблокированных"
+                            Cursor="Hand"
                             IsChecked="{Binding IsBannedUsersShow, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 

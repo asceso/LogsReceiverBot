@@ -171,5 +171,35 @@ namespace BotMainApp.External
             process.Close();
             return jsonResult;
         }
+
+        /// <summary>
+        /// Run filepath txt in notepad
+        /// </summary>
+        /// <param name="notepadPath">path to notepad</param>
+        /// <param name="filepath">filename</param>
+        /// <returns>true if opened without error</returns>
+        public static bool RunTextFileInNotepad(string notepadPath, string filepath)
+        {
+            try
+            {
+                if (notepadPath == "")
+                {
+                    notepadPath = "notepad";
+                }
+                ProcessStartInfo psi = new()
+                {
+                    FileName = $"{notepadPath}",
+                    Arguments = $"\"{filepath}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+                Process process = Process.Start(psi);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
 }

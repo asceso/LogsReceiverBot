@@ -50,6 +50,7 @@
                     MinWidth="300"
                     Margin="5"
                     VerticalAlignment="Center"
+                    Cursor="Hand"
                     ItemsSource="{Binding UsersForFilter, UpdateSourceTrigger=PropertyChanged}"
                     SelectedItem="{Binding SelectedUserForFilter, UpdateSourceTrigger=PropertyChanged}"
                     ShowClearButton="True">
@@ -77,14 +78,19 @@
                     MinWidth="300"
                     Margin="5"
                     VerticalAlignment="Center"
+                    Cursor="Hand"
                     ItemsSource="{Binding CategoriesForFilter, UpdateSourceTrigger=PropertyChanged}"
                     SelectedItem="{Binding SelectedCategoryForFilter, UpdateSourceTrigger=PropertyChanged}"
                     ShowClearButton="True" />
                 <Button
                     Grid.Column="4"
                     Command="{Binding SaveToFileCurrentViewLogs}"
-                    Content="Сохранить в файл" />
-                <Button Grid.Column="6" Command="{Binding RefreshCommand}">
+                    Content="Сохранить в файл"
+                    Cursor="Hand" />
+                <Button
+                    Grid.Column="6"
+                    Command="{Binding RefreshCommand}"
+                    Cursor="Hand">
                     <StackPanel Orientation="Horizontal">
                         <Image
                             Width="16"

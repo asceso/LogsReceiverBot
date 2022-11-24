@@ -78,6 +78,7 @@ namespace BotMainApp.ViewModels
             if (selectedType is ViewsPayload.ViewTypes.Users)
             {
                 RefreshCommand.Execute();
+                UpdateHasSelectedDataUsers();
             }
         }
 
