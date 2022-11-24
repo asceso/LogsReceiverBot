@@ -47,19 +47,6 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<List<LogModel>> TakeLogsByPage(int pageNum, int countInPage)
-        {
-            try
-            {
-                using DataContext data = new();
-                return await data.Logs.Skip(countInPage * (pageNum - 1)).Take(countInPage * pageNum).ToListAsync();
-            }
-            catch (Exception)
-            {
-                return new List<LogModel>();
-            }
-        }
-
         public static List<string> GetLogsData()
         {
             try

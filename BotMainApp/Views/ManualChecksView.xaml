@@ -14,6 +14,7 @@
     <UserControl.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
         <converters:IntEqualToVisibilityConverter x:Key="IntEqualToVisibility" />
+        <converters:EnumStatusToVisibilityConverter x:Key="StatusToVisibility" />
         <converters:StatusStringConverter x:Key="StatusToString" />
     </UserControl.Resources>
     <Grid Margin="5,0,0,0">
@@ -335,7 +336,8 @@
                                             Command="{Binding OpenManualCheckCommand}"
                                             CommandParameter="{Binding}"
                                             Content="Проработать"
-                                            Cursor="Hand" />
+                                            Cursor="Hand"
+                                            Visibility="{Binding Status, Converter={StaticResource StatusToVisibility}, ConverterParameter=4 6}" />
                                     </StackPanel>
                                     <Border Grid.Column="2" Style="{StaticResource CellBorder}" />
                                 </Grid>

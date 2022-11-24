@@ -35,6 +35,7 @@ namespace BotMainApp.ViewModels
         private ObservableCollection<UserModel> notAcceptedUsers;
         private ObservableCollection<UserModel> dataUsers;
         private bool isHasSelectedDataUsers;
+        private bool isBannedUsersShow;
 
         public bool IsLoading { get => isLoading; set => SetProperty(ref isLoading, value); }
         public int NotAcceptedUsersCount { get => notAcceptedUsersCount; set => SetProperty(ref notAcceptedUsersCount, value); }
@@ -42,6 +43,7 @@ namespace BotMainApp.ViewModels
         public ObservableCollection<UserModel> NotAcceptedUsers { get => notAcceptedUsers; set => SetProperty(ref notAcceptedUsers, value); }
         public ObservableCollection<UserModel> DataUsers { get => dataUsers; set => SetProperty(ref dataUsers, value); }
         public bool IsHasSelectedDataUsers { get => isHasSelectedDataUsers; set => SetProperty(ref isHasSelectedDataUsers, value); }
+        public bool IsBannedUsersShow { get => isBannedUsersShow; set => SetProperty(ref isBannedUsersShow, value); }
 
         public DelegateCommand RefreshCommand { get; set; }
         public DelegateCommand SelectAllUsersCommand { get; set; }
@@ -54,6 +56,7 @@ namespace BotMainApp.ViewModels
         {
             NotAcceptedUsers = new();
             DataUsers = new();
+            IsBannedUsersShow = true;
             NotAcceptedUsers.CollectionChanged += (s, e) => UpdateNotAcceptedUsersCounter();
             DataUsers.CollectionChanged += (s, e) => UpdateDataUsersCounter();
 

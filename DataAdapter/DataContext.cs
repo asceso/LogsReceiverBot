@@ -7,6 +7,7 @@ namespace DataAdapter
     {
         public DbSet<UserModel> Users { get; set; }
         public DbSet<LogModel> Logs { get; set; }
+        public DbSet<ValidModel> Valid { get; set; }
         public DbSet<ManualCheckModel> ManualChecks { get; set; }
         public DbSet<PayoutModel> Payouts { get; set; }
 

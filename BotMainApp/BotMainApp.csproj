@@ -76,6 +76,7 @@
     <ProjectReference Include="..\CpanelChecker\CpanelChecker.csproj" />
     <ProjectReference Include="..\DataAdapter\DataAdapter.csproj" />
     <ProjectReference Include="..\DatabaseFillerApp\DatabaseFillerApp.csproj" />
+    <ProjectReference Include="..\DatabaseValidFillerApp\DatabaseValidFillerApp.csproj" />
     <ProjectReference Include="..\DublicateRemoveRunner\DublicateRemoveRunner.csproj" />
     <ProjectReference Include="..\Extensions\Extensions.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />

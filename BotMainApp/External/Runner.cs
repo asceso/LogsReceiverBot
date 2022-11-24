@@ -140,5 +140,36 @@ namespace BotMainApp.External
             process.Close();
             return jsonResult;
         }
+
+        /// <summary>
+        /// Run database filler
+        /// </summary>
+        /// <param name="userId">user id</param>
+        /// <param name="cpanelFilePath">cpanel filename</param>
+        /// <param name="whmFilePath">whm filename</param>
+        /// <returns>json result</returns>
+        public static string RunValidFiller(long userId, string cpanelFilePath, string whmFilePath)
+        {
+            ProcessStartInfo psi = new()
+            {
+                WorkingDirectory = Environment.CurrentDirectory,
+                FileName = "DatabaseValidFillerApp.exe",
+                Arguments =
+                $"{userId} " +
+                $"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)} " +
+                $"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            Process process = Process.Start(psi);
+            process.WaitForExit();
+            StreamReader reader = process.StandardOutput;
+            string jsonResult = reader.ReadToEnd();
+            reader.Close();
+            process.Close();
+            return jsonResult;
+        }
     }
 }

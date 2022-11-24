@@ -8,13 +8,16 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:prism="http://prismlibrary.com/"
     xmlns:styles="clr-namespace:Styles;assembly=Styles"
+    xmlns:views="clr-namespace:BotMainApp.Views"
     xmlns:vm="clr-namespace:BotMainApp.ViewModels"
+    x:Name="UsersViewControl"
     d:DataContext="{d:DesignInstance Type=vm:UsersViewModel}"
     prism:ViewModelLocator.AutoWireViewModel="True"
     mc:Ignorable="d">
     <UserControl.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
         <converters:IntEqualToVisibilityConverter x:Key="IntEqualToVisibility" />
+        <converters:MultiBooleanToVisibilityConverter x:Key="MultiBooleanToVisibility" />
     </UserControl.Resources>
     <Grid Margin="5,0,0,0">
         <hc:TabControl>
@@ -65,6 +68,11 @@
                             Margin="5,0,0,0"
                             Command="{Binding SendMailToSelectedUsersCommand}"
                             Content="Отправить сообщение выделенным" />
+                        <CheckBox
+                            Width="225"
+                            Margin="5,0,0,0"
+                            Content="Отображать заблокированных"
+                            IsChecked="{Binding IsBannedUsersShow, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
                     <!--#endregion-->
@@ -127,6 +135,15 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Height="45">
+                                        <Grid.Visibility>
+                                            <MultiBinding Converter="{StaticResource MultiBooleanToVisibility}">
+                                                <Binding Path="IsBanned" UpdateSourceTrigger="PropertyChanged" />
+                                                <Binding
+                                                    ElementName="UsersViewControl"
+                                                    Path="DataContext.IsBannedUsersShow"
+                                                    UpdateSourceTrigger="PropertyChanged" />
+                                            </MultiBinding>
+                                        </Grid.Visibility>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="60" />
                                             <ColumnDefinition Width="200" />

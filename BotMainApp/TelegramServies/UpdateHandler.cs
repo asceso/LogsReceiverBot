@@ -483,7 +483,7 @@ namespace BotMainApp.TelegramServices
                                             {
                                                 aggregator.GetEvent<LogUpdateEvent>().Publish();
                                                 await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
-                                                    $"В базу данных было добавлено {totalAddedCount} записей:\r\n" +
+                                                    $"В базу данных дубликатов было добавлено {totalAddedCount} записей:\r\n" +
                                                     $"Новый записей в категории webmail: {webmailAddedCount}\r\n" +
                                                     $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
                                                     $"Новый записей в категории whm: {whmAddedCount}\r\n");
@@ -554,6 +554,42 @@ namespace BotMainApp.TelegramServices
                                         manualCheckModel.WhmBadFilePath = cpanelDataJson["WhmBad"].ToString();
 
                                         await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+
+                                        string fillValidData = Runner.RunValidFiller(dbUser.Id, manualCheckModel.CpanelGoodFilePath, manualCheckModel.WhmGoodFilePath);
+                                        JObject fillValidDataJson = JObject.Parse(fillValidData);
+                                        if (fillValidDataJson.ContainsKey("Error"))
+                                        {
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при заполнении валида:\r\n{dublicateData}");
+                                            }
+                                            catch (Exception)
+                                            {
+                                            }
+                                            return;
+                                        }
+
+                                        cpanelAddedCount = fillValidDataJson.Value<int>("CpanelAddedCount");
+                                        whmAddedCount = fillValidDataJson.Value<int>("WhmAddedCount");
+                                        totalAddedCount = cpanelAddedCount + whmAddedCount;
+                                        if (totalAddedCount != 0)
+                                        {
+                                            if (config.Chats.NotifyWhenDatabaseFillNewValidRecordsChat != 0)
+                                            {
+                                                try
+                                                {
+                                                    aggregator.GetEvent<LogUpdateEvent>().Publish();
+                                                    await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
+                                                        $"В базу данных валида было добавлено {totalAddedCount} записей:\r\n" +
+                                                        $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
+                                                        $"Новый записей в категории whm: {whmAddedCount}\r\n");
+                                                }
+                                                catch (Exception)
+                                                {
+                                                }
+                                            }
+                                        }
+
                                         MoveFilesToChecksIdFolderAndUpatePathes(manualCheckModel, folderPath);
                                         if (config.Chats.NotifyWhenCheckerEndWorkChat != 0)
                                         {
@@ -680,7 +716,7 @@ namespace BotMainApp.TelegramServices
                                     Method = method,
                                     Requisites = requisites,
                                     Ammount = ammount,
-                                    Status = "создана"
+                                    Status = PayoutStatus.PayoutStatusEnum.Created
                                 };
                                 if (await PayoutController.PostPayoutAsync(model, aggregator))
                                 {
@@ -846,13 +882,18 @@ namespace BotMainApp.TelegramServices
                     {
                         switch (payout.Status)
                         {
-                            case "создана":
+                            case PayoutStatus.PayoutStatusEnum.Created:
                                 builder.AppendLine(locales.GetByKey("PayoutInWork", dbUser.Language)
                                                           .Replace("@ID", payout.Id.ToString()));
                                 break;
 
-                            case "звершена":
+                            case PayoutStatus.PayoutStatusEnum.Completed:
                                 builder.AppendLine(locales.GetByKey("PayoutDone", dbUser.Language)
+                                                          .Replace("@ID", payout.Id.ToString()));
+                                break;
+
+                            case PayoutStatus.PayoutStatusEnum.Denied:
+                                builder.AppendLine(locales.GetByKey("PayoutDenied", dbUser.Language)
                                                           .Replace("@ID", payout.Id.ToString()));
                                 break;
                         }
@@ -869,7 +910,7 @@ namespace BotMainApp.TelegramServices
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("ошибка", TelegramStateModel.RedBrush));
-            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
             botClient.StartReceiving(this);
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("работает", TelegramStateModel.GreenBrush));
         }
@@ -1081,11 +1122,22 @@ namespace BotMainApp.TelegramServices
             }
         }
 
-        public async Task NotifyChangeStatusPayoutToClosed(UserModel dbUser)
+        public async Task NotifyChangeStatusPayoutToClosed(UserModel dbUser, string id)
         {
             try
             {
-                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PayoutStatusChangedToClosed", dbUser.Language));
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PayoutStatusChangedToClosed", dbUser.Language).Replace("@ID", id));
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public async Task NotifyChangeStatusPayoutToDenied(UserModel dbUser, string id)
+        {
+            try
+            {
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PayoutStatusChangedToDenied", dbUser.Language).Replace("@ID", id));
             }
             catch (Exception)
             {

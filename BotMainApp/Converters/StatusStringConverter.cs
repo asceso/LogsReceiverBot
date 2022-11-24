@@ -9,9 +9,13 @@ namespace BotMainApp.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is CheckStatus.ManualCheckStatus enumStatus)
+            if (value is CheckStatus.ManualCheckStatus manualCheckEnum)
             {
-                return CheckStatus.GetEnumValue(enumStatus);
+                return CheckStatus.GetEnumValue(manualCheckEnum);
+            }
+            if (value is PayoutStatus.PayoutStatusEnum payoutEnum)
+            {
+                return PayoutStatus.GetEnumValue(payoutEnum);
             }
             else return null;
         }

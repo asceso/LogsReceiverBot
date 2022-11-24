@@ -39,11 +39,13 @@ namespace Models.App
     {
         private long errorNotificationChat;
         private long notifyWhenDatabaseFillNewLogRecordsChat;
+        private long notifyWhenDatabaseFillNewValidRecordsChat;
         private long notifyWhenCheckerEndWorkChat;
         private long notifyWhenUserMakePayout;
 
         public long ErrorNotificationChat { get => errorNotificationChat; set => SetProperty(ref errorNotificationChat, value); }
         public long NotifyWhenDatabaseFillNewLogRecordsChat { get => notifyWhenDatabaseFillNewLogRecordsChat; set => SetProperty(ref notifyWhenDatabaseFillNewLogRecordsChat, value); }
+        public long NotifyWhenDatabaseFillNewValidRecordsChat { get => notifyWhenDatabaseFillNewValidRecordsChat; set => SetProperty(ref notifyWhenDatabaseFillNewValidRecordsChat, value); }
         public long NotifyWhenCheckerEndWorkChat { get => notifyWhenCheckerEndWorkChat; set => SetProperty(ref notifyWhenCheckerEndWorkChat, value); }
         public long NotifyWhenUserMakePayout { get => notifyWhenUserMakePayout; set => SetProperty(ref notifyWhenUserMakePayout, value); }
     }

@@ -3,6 +3,7 @@ using System;
 using DataAdapter;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAdapter.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20221124072130_ChangePayoutStatusToEnum")]
+    partial class ChangePayoutStatusToEnum
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -184,29 +186,6 @@ namespace DataAdapter.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Models.Database.ValidModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<string>("Category")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Data")
-                        .HasColumnType("longtext");
-
-                    b.Property<long>("UploadedByUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("UploadedByUsername")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Valid");
                 });
 #pragma warning restore 612, 618
         }

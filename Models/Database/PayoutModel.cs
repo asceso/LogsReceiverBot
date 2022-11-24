@@ -1,4 +1,5 @@
-﻿using Prism.Commands;
+﻿using Models.Enums;
+using Prism.Commands;
 using Prism.Mvvm;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -13,7 +14,7 @@ namespace Models.Database
         private string method;
         private int ammount;
         private string requisites;
-        private string status;
+        private PayoutStatus.PayoutStatusEnum status;
 
         public int Id { get => id; set => SetProperty(ref id, value); }
         public DateTime StartDateTime { get => startDateTime; set => SetProperty(ref startDateTime, value); }
@@ -22,12 +23,15 @@ namespace Models.Database
         public string Method { get => method; set => SetProperty(ref method, value); }
         public int Ammount { get => ammount; set => SetProperty(ref ammount, value); }
         public string Requisites { get => requisites; set => SetProperty(ref requisites, value); }
-        public string Status { get => status; set => SetProperty(ref status, value); }
+        public PayoutStatus.PayoutStatusEnum Status { get => status; set => SetProperty(ref status, value); }
 
         [NotMapped]
         public DelegateCommand<string> OnCopyCommand { get; set; }
 
         [NotMapped]
         public DelegateCommand<PayoutModel> MarkClosed { get; set; }
+
+        [NotMapped]
+        public DelegateCommand<PayoutModel> MarkDenied { get; set; }
     }
 }

@@ -14,6 +14,8 @@
     <UserControl.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
         <converters:IntEqualToVisibilityConverter x:Key="IntEqualToVisibility" />
+        <converters:EnumStatusToVisibilityConverter x:Key="StatusToVisibility" />
+        <converters:StatusStringConverter x:Key="StatusToString" />
     </UserControl.Resources>
     <Grid Margin="5,0,0,0">
         <!--#region payouts-->
@@ -240,7 +242,7 @@
                                 </Grid>
 
                                 <!--#endregion-->
-                                <!--#region req-->
+                                <!--#region status-->
 
                                 <Grid Grid.Column="7">
                                     <Border Style="{StaticResource CellBorder}" />
@@ -248,7 +250,7 @@
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
                                         BorderThickness="0"
-                                        Text="{Binding Status, UpdateSourceTrigger=PropertyChanged}" />
+                                        Text="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource StatusToString}}" />
                                 </Grid>
 
                                 <!--#endregion-->
@@ -273,7 +275,18 @@
                                             Command="{Binding MarkClosed}"
                                             CommandParameter="{Binding}"
                                             Content="Завершить"
-                                            Cursor="Hand" />
+                                            Cursor="Hand"
+                                            Visibility="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource StatusToVisibility}, ConverterParameter=0}" />
+                                        <Button
+                                            Width="125"
+                                            Height="40"
+                                            Margin="5,0,0,0"
+                                            hc:BorderElement.CornerRadius="10"
+                                            Command="{Binding MarkDenied}"
+                                            CommandParameter="{Binding}"
+                                            Content="Отклонить"
+                                            Cursor="Hand"
+                                            Visibility="{Binding Status, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource PayoutStatusToVisibility}, ConverterParameter=0}" />
                                     </StackPanel>
                                     <Border Grid.Column="2" Style="{StaticResource CellBorder}" />
                                 </Grid>

@@ -89,14 +89,23 @@ namespace BotMainApp.ViewModels
                 }
             });
             model.MarkClosed = new DelegateCommand<PayoutModel>(OnMarkPayoutClosed);
+            model.MarkDenied = new DelegateCommand<PayoutModel>(OnMarkPayoutDenied);
         }
 
         private async void OnMarkPayoutClosed(PayoutModel model)
         {
-            model.Status = "звершена";
+            model.Status = PayoutStatus.PayoutStatusEnum.Completed;
             await PayoutController.PutPayoutAsync(model, aggregator);
             UserModel dbUser = await UsersController.GetUserByIdAsync(model.FromUserId);
-            await handler.NotifyChangeStatusPayoutToClosed(dbUser);
+            await handler.NotifyChangeStatusPayoutToClosed(dbUser, model.Id.ToString());
+        }
+
+        private async void OnMarkPayoutDenied(PayoutModel model)
+        {
+            model.Status = PayoutStatus.PayoutStatusEnum.Denied;
+            await PayoutController.PutPayoutAsync(model, aggregator);
+            UserModel dbUser = await UsersController.GetUserByIdAsync(model.FromUserId);
+            await handler.NotifyChangeStatusPayoutToDenied(dbUser, model.Id.ToString());
         }
 
         private void UpdateModelsCount() => ModelsCount = Models.Count;
