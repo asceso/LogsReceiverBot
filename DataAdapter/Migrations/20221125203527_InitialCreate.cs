@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -50,11 +51,17 @@ namespace DataAdapter.Migrations
                     FromUsername = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     DublicateFoundedCount = table.Column<int>(type: "int", nullable: false),
+                    DublicateFoundedCountManual = table.Column<int>(type: "int", nullable: false),
                     WebmailFoundedCount = table.Column<int>(type: "int", nullable: false),
+                    WebmailFoundedCountManual = table.Column<int>(type: "int", nullable: false),
                     CpanelGoodCount = table.Column<int>(type: "int", nullable: false),
+                    CpanelGoodCountManual = table.Column<int>(type: "int", nullable: false),
                     CpanelBadCount = table.Column<int>(type: "int", nullable: false),
+                    CpanelBadCountManual = table.Column<int>(type: "int", nullable: false),
                     WhmGoodCount = table.Column<int>(type: "int", nullable: false),
+                    WhmGoodCountManual = table.Column<int>(type: "int", nullable: false),
                     WhmBadCount = table.Column<int>(type: "int", nullable: false),
+                    WhmBadCountManual = table.Column<int>(type: "int", nullable: false),
                     DublicateFilePath = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     WebmailFilePath = table.Column<string>(type: "longtext", nullable: true)
@@ -66,11 +73,35 @@ namespace DataAdapter.Migrations
                     WhmGoodFilePath = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     WhmBadFilePath = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsManualCheckEnd = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ManualChecks", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Payouts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    StartDateTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    FromUserId = table.Column<long>(type: "bigint", nullable: false),
+                    FromUsername = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Method = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Ammount = table.Column<int>(type: "int", nullable: false),
+                    Requisites = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Status = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payouts", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -88,6 +119,8 @@ namespace DataAdapter.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Language = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    BanReason = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     IsAccepted = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsBanned = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     RegistrationDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -97,6 +130,26 @@ namespace DataAdapter.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Valid",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Data = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Category = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UploadedByUserId = table.Column<long>(type: "bigint", nullable: false),
+                    UploadedByUsername = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Valid", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
         }
@@ -110,7 +163,13 @@ namespace DataAdapter.Migrations
                 name: "ManualChecks");
 
             migrationBuilder.DropTable(
+                name: "Payouts");
+
+            migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Valid");
         }
     }
 }

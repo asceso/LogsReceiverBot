@@ -9,6 +9,7 @@ using Models.App;
 using Models.Database;
 using Models.Enums;
 using Newtonsoft.Json.Linq;
+using Notification.Wpf;
 using Prism.Events;
 using Services;
 using Services.Interfaces;
@@ -30,6 +31,7 @@ namespace BotMainApp.TelegramServices
 {
     public class UpdateHandler : IUpdateHandler
     {
+        private readonly NotificationManager notificationManager;
         private readonly ReplyKeyboardRemove emptyKeyboard = new();
         private TelegramBotClient botClient;
         private List<LocaleStringModel> locales;
@@ -51,6 +53,7 @@ namespace BotMainApp.TelegramServices
             this.aggregator = aggregator;
             this.memory = memory;
             this.captcha = captcha;
+            notificationManager = memory.GetItem<NotificationManager>("Notification");
             botClient = memory.GetItem<TelegramBotClient>("BotClient");
             locales = memory.GetItem<List<LocaleStringModel>>("Locales");
             keyboards = memory.GetItem<Dictionary<string, ReplyKeyboardMarkup>>("Keyboards");

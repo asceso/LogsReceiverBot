@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAdapter.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20221124072130_ChangePayoutStatusToEnum")]
-    partial class ChangePayoutStatusToEnum
+    [Migration("20221125203527_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -62,10 +62,16 @@ namespace DataAdapter.Migrations
                     b.Property<int>("CpanelBadCount")
                         .HasColumnType("int");
 
+                    b.Property<int>("CpanelBadCountManual")
+                        .HasColumnType("int");
+
                     b.Property<string>("CpanelBadFilePath")
                         .HasColumnType("longtext");
 
                     b.Property<int>("CpanelGoodCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CpanelGoodCountManual")
                         .HasColumnType("int");
 
                     b.Property<string>("CpanelGoodFilePath")
@@ -77,6 +83,9 @@ namespace DataAdapter.Migrations
                     b.Property<int>("DublicateFoundedCount")
                         .HasColumnType("int");
 
+                    b.Property<int>("DublicateFoundedCountManual")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("EndDateTime")
                         .HasColumnType("datetime(6)");
 
@@ -85,6 +94,9 @@ namespace DataAdapter.Migrations
 
                     b.Property<string>("FromUsername")
                         .HasColumnType("longtext");
+
+                    b.Property<bool>("IsManualCheckEnd")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime>("StartDateTime")
                         .HasColumnType("datetime(6)");
@@ -98,13 +110,22 @@ namespace DataAdapter.Migrations
                     b.Property<int>("WebmailFoundedCount")
                         .HasColumnType("int");
 
+                    b.Property<int>("WebmailFoundedCountManual")
+                        .HasColumnType("int");
+
                     b.Property<int>("WhmBadCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WhmBadCountManual")
                         .HasColumnType("int");
 
                     b.Property<string>("WhmBadFilePath")
                         .HasColumnType("longtext");
 
                     b.Property<int>("WhmGoodCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WhmGoodCountManual")
                         .HasColumnType("int");
 
                     b.Property<string>("WhmGoodFilePath")
@@ -186,6 +207,29 @@ namespace DataAdapter.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Models.Database.ValidModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Data")
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("UploadedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UploadedByUsername")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Valid");
                 });
 #pragma warning restore 612, 618
         }

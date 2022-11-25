@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "BotMainApp": {
+      "commandName": "Project",
+      "remoteDebugEnabled": false,
+      "authenticationMode": "None",
+      "remoteDebugMachine": "185.174.137.37:4026",
+      "nativeDebugging": false
+    }
+  }
+}

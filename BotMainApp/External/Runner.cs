@@ -56,10 +56,10 @@ namespace BotMainApp.External
                 WorkingDirectory = Environment.CurrentDirectory,
                 FileName = "CheckerRunner.exe",
                 Arguments =
-                $"{folderPath} " +
-                $"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)} " +
-                $"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)} " +
-                $"{maxForThread}",
+                $"\"{folderPath}\" " +
+                $"\"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)}\" " +
+                $"\"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)}\" " +
+                $"\"{maxForThread}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -90,10 +90,10 @@ namespace BotMainApp.External
                 WorkingDirectory = Environment.CurrentDirectory,
                 FileName = "CpanelChecker.exe",
                 Arguments =
-                $"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)} " +
-                $"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)} " +
-                $"{folderPath} " +
-                $"{maxForThread}",
+                $"\"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)}\" " +
+                $"\"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)}\" " +
+                $"\"{folderPath}\" " +
+                $"\"{maxForThread}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -123,10 +123,10 @@ namespace BotMainApp.External
                 WorkingDirectory = Environment.CurrentDirectory,
                 FileName = "DatabaseFillerApp.exe",
                 Arguments =
-                $"{userId} " +
-                $"{(webmailFilePath.IsNullOrEmptyString() ? "none" : webmailFilePath)} " +
-                $"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)} " +
-                $"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}",
+                $"\"{userId}\" " +
+                $"\"{(webmailFilePath.IsNullOrEmptyString() ? "none" : webmailFilePath)}\" " +
+                $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
+                $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -155,9 +155,9 @@ namespace BotMainApp.External
                 WorkingDirectory = Environment.CurrentDirectory,
                 FileName = "DatabaseValidFillerApp.exe",
                 Arguments =
-                $"{userId} " +
-                $"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)} " +
-                $"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}",
+                $"\"{userId}\" " +
+                $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
+                $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
