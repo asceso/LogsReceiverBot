@@ -30,25 +30,6 @@ namespace Models.Database
         public int LogsUploaded { get => logsUploaded; set => SetProperty(ref logsUploaded, value); }
         public double Balance { get => balance; set => SetProperty(ref balance, value); }
 
-#if DEBUG
-
-        public void FillRandom()
-        {
-            List<string> words = new() { "home", "dead", "moralez", "ooo", "exact" };
-            List<string> langs = new() { "en", "ru" };
-
-            Id = Random.Shared.Next(100000000, 999999999);
-            Username = words[Random.Shared.Next(words.Count)];
-            Firstname = words[Random.Shared.Next(words.Count)];
-            Lastname = words[Random.Shared.Next(words.Count)];
-            Language = langs[Random.Shared.Next(langs.Count)];
-            RegistrationDate = DateTime.Now.AddDays(Random.Shared.Next(10, 90)).AddMinutes(Random.Shared.Next(1, 99));
-            IsAccepted = Random.Shared.NextDouble() > 0.5;
-            IsBanned = Random.Shared.NextDouble() > 0.5;
-        }
-
-#endif
-
         private bool isSelected;
 
         [NotMapped]

@@ -15,6 +15,7 @@ using Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -143,7 +144,6 @@ namespace BotMainApp.ViewModels
                     for (int i = 0; i < 100; i++)
                     {
                         UserModel user = new();
-                        user.FillRandom();
                         cacheUsers.Add(user);
                     }
                 }
@@ -197,16 +197,20 @@ namespace BotMainApp.ViewModels
                 bool? result = smw.ShowDialog();
                 if (result.HasValue && result.Value)
                 {
-                    string mail = smw.OutputText;
+                    string mail = smw.InputTextBox.Text;
+                    string filename = smw.AttachmentTextBox.Text;
                     if (!mail.IsNullOrEmptyString())
                     {
                         int successCount = 0;
                         foreach (var user in DataUsers.Where(u => u.IsSelected))
                         {
-                            if (await handler.SendMailToUserAsync(user, mail))
+                            FileStream fs = null;
+                            if (File.Exists(filename)) fs = new(filename, FileMode.Open);
+                            if (await handler.SendMailToUserAsync(user, mail, fs))
                             {
                                 successCount++;
                             }
+                            fs.Close();
                         }
                         notificationManager.Show("Результат", $"Сообщение отправлено {successCount}/{DataUsers.Count(u => u.IsSelected)} пользователям", NotificationType.Information);
                     }
@@ -261,10 +265,16 @@ namespace BotMainApp.ViewModels
             bool? result = smw.ShowDialog();
             if (result.HasValue && result.Value)
             {
-                string mail = smw.OutputText;
+                string mail = smw.InputTextBox.Text;
+                string filename = smw.AttachmentTextBox.Text;
+                FileStream fs = null;
+                if (File.Exists(filename))
+                {
+                    fs = new(filename, FileMode.Open);
+                }
                 if (!mail.IsNullOrEmptyString())
                 {
-                    if (await handler.SendMailToUserAsync(user, mail))
+                    if (await handler.SendMailToUserAsync(user, mail, fs))
                     {
                         notificationManager.Show("Успешно", "Сообщение успешно отправлено пользователю", NotificationType.Information);
                     }
@@ -273,6 +283,7 @@ namespace BotMainApp.ViewModels
                         notificationManager.Show("Ошибка", "Ошибка при отправке, возможно пользователь заблокировал бота", NotificationType.Error);
                     }
                 }
+                fs.Close();
             }
         }
 

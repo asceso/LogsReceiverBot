@@ -1168,11 +1168,18 @@ namespace BotMainApp.TelegramServices
             return updatedUsersFromDb.Count;
         }
 
-        public async Task<bool> SendMailToUserAsync(UserModel dbUser, string mail)
+        public async Task<bool> SendMailToUserAsync(UserModel dbUser, string mail, FileStream fs)
         {
             try
             {
-                await botClient.SendTextMessageAsync(dbUser.Id, mail);
+                if (fs != null)
+                {
+                    await botClient.SendPhotoAsync(dbUser.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(fs), mail);
+                }
+                else
+                {
+                    await botClient.SendTextMessageAsync(dbUser.Id, mail);
+                }
                 return true;
             }
             catch (Exception)

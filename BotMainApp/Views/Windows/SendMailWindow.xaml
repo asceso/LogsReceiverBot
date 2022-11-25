@@ -30,6 +30,7 @@
                 <RowDefinition Height="40" />
                 <RowDefinition />
                 <RowDefinition Height="40" />
+                <RowDefinition Height="40" />
                 <RowDefinition Height="5" />
             </Grid.RowDefinitions>
 
@@ -59,8 +60,35 @@
                 AcceptsTab="True"
                 FontSize="14"
                 ShowClearButton="True" />
-
             <Grid Grid.Row="3" Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="100" />
+                </Grid.ColumnDefinitions>
+
+                <hc:TextBox
+                    Name="AttachmentTextBox"
+                    Grid.Column="0"
+                    Margin="5"
+                    VerticalContentAlignment="Top"
+                    hc:BorderElement.CornerRadius="10"
+                    AcceptsReturn="True"
+                    AcceptsTab="True"
+                    FontSize="14"
+                    ShowClearButton="True" />
+
+                <Button
+                    Grid.Column="1"
+                    Width="80"
+                    hc:BorderElement.CornerRadius="10"
+                    hc:IconElement.Geometry="{StaticResource AddGeometry}"
+                    AllowDrop="True"
+                    Click="AppendFileClick"
+                    Content="Файл"
+                    Drop="AttachmentTextBoxDrop" />
+            </Grid>
+
+            <Grid Grid.Row="4" Grid.Column="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="10" />
                     <ColumnDefinition />

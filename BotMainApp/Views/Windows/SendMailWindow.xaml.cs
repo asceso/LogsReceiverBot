@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
+using System.Linq;
+using System.Security.Cryptography;
 using System.Windows;
 
 namespace BotMainApp.Views.Windows
@@ -8,17 +11,28 @@ namespace BotMainApp.Views.Windows
     /// </summary>
     public partial class SendMailWindow : Window, IDisposable
     {
-        public string OutputText { get; set; }
-
         public SendMailWindow(string targetUsername)
         {
             InitializeComponent();
             HeaderBox.Text = targetUsername;
         }
 
+        private void AppendFileClick(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new()
+            {
+                Filter = " Изображения|*.jpg;*.jpeg;*.png",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+            };
+            bool? result = ofd.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                AttachmentTextBox.Text = ofd.FileName;
+            }
+        }
+
         private void OkButtonClick(object sender, RoutedEventArgs e)
         {
-            OutputText = InputTextBox.Text;
             DialogResult = true;
         }
 
@@ -31,6 +45,12 @@ namespace BotMainApp.Views.Windows
         {
             Close();
             GC.SuppressFinalize(this);
+        }
+
+        private void AttachmentTextBoxDrop(object sender, DragEventArgs e)
+        {
+            string filename = ((string[])e.Data.GetData("FileDrop")).FirstOrDefault();
+            AttachmentTextBox.Text = filename;
         }
     }
 }
