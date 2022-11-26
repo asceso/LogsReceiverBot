@@ -95,6 +95,10 @@ namespace BotMainApp.TelegramServices
             requestsThread.Start();
             temp.Operation = operations.FirstOrDefault(o => o.UserId == temp.Uid);
             UserModel dbUser = await UsersController.GetUserByIdAsync(temp.Uid);
+            if (temp.Uid == 0)
+            {
+                return;
+            }
 
             #endregion catch data
 

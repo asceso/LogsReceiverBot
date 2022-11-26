@@ -72,6 +72,7 @@ namespace DublicateRemoveRunner
                     login = parts[1];
                     password = parts[2];
 
+                    Uri uri = new(url);
                     if (dbLogsData.Any(db => db == log))
                     {
                         if (!dublicateList.Any(d => d == log))
@@ -81,21 +82,22 @@ namespace DublicateRemoveRunner
                     }
                     else if (cpanelRegex.IsMatch(url))
                     {
-                        if (!cpanelList.Any(d => d == log))
+                        string parsedLog = $"{uri.Authority}|{login}|{password}";
+                        if (!cpanelList.Any(d => d == parsedLog))
                         {
-                            cpanelList.Add(log);
+                            cpanelList.Add(parsedLog);
                         }
                     }
                     else if (whmRegex.IsMatch(url))
                     {
-                        if (!whmList.Any(d => d == log))
+                        string parsedLog = $"{uri.Authority}|{login}|{password}";
+                        if (!whmList.Any(d => d == parsedLog))
                         {
-                            whmList.Add(log);
+                            whmList.Add(parsedLog);
                         }
                     }
                     else if (webmailRegex.IsMatch(url))
                     {
-                        Uri uri = new(url);
                         string parsedLog = $"{uri.DnsSafeHost}|587|{login}|{password}";
                         if (dbLogsData.Any(db => db == parsedLog))
                         {
