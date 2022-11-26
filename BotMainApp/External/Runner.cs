@@ -116,7 +116,7 @@ namespace BotMainApp.External
         /// <param name="cpanelFilePath">cpanel filename</param>
         /// <param name="whmFilePath">whm filename</param>
         /// <returns>json result</returns>
-        public static string RunDublicateFiller(long userId, string webmailFilePath, string cpanelFilePath, string whmFilePath)
+        public static string RunDublicateFiller(long userId, string webmailFilePath, string cpanelFilePath, string whmFilePath, bool fillRecords)
         {
             ProcessStartInfo psi = new()
             {
@@ -126,7 +126,8 @@ namespace BotMainApp.External
                 $"\"{userId}\" " +
                 $"\"{(webmailFilePath.IsNullOrEmptyString() ? "none" : webmailFilePath)}\" " +
                 $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
-                $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\"",
+                $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\" " +
+                $"\"{fillRecords}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,

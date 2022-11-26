@@ -102,6 +102,7 @@ namespace BotMainApp.ViewModels
                 }
             });
             model.OpenManualCheckCommand = new DelegateCommand<ManualCheckModel>(OnOpenManualCheck);
+            model.DeleteCheckCommand = new DelegateCommand<ManualCheckModel>(OnDeleteManualCheck);
         }
 
         private async void OnOpenManualCheck(ManualCheckModel model)
@@ -155,6 +156,20 @@ namespace BotMainApp.ViewModels
                 model.Status = cancelStatus;
                 await ManualCheckController.PutCheckAsync(model, aggregator);
             }
+        }
+
+        private void OnDeleteManualCheck(ManualCheckModel model)
+        {
+            notificationManager.ShowButtonWindow("Удалить проверку?", "Подтверждение", async () =>
+            {
+                int deleteCount = await ManualCheckController.DeleteManualCheckAsync(model);
+                if (deleteCount == 1)
+                {
+                    Models.Remove(model);
+                    notificationManager.Show("Проверка удалена", NotificationType.Information);
+                }
+                ;
+            });
         }
 
         private void UpdateModelsCount() => ModelsCount = Models.Count;

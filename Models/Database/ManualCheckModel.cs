@@ -67,6 +67,9 @@ namespace Models.Database
         [NotMapped]
         public DelegateCommand<ManualCheckModel> OpenManualCheckCommand { get; set; }
 
+        [NotMapped]
+        public DelegateCommand<ManualCheckModel> DeleteCheckCommand { get; set; }
+
         public ManualCheckModel()
         {
             DublicateFilePath = "";

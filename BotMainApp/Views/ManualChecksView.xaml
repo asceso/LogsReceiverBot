@@ -504,6 +504,17 @@
                                             Content="Результат проверки"
                                             Cursor="Hand"
                                             Visibility="{Binding Status, Converter={StaticResource StatusToVisibility}, ConverterParameter=-1 9}" />
+                                        <Button
+                                            Width="50"
+                                            Height="40"
+                                            Margin="5,0,0,0"
+                                            hc:BorderElement.CornerRadius="10"
+                                            Command="{Binding DeleteCheckCommand}"
+                                            CommandParameter="{Binding}"
+                                            hc:IconElement.Geometry="{StaticResource DeleteFillCircleGeometry}"
+                                            hc:IconElement.Width="20"
+                                            hc:IconElement.Height="20"
+                                            Cursor="Hand" />
                                     </StackPanel>
                                     <Border Grid.Column="2" Style="{StaticResource CellBorder}" />
                                 </Grid>

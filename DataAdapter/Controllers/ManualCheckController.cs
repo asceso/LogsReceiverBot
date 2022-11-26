@@ -84,5 +84,19 @@ namespace DataAdapter.Controllers
                 return false;
             }
         }
+
+        public static async Task<int> DeleteManualCheckAsync(ManualCheckModel model)
+        {
+            try
+            {
+                using DataContext data = new();
+                data.ManualChecks.Remove(model);
+                return await data.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
+        }
     }
 }

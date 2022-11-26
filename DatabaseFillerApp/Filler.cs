@@ -25,15 +25,16 @@ namespace DatabaseFillerApp
             webmailFilePath = arguments[2];
             cpanelFilePath = arguments[3];
             whmFilePath = arguments[4];
-            bool showOutput = arguments.Length > 5 && arguments[5] == "true";
+            bool fillRecords = arguments.Length > 5 && arguments[5] == "true";
+            bool showOutput = arguments.Length > 6 && arguments[6] == "true";
 
             try
             {
                 JsonAnswer answer = new();
                 UserModel user = await UsersController.GetUserByIdAsync(long.Parse(userId));
-                answer.WebmailAddedCount = await CheckFileAndPostLogsAsync(user, webmailFilePath, "webmail");
-                answer.CpanelAddedCount = await CheckFileAndPostLogsAsync(user, cpanelFilePath, "cpanel");
-                answer.WhmAddedCount = await CheckFileAndPostLogsAsync(user, whmFilePath, "whm");
+                answer.WebmailAddedCount = await CheckFileAndPostLogsAsync(user, webmailFilePath, "webmail", fillRecords);
+                answer.CpanelAddedCount = await CheckFileAndPostLogsAsync(user, cpanelFilePath, "cpanel", fillRecords);
+                answer.WhmAddedCount = await CheckFileAndPostLogsAsync(user, whmFilePath, "whm", fillRecords);
                 Console.WriteLine(JsonConvert.SerializeObject(answer));
             }
             catch (Exception ex)
@@ -47,7 +48,7 @@ namespace DatabaseFillerApp
             }
         }
 
-        private static async Task<int> CheckFileAndPostLogsAsync(UserModel user, string filePath, string category)
+        private static async Task<int> CheckFileAndPostLogsAsync(UserModel user, string filePath, string category, bool fillRecords)
         {
             if (!File.Exists(filePath))
             {
@@ -106,9 +107,12 @@ namespace DatabaseFillerApp
                         UploadedByUsername = user.Username
                     };
                 }
-                if (await LogsController.PostLogAsync(model))
+                if (fillRecords)
                 {
-                    addedCount++;
+                    if (await LogsController.PostLogAsync(model))
+                    {
+                        addedCount++;
+                    }
                 }
             }
             return addedCount;

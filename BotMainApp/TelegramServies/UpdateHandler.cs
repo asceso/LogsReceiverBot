@@ -399,287 +399,47 @@ namespace BotMainApp.TelegramServices
 
                                     ThreadStart threadStart = new(async () =>
                                     {
-                                        #region init
+                                        await StandartCheckProcess(dbUser, filename, manualCheckModel, true);
+                                    });
+                                    Thread checkThread = new(threadStart);
+                                    checkThread.Start();
+                                }
+                                else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("AdminChecking") &&
+                                         temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("AdminChecking"))
+                                {
+                                    #region load tg file
 
-                                        string inputFilename = PathCollection.TempFolderPath + "/" + filename;
-                                        string folderPath = PathCollection.TempFolderPath + $"u_{dbUser.Id}_d_{DateTime.Now:dd_MM_yyyy_HH_mm_ss}/";
-                                        Directory.CreateDirectory(folderPath);
-                                        Stopwatch ellapsedWatch = Stopwatch.StartNew();
+                                    Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
+                                    string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
+                                    using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
+                                    await botClient.DownloadFileAsync(file.FilePath, stream);
+                                    stream.Close();
 
-                                        #endregion init
+                                    #endregion load tg file
 
-                                        #region check dublicates
+                                    #region accept file
 
-                                        string dublicateData = Runner.RunDublicateChecker(folderPath, inputFilename, config);
-                                        JObject dublicateDataJson = JObject.Parse(dublicateData);
-                                        if (dublicateDataJson.ContainsKey("Error"))
-                                        {
-                                            if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
-                                            {
-                                                try
-                                                {
-                                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
-                                                                                                           .Replace("@ID", manualCheckModel.Id.ToString()));
-                                                }
-                                                catch (Exception)
-                                                {
-                                                }
-                                            }
+                                    operations.Remove(temp.Operation);
+                                    ManualCheckModel manualCheckModel = new()
+                                    {
+                                        StartDateTime = DateTime.Now,
+                                        Status = CheckStatus.ManualCheckStatus.Created,
+                                        FromUserId = dbUser.Id,
+                                        FromUsername = dbUser.Username,
+                                    };
+                                    await ManualCheckController.PostCheckAsync(manualCheckModel, aggregator);
+                                    await botClient.SendTextMessageAsync(
+                                        dbUser.Id,
+                                        locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
+                                               .Replace("@ID", manualCheckModel.Id.ToString()),
+                                        replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                        );
 
-                                            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
-                                            Directory.Delete(folderPath, true);
-                                            try
-                                            {
-                                                await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при поиске дубликатов файла:\r\n{dublicateData}");
-                                            }
-                                            catch (Exception)
-                                            {
-                                            }
-                                            return;
-                                        }
+                                    #endregion accept file
 
-                                        manualCheckModel.DublicateFilePath = dublicateDataJson["Dublicates"].ToString();
-                                        manualCheckModel.WebmailFilePath = dublicateDataJson["Webmail"].ToString();
-                                        string cpanelDataFilePath = dublicateDataJson["Cpanel"].ToString();
-                                        string whmDataFilePath = dublicateDataJson["Whm"].ToString();
-                                        MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.FillingDb, null);
-
-                                        #endregion check dublicates
-
-                                        #region fill logs db
-
-                                        string fillData = Runner.RunDublicateFiller(dbUser.Id, manualCheckModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath);
-                                        JObject fillDataJson = JObject.Parse(fillData);
-                                        if (fillDataJson.ContainsKey("Error"))
-                                        {
-                                            if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
-                                            {
-                                                try
-                                                {
-                                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
-                                                                                                           .Replace("@ID", manualCheckModel.Id.ToString()));
-                                                }
-                                                catch (Exception)
-                                                {
-                                                }
-                                            }
-                                            try
-                                            {
-                                                await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
-                                            }
-                                            catch (Exception)
-                                            {
-                                            }
-
-                                            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
-                                            Directory.Delete(folderPath, true);
-                                            return;
-                                        }
-
-                                        #endregion fill logs db
-
-                                        #region no any unique
-
-                                        int webmailAddedCount = fillDataJson.Value<int>("WebmailAddedCount");
-                                        int cpanelAddedCount = fillDataJson.Value<int>("CpanelAddedCount");
-                                        int whmAddedCount = fillDataJson.Value<int>("WhmAddedCount");
-                                        int totalAddedCount = webmailAddedCount + cpanelAddedCount + whmAddedCount;
-                                        if (totalAddedCount == 0)
-                                        {
-                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language)
-                                                                                                   .Replace("@ID", manualCheckModel.Id.ToString()));
-
-                                            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.NoAnyUnique, ellapsedWatch);
-                                            Directory.Delete(folderPath, true);
-                                            return;
-                                        }
-
-                                        #endregion no any unique
-
-                                        #region notify when any inserted
-
-                                        if (config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat != 0)
-                                        {
-                                            try
-                                            {
-                                                aggregator.GetEvent<LogUpdateEvent>().Publish();
-                                                await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
-                                                    $"В базу данных дубликатов было добавлено {totalAddedCount} записей:\r\n" +
-                                                    $"Новый записей в категории webmail: {webmailAddedCount}\r\n" +
-                                                    $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
-                                                    $"Новый записей в категории whm: {whmAddedCount}\r\n");
-                                            }
-                                            catch (Exception)
-                                            {
-                                            }
-                                        }
-
-                                        #endregion notify when any inserted
-
-                                        #region check no data or only webmail
-
-                                        if (cpanelDataFilePath == "" && whmDataFilePath == "")
-                                        {
-                                            if (webmailAddedCount != 0)
-                                            {
-                                                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.OnlyWebmail, ellapsedWatch);
-                                                Directory.Delete(folderPath, true);
-
-                                                if (config.Chats.NotifyWhenCheckerEndWorkChat != 0)
-                                                {
-                                                    try
-                                                    {
-                                                        await botClient.SendTextMessageAsync(config.Chats.NotifyWhenCheckerEndWorkChat,
-                                                            $"Закончена проверка логов ID: {manualCheckModel.Id} от {manualCheckModel.StartDateTime:dd.MM.yyyy} :\r\n" +
-                                                            $"Загрузил : @{manualCheckModel.FromUsername}\r\n" +
-                                                            $"Затрачено всего : {Math.Round(manualCheckModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
-                                                            $"Дубликатов найдено: {manualCheckModel.DublicateFoundedCount}\r\n" +
-                                                            $"Webmail найдено: {manualCheckModel.WebmailFoundedCount}\r\n" +
-                                                            $"Cpanel (good) найдено: {manualCheckModel.CpanelGoodCount}\r\n" +
-                                                            $"Cpanel (bad) найдено: {manualCheckModel.CpanelBadCount}\r\n" +
-                                                            $"Whm (good) найдено: {manualCheckModel.WhmGoodCount}\r\n" +
-                                                            $"Whm (bad) найдено: {manualCheckModel.WhmBadCount}");
-                                                    }
-                                                    catch (Exception)
-                                                    {
-                                                    }
-                                                }
-
-                                                return;
-                                            }
-                                            else
-                                            {
-                                                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.NoAnyUnique, ellapsedWatch);
-                                                Directory.Delete(folderPath, true);
-                                                return;
-                                            }
-                                        }
-
-                                        #endregion check no data or only webmail
-
-                                        #region after checks set status to dublicate deleted
-
-                                        manualCheckModel.Status = CheckStatus.ManualCheckStatus.DublicateDeleted;
-                                        await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
-
-                                        #endregion after checks set status to dublicate deleted
-
-                                        #region check cpanel
-
-                                        string cpanelData;
-                                        if (config.UseOwnCpanelChecker)
-                                        {
-                                            cpanelData = Runner.RunOwnCpanelChecker(cpanelDataFilePath, whmDataFilePath, folderPath, config.CheckerMaxForThread);
-                                        }
-                                        else
-                                        {
-                                            cpanelData = Runner.RunCpanelChecker(folderPath, cpanelDataFilePath, whmDataFilePath, config.CheckerMaxForThread);
-                                        }
-                                        JObject cpanelDataJson = JObject.Parse(cpanelData);
-                                        if (cpanelDataJson.ContainsKey("Error"))
-                                        {
-                                            if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
-                                            {
-                                                try
-                                                {
-                                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
-                                                                                                           .Replace("@ID", manualCheckModel.Id.ToString()));
-                                                }
-                                                catch (Exception)
-                                                {
-                                                }
-                                            }
-                                            try
-                                            {
-                                                await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
-                                            }
-                                            catch (Exception)
-                                            {
-                                            }
-
-                                            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
-                                            Directory.Delete(folderPath, true);
-                                            return;
-                                        }
-
-                                        #endregion check cpanel
-
-                                        #region set to copying files
-
-                                        manualCheckModel.CpanelGoodFilePath = cpanelDataJson["CpanelGood"].ToString();
-                                        manualCheckModel.CpanelBadFilePath = cpanelDataJson["CpanelBad"].ToString();
-                                        manualCheckModel.WhmGoodFilePath = cpanelDataJson["WhmGood"].ToString();
-                                        manualCheckModel.WhmBadFilePath = cpanelDataJson["WhmBad"].ToString();
-
-                                        MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.CopyingFiles, ellapsedWatch);
-
-                                        #endregion set to copying files
-
-                                        #region fill valid db
-
-                                        string fillValidData = Runner.RunValidFiller(dbUser.Id, manualCheckModel.CpanelGoodFilePath, manualCheckModel.WhmGoodFilePath);
-                                        JObject fillValidDataJson = JObject.Parse(fillValidData);
-                                        if (fillValidDataJson.ContainsKey("Error"))
-                                        {
-                                            try
-                                            {
-                                                await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при заполнении валида:\r\n{dublicateData}");
-                                            }
-                                            catch (Exception)
-                                            {
-                                            }
-                                            return;
-                                        }
-
-                                        cpanelAddedCount = fillValidDataJson.Value<int>("CpanelAddedCount");
-                                        whmAddedCount = fillValidDataJson.Value<int>("WhmAddedCount");
-                                        totalAddedCount = cpanelAddedCount + whmAddedCount;
-                                        if (totalAddedCount != 0)
-                                        {
-                                            if (config.Chats.NotifyWhenDatabaseFillNewValidRecordsChat != 0)
-                                            {
-                                                try
-                                                {
-                                                    aggregator.GetEvent<LogUpdateEvent>().Publish();
-                                                    await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
-                                                        $"В базу данных валида было добавлено {totalAddedCount} записей:\r\n" +
-                                                        $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
-                                                        $"Новый записей в категории whm: {whmAddedCount}\r\n");
-                                                }
-                                                catch (Exception)
-                                                {
-                                                }
-                                            }
-                                        }
-
-                                        #endregion fill valid db
-
-                                        #region copying last files and set to checked by soft status
-
-                                        MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.CheckedBySoft, null);
-                                        Directory.Delete(folderPath, true);
-                                        if (config.Chats.NotifyWhenCheckerEndWorkChat != 0)
-                                        {
-                                            try
-                                            {
-                                                await botClient.SendTextMessageAsync(config.Chats.NotifyWhenCheckerEndWorkChat,
-                                                    $"Закончена проверка логов ID: {manualCheckModel.Id} от {manualCheckModel.StartDateTime:dd.MM.yyyy} :\r\n" +
-                                                    $"Загрузил : @{manualCheckModel.FromUsername}\r\n" +
-                                                    $"Затрачено всего : {Math.Round(manualCheckModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
-                                                    $"Дубликатов найдено: {manualCheckModel.DublicateFoundedCount}\r\n" +
-                                                    $"Webmail найдено: {manualCheckModel.WebmailFoundedCount}\r\n" +
-                                                    $"Cpanel (good) найдено: {manualCheckModel.CpanelGoodCount}\r\n" +
-                                                    $"Cpanel (bad) найдено: {manualCheckModel.CpanelBadCount}\r\n" +
-                                                    $"Whm (good) найдено: {manualCheckModel.WhmGoodCount}\r\n" +
-                                                    $"Whm (bad) найдено: {manualCheckModel.WhmBadCount}");
-                                            }
-                                            catch (Exception)
-                                            {
-                                            }
-                                        }
-                                        return;
-
-                                        #endregion copying last files and set to checked by soft status
+                                    ThreadStart threadStart = new(async () =>
+                                    {
+                                        await StandartCheckProcess(dbUser, filename, manualCheckModel, false);
                                     });
                                     Thread checkThread = new(threadStart);
                                     checkThread.Start();
@@ -976,6 +736,19 @@ namespace BotMainApp.TelegramServices
                 }
                 return;
             }
+            if (temp.Message.IsAnyEqual("/check_log_admin"))
+            {
+                operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
+                    new KeyValuePair<string, object>("Category", "AdminChecking"),
+                    new KeyValuePair<string, object>("SubCategory", "AdminChecking")
+                    ));
+                await botClient.SendTextMessageAsync(
+                    dbUser.Id,
+                    locales.GetByKey("SendFileInstruction", dbUser.Language),
+                    replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                    );
+                return;
+            }
         }
 
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
@@ -984,6 +757,291 @@ namespace BotMainApp.TelegramServices
             await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
             botClient.StartReceiving(this);
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("работает", TelegramStateModel.GreenBrush));
+        }
+
+        private async Task StandartCheckProcess(UserModel dbUser, string filename, ManualCheckModel manualCheckModel, bool fillDublicates)
+        {
+            #region init
+
+            string inputFilename = PathCollection.TempFolderPath + "/" + filename;
+            string folderPath = PathCollection.TempFolderPath + $"u_{dbUser.Id}_d_{DateTime.Now:dd_MM_yyyy_HH_mm_ss}/";
+            Directory.CreateDirectory(folderPath);
+            Stopwatch ellapsedWatch = Stopwatch.StartNew();
+
+            #endregion init
+
+            #region check dublicates
+
+            string dublicateData = Runner.RunDublicateChecker(folderPath, inputFilename, config);
+            JObject dublicateDataJson = JObject.Parse(dublicateData);
+            if (dublicateDataJson.ContainsKey("Error"))
+            {
+                if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
+                                                                               .Replace("@ID", manualCheckModel.Id.ToString()));
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
+                Directory.Delete(folderPath, true);
+                try
+                {
+                    await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при поиске дубликатов файла:\r\n{dublicateData}");
+                }
+                catch (Exception)
+                {
+                }
+                return;
+            }
+
+            manualCheckModel.DublicateFilePath = dublicateDataJson["Dublicates"].ToString();
+            manualCheckModel.WebmailFilePath = dublicateDataJson["Webmail"].ToString();
+            string cpanelDataFilePath = dublicateDataJson["Cpanel"].ToString();
+            string whmDataFilePath = dublicateDataJson["Whm"].ToString();
+            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.FillingDb, null);
+
+            #endregion check dublicates
+
+            #region fill logs db
+
+            string fillData = Runner.RunDublicateFiller(dbUser.Id, manualCheckModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath, fillDublicates);
+            JObject fillDataJson = JObject.Parse(fillData);
+            if (fillDataJson.ContainsKey("Error"))
+            {
+                if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
+                                                                               .Replace("@ID", manualCheckModel.Id.ToString()));
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                try
+                {
+                    await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                }
+                catch (Exception)
+                {
+                }
+
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
+                Directory.Delete(folderPath, true);
+                return;
+            }
+
+            #endregion fill logs db
+
+            #region no any unique
+
+            int webmailAddedCount = fillDataJson.Value<int>("WebmailAddedCount");
+            int cpanelAddedCount = fillDataJson.Value<int>("CpanelAddedCount");
+            int whmAddedCount = fillDataJson.Value<int>("WhmAddedCount");
+            int totalAddedCount = webmailAddedCount + cpanelAddedCount + whmAddedCount;
+            if (totalAddedCount == 0)
+            {
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language)
+                                                                       .Replace("@ID", manualCheckModel.Id.ToString()));
+
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.NoAnyUnique, ellapsedWatch);
+                Directory.Delete(folderPath, true);
+                return;
+            }
+
+            #endregion no any unique
+
+            #region notify when any inserted
+
+            if (config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat != 0)
+            {
+                try
+                {
+                    aggregator.GetEvent<LogUpdateEvent>().Publish();
+                    await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
+                        $"В базу данных дубликатов было добавлено {totalAddedCount} записей:\r\n" +
+                        $"Новый записей в категории webmail: {webmailAddedCount}\r\n" +
+                        $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
+                        $"Новый записей в категории whm: {whmAddedCount}\r\n");
+                }
+                catch (Exception)
+                {
+                }
+            }
+
+            #endregion notify when any inserted
+
+            #region check no data or only webmail
+
+            if (cpanelDataFilePath == "" && whmDataFilePath == "")
+            {
+                if (webmailAddedCount != 0)
+                {
+                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.OnlyWebmail, ellapsedWatch);
+                    Directory.Delete(folderPath, true);
+
+                    if (config.Chats.NotifyWhenCheckerEndWorkChat != 0)
+                    {
+                        try
+                        {
+                            await botClient.SendTextMessageAsync(config.Chats.NotifyWhenCheckerEndWorkChat,
+                                $"Закончена проверка логов ID: {manualCheckModel.Id} от {manualCheckModel.StartDateTime:dd.MM.yyyy} :\r\n" +
+                                $"Загрузил : @{manualCheckModel.FromUsername}\r\n" +
+                                $"Затрачено всего : {Math.Round(manualCheckModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
+                                $"Дубликатов найдено: {manualCheckModel.DublicateFoundedCount}\r\n" +
+                                $"Webmail найдено: {manualCheckModel.WebmailFoundedCount}\r\n" +
+                                $"Cpanel (good) найдено: {manualCheckModel.CpanelGoodCount}\r\n" +
+                                $"Cpanel (bad) найдено: {manualCheckModel.CpanelBadCount}\r\n" +
+                                $"Whm (good) найдено: {manualCheckModel.WhmGoodCount}\r\n" +
+                                $"Whm (bad) найдено: {manualCheckModel.WhmBadCount}");
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+
+                    return;
+                }
+                else
+                {
+                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.NoAnyUnique, ellapsedWatch);
+                    Directory.Delete(folderPath, true);
+                    return;
+                }
+            }
+
+            #endregion check no data or only webmail
+
+            #region after checks set status to dublicate deleted
+
+            manualCheckModel.Status = CheckStatus.ManualCheckStatus.DublicateDeleted;
+            await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+
+            #endregion after checks set status to dublicate deleted
+
+            #region check cpanel
+
+            string cpanelData;
+            if (config.UseOwnCpanelChecker)
+            {
+                cpanelData = Runner.RunOwnCpanelChecker(cpanelDataFilePath, whmDataFilePath, folderPath, config.CheckerMaxForThread);
+            }
+            else
+            {
+                cpanelData = Runner.RunCpanelChecker(folderPath, cpanelDataFilePath, whmDataFilePath, config.CheckerMaxForThread);
+            }
+            JObject cpanelDataJson = JObject.Parse(cpanelData);
+            if (cpanelDataJson.ContainsKey("Error"))
+            {
+                if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
+                                                                               .Replace("@ID", manualCheckModel.Id.ToString()));
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                try
+                {
+                    await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                }
+                catch (Exception)
+                {
+                }
+
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
+                Directory.Delete(folderPath, true);
+                return;
+            }
+
+            #endregion check cpanel
+
+            #region set to copying files
+
+            manualCheckModel.CpanelGoodFilePath = cpanelDataJson["CpanelGood"].ToString();
+            manualCheckModel.CpanelBadFilePath = cpanelDataJson["CpanelBad"].ToString();
+            manualCheckModel.WhmGoodFilePath = cpanelDataJson["WhmGood"].ToString();
+            manualCheckModel.WhmBadFilePath = cpanelDataJson["WhmBad"].ToString();
+
+            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.CopyingFiles, ellapsedWatch);
+
+            #endregion set to copying files
+
+            #region fill valid db
+
+            string fillValidData = Runner.RunValidFiller(dbUser.Id, manualCheckModel.CpanelGoodFilePath, manualCheckModel.WhmGoodFilePath);
+            JObject fillValidDataJson = JObject.Parse(fillValidData);
+            if (fillValidDataJson.ContainsKey("Error"))
+            {
+                try
+                {
+                    await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при заполнении валида:\r\n{dublicateData}");
+                }
+                catch (Exception)
+                {
+                }
+                return;
+            }
+
+            cpanelAddedCount = fillValidDataJson.Value<int>("CpanelAddedCount");
+            whmAddedCount = fillValidDataJson.Value<int>("WhmAddedCount");
+            totalAddedCount = cpanelAddedCount + whmAddedCount;
+            if (totalAddedCount != 0)
+            {
+                if (config.Chats.NotifyWhenDatabaseFillNewValidRecordsChat != 0)
+                {
+                    try
+                    {
+                        aggregator.GetEvent<LogUpdateEvent>().Publish();
+                        await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
+                            $"В базу данных валида было добавлено {totalAddedCount} записей:\r\n" +
+                            $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
+                            $"Новый записей в категории whm: {whmAddedCount}\r\n");
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            #endregion fill valid db
+
+            #region copying last files and set to checked by soft status
+
+            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.CheckedBySoft, null);
+            Directory.Delete(folderPath, true);
+            if (config.Chats.NotifyWhenCheckerEndWorkChat != 0)
+            {
+                try
+                {
+                    await botClient.SendTextMessageAsync(config.Chats.NotifyWhenCheckerEndWorkChat,
+                        $"Закончена проверка логов ID: {manualCheckModel.Id} от {manualCheckModel.StartDateTime:dd.MM.yyyy} :\r\n" +
+                        $"Загрузил : @{manualCheckModel.FromUsername}\r\n" +
+                        $"Затрачено всего : {Math.Round(manualCheckModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
+                        $"Дубликатов найдено: {manualCheckModel.DublicateFoundedCount}\r\n" +
+                        $"Webmail найдено: {manualCheckModel.WebmailFoundedCount}\r\n" +
+                        $"Cpanel (good) найдено: {manualCheckModel.CpanelGoodCount}\r\n" +
+                        $"Cpanel (bad) найдено: {manualCheckModel.CpanelBadCount}\r\n" +
+                        $"Whm (good) найдено: {manualCheckModel.WhmGoodCount}\r\n" +
+                        $"Whm (bad) найдено: {manualCheckModel.WhmBadCount}");
+                }
+                catch (Exception)
+                {
+                }
+            }
+            return;
+
+            #endregion copying last files and set to checked by soft status
         }
 
         private async void MoveFilesToChecksIdFolderAndUpateCountAndPathes(ManualCheckModel manualCheck, CheckStatus.ManualCheckStatus endStatus, Stopwatch ellapsedWatch)
