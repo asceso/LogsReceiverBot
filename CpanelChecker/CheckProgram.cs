@@ -65,7 +65,7 @@ namespace CpanelChecker
                                 login = parts[1];
                                 password = parts[2];
 
-                                bool? result = await CheckValidPairAsync(new(url), url, login, password);
+                                bool? result = await CheckValidPairAsync(url, login, password);
                                 if (result.HasValue)
                                 {
                                     if (result.Value)
@@ -120,7 +120,7 @@ namespace CpanelChecker
                                 login = parts[1];
                                 password = parts[2];
 
-                                bool? result = await CheckValidPairAsync(new(url), url, login, password);
+                                bool? result = await CheckValidPairAsync(url, login, password);
                                 if (result.HasValue)
                                 {
                                     if (result.Value)
@@ -194,7 +194,7 @@ namespace CpanelChecker
             }
         }
 
-        private static async Task<bool?> CheckValidPairAsync(Uri uri, string url, string login, string password)
+        private static async Task<bool?> CheckValidPairAsync(string url, string login, string password)
         {
             try
             {
@@ -202,23 +202,17 @@ namespace CpanelChecker
                 RestClient client;
                 try
                 {
-                    options = new RestClientOptions(uri.AbsoluteUri.Replace(uri.AbsolutePath, string.Empty))
+                    options = new RestClientOptions(url)
                     {
                         ThrowOnAnyError = false,
                         RemoteCertificateValidationCallback = delegate { return true; },
-                        MaxTimeout = 10000
+                        MaxTimeout = 15000
                     };
                     client = new(options);
                 }
                 catch (Exception)
                 {
-                    options = new RestClientOptions(url)
-                    {
-                        ThrowOnAnyError = false,
-                        RemoteCertificateValidationCallback = delegate { return true; },
-                        MaxTimeout = 10000
-                    };
-                    client = new(options);
+                    return null;
                 }
                 RestRequest request = new("/login/?login_only=1", method: Method.Get);
                 request.AddQueryParameter("user", login);

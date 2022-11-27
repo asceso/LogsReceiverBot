@@ -14,6 +14,7 @@ using Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -165,6 +166,13 @@ namespace BotMainApp.ViewModels
                 int deleteCount = await ManualCheckController.DeleteManualCheckAsync(model);
                 if (deleteCount == 1)
                 {
+                    try
+                    {
+                        Directory.Delete(Environment.CurrentDirectory + "/checks/" + model.Id + "/", true);
+                    }
+                    catch (Exception)
+                    {
+                    }
                     Models.Remove(model);
                     notificationManager.Show("Проверка удалена", NotificationType.Information);
                 }

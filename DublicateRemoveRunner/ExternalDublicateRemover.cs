@@ -1,5 +1,6 @@
 ﻿using DataAdapter.Controllers;
 using Newtonsoft.Json;
+using System;
 using System.Text.RegularExpressions;
 
 namespace DublicateRemoveRunner
@@ -72,7 +73,9 @@ namespace DublicateRemoveRunner
                     login = parts[1];
                     password = parts[2];
 
-                    Uri uri = new(url);
+                    Regex urlCleanRegex = new(@"(.*:\/\/.*:\d*|.*:\/\/cpanel[^:|]*)");
+                    string cleanUrl = urlCleanRegex.Match(url).Value;
+
                     if (dbLogsData.Any(db => db == log))
                     {
                         if (!dublicateList.Any(d => d == log))
@@ -82,7 +85,7 @@ namespace DublicateRemoveRunner
                     }
                     else if (cpanelRegex.IsMatch(url))
                     {
-                        string parsedLog = $"{uri.Authority}|{login}|{password}";
+                        string parsedLog = $"{cleanUrl}|{login}|{password}";
                         if (!cpanelList.Any(d => d == parsedLog))
                         {
                             cpanelList.Add(parsedLog);
@@ -90,7 +93,7 @@ namespace DublicateRemoveRunner
                     }
                     else if (whmRegex.IsMatch(url))
                     {
-                        string parsedLog = $"{uri.Authority}|{login}|{password}";
+                        string parsedLog = $"{cleanUrl}|{login}|{password}";
                         if (!whmList.Any(d => d == parsedLog))
                         {
                             whmList.Add(parsedLog);
@@ -98,7 +101,12 @@ namespace DublicateRemoveRunner
                     }
                     else if (webmailRegex.IsMatch(url))
                     {
-                        string parsedLog = $"{uri.DnsSafeHost}|587|{login}|{password}";
+                        int symCount = cleanUrl.Count(cu => cu == ':');
+                        if (symCount == 2)
+                        {
+                            cleanUrl = cleanUrl.Remove(cleanUrl.LastIndexOf(':'));
+                        }
+                        string parsedLog = $"{cleanUrl}|587|{login}|{password}";
                         if (dbLogsData.Any(db => db == parsedLog))
                         {
                             if (!dublicateList.Any(d => d == parsedLog))

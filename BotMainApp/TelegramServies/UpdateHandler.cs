@@ -397,12 +397,7 @@ namespace BotMainApp.TelegramServices
 
                                     #endregion accept file
 
-                                    ThreadStart threadStart = new(async () =>
-                                    {
-                                        await StandartCheckProcess(dbUser, filename, manualCheckModel, true);
-                                    });
-                                    Thread checkThread = new(threadStart);
-                                    checkThread.Start();
+                                    await Task.Factory.StartNew(async () => await StandartCheckProcess(dbUser, filename, manualCheckModel, true)).ConfigureAwait(false);
                                 }
                                 else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("AdminChecking") &&
                                          temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("AdminChecking"))
@@ -437,12 +432,7 @@ namespace BotMainApp.TelegramServices
 
                                     #endregion accept file
 
-                                    ThreadStart threadStart = new(async () =>
-                                    {
-                                        await StandartCheckProcess(dbUser, filename, manualCheckModel, false);
-                                    });
-                                    Thread checkThread = new(threadStart);
-                                    checkThread.Start();
+                                    await Task.Factory.StartNew(async () => await StandartCheckProcess(dbUser, filename, manualCheckModel, false)).ConfigureAwait(false);
                                 }
                                 else
                                 {
@@ -664,7 +654,7 @@ namespace BotMainApp.TelegramServices
                         {
                             case CheckStatus.ManualCheckStatus.Created or
                                  CheckStatus.ManualCheckStatus.FillingDb or
-                                 CheckStatus.ManualCheckStatus.DublicateDeleted or
+                                 CheckStatus.ManualCheckStatus.SendedToSoftCheck or
                                  CheckStatus.ManualCheckStatus.CopyingFiles:
                                 builder.AppendLine(locales.GetByKey("CheckNotStarted", dbUser.Language)
                                                           .Replace("@ID", check.Id.ToString()));
@@ -736,7 +726,7 @@ namespace BotMainApp.TelegramServices
                 }
                 return;
             }
-            if (temp.Message.IsAnyEqual("/check_log_admin"))
+            if (temp.Message.IsAnyEqual("/check_log_admin") && config.EnableAdminCheckCommand)
             {
                 operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
                     new KeyValuePair<string, object>("Category", "AdminChecking"),
@@ -846,33 +836,40 @@ namespace BotMainApp.TelegramServices
             int cpanelAddedCount = fillDataJson.Value<int>("CpanelAddedCount");
             int whmAddedCount = fillDataJson.Value<int>("WhmAddedCount");
             int totalAddedCount = webmailAddedCount + cpanelAddedCount + whmAddedCount;
-            if (totalAddedCount == 0)
-            {
-                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language)
-                                                                       .Replace("@ID", manualCheckModel.Id.ToString()));
 
-                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.NoAnyUnique, ellapsedWatch);
-                Directory.Delete(folderPath, true);
-                return;
+            if (fillDublicates)
+            {
+                if (totalAddedCount == 0)
+                {
+                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language)
+                                                                           .Replace("@ID", manualCheckModel.Id.ToString()));
+
+                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.NoAnyUnique, ellapsedWatch);
+                    Directory.Delete(folderPath, true);
+                    return;
+                }
             }
 
             #endregion no any unique
 
             #region notify when any inserted
 
-            if (config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat != 0)
+            if (fillDublicates)
             {
-                try
+                if (config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat != 0)
                 {
-                    aggregator.GetEvent<LogUpdateEvent>().Publish();
-                    await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
-                        $"В базу данных дубликатов было добавлено {totalAddedCount} записей:\r\n" +
-                        $"Новый записей в категории webmail: {webmailAddedCount}\r\n" +
-                        $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
-                        $"Новый записей в категории whm: {whmAddedCount}\r\n");
-                }
-                catch (Exception)
-                {
+                    try
+                    {
+                        aggregator.GetEvent<LogUpdateEvent>().Publish();
+                        await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
+                            $"В базу данных дубликатов было добавлено {totalAddedCount} записей:\r\n" +
+                            $"Новый записей в категории webmail: {webmailAddedCount}\r\n" +
+                            $"Новый записей в категории cpanel: {cpanelAddedCount}\r\n" +
+                            $"Новый записей в категории whm: {whmAddedCount}\r\n");
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
             }
 
@@ -921,7 +918,7 @@ namespace BotMainApp.TelegramServices
 
             #region after checks set status to dublicate deleted
 
-            manualCheckModel.Status = CheckStatus.ManualCheckStatus.DublicateDeleted;
+            manualCheckModel.Status = CheckStatus.ManualCheckStatus.SendedToSoftCheck;
             await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
 
             #endregion after checks set status to dublicate deleted

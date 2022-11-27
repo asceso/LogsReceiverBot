@@ -19,6 +19,7 @@ namespace Models.App
         private int checkerMaxForThread;
         private bool useOwnCpanelChecker;
         private bool notifyUserWhenAnyErrorOcuredInCheckingProcess;
+        private bool enableAdminCheckCommand;
         private Chats chats;
 
         public string BotToken { get => botToken; set => SetProperty(ref botToken, value); }
@@ -36,6 +37,7 @@ namespace Models.App
         public int CheckerMaxForThread { get => checkerMaxForThread; set => SetProperty(ref checkerMaxForThread, value); }
         public bool UseOwnCpanelChecker { get => useOwnCpanelChecker; set => SetProperty(ref useOwnCpanelChecker, value); }
         public bool NotifyUserWhenAnyErrorOcuredInCheckingProcess { get => notifyUserWhenAnyErrorOcuredInCheckingProcess; set => SetProperty(ref notifyUserWhenAnyErrorOcuredInCheckingProcess, value); }
+        public bool EnableAdminCheckCommand { get => enableAdminCheckCommand; set => SetProperty(ref enableAdminCheckCommand, value); }
         public Chats Chats { get => chats; set => SetProperty(ref chats, value); }
     }
 

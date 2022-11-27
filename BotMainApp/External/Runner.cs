@@ -127,7 +127,7 @@ namespace BotMainApp.External
                 $"\"{(webmailFilePath.IsNullOrEmptyString() ? "none" : webmailFilePath)}\" " +
                 $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
                 $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\" " +
-                $"\"{fillRecords}\"",
+                $"\"{fillRecords.ToString().ToLower()}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
