@@ -445,9 +445,26 @@ namespace BotMainApp.TelegramServices
                                     return;
                                 }
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
-                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUploadError", dbUser.Language));
+                                if (ex.Message == "Bad Request: file is too big")
+                                {
+                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileTooBigError", dbUser.Language));
+                                }
+                                else
+                                {
+                                    if (config.Chats.ErrorNotificationChat != 0)
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при загрузке файла:\r\n{ex.Message}");
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                    }
+                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUploadError", dbUser.Language));
+                                }
                             }
                             return;
                         }
@@ -780,12 +797,15 @@ namespace BotMainApp.TelegramServices
 
                 MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
                 Directory.Delete(folderPath, true);
-                try
+                if (config.Chats.ErrorNotificationChat != 0)
                 {
-                    await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при поиске дубликатов файла:\r\n{dublicateData}");
-                }
-                catch (Exception)
-                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при поиске дубликатов файла:\r\n{dublicateData}");
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
                 return;
             }
@@ -815,12 +835,15 @@ namespace BotMainApp.TelegramServices
                     {
                     }
                 }
-                try
+                if (config.Chats.ErrorNotificationChat != 0)
                 {
-                    await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
-                }
-                catch (Exception)
-                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
 
                 MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
@@ -948,12 +971,15 @@ namespace BotMainApp.TelegramServices
                     {
                     }
                 }
-                try
+                if (config.Chats.ErrorNotificationChat != 0)
                 {
-                    await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
-                }
-                catch (Exception)
-                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
 
                 MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
@@ -980,12 +1006,15 @@ namespace BotMainApp.TelegramServices
             JObject fillValidDataJson = JObject.Parse(fillValidData);
             if (fillValidDataJson.ContainsKey("Error"))
             {
-                try
+                if (config.Chats.ErrorNotificationChat != 0)
                 {
-                    await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при заполнении валида:\r\n{dublicateData}");
-                }
-                catch (Exception)
-                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при заполнении валида:\r\n{dublicateData}");
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
                 return;
             }
