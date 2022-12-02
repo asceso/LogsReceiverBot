@@ -66,7 +66,7 @@
 
         <Grid Grid.Row="1" ShowGridLines="False">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="200" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
             <hc:SideMenu>
@@ -85,7 +85,7 @@
                 <hc:SideMenuItem
                     Command="{Binding SwithViewCommand}"
                     CommandParameter="ManualChecks"
-                    Header="Проверки"
+                    Header="Приватные запросы"
                     IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=ManualChecks}">
                     <hc:SideMenuItem.Icon>
                         <Image

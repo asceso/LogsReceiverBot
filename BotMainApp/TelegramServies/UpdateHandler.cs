@@ -364,6 +364,12 @@ namespace BotMainApp.TelegramServices
                         {
                             try
                             {
+                                if (temp.Document == null || !temp.Document.FileName.EndsWith(".txt"))
+                                {
+                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("NotFileSended", dbUser.Language));
+                                    return;
+                                }
+
                                 if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Private requests", "Приватные запросы") &&
                                     temp.Operation.Params["SubCategory"].ToString().IsAnyEqual(":20"))
                                 {
@@ -761,7 +767,7 @@ namespace BotMainApp.TelegramServices
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("ошибка", TelegramStateModel.RedBrush));
-            await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
             botClient.StartReceiving(this);
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("работает", TelegramStateModel.GreenBrush));
         }

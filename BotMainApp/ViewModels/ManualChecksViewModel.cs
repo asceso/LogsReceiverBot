@@ -109,7 +109,7 @@ namespace BotMainApp.ViewModels
         private async void OnOpenManualCheck(ManualCheckModel model)
         {
             CheckStatus.ManualCheckStatus cancelStatus = model.Status;
-            if (cancelStatus != CheckStatus.ManualCheckStatus.End)
+            if (cancelStatus != CheckStatus.ManualCheckStatus.End && cancelStatus != CheckStatus.ManualCheckStatus.EndNoValid)
             {
                 model.Status = CheckStatus.ManualCheckStatus.SendToManualChecking;
                 await ManualCheckController.PutCheckAsync(model, aggregator);

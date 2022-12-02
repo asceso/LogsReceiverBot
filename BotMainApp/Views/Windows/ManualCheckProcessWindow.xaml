@@ -7,7 +7,7 @@
     xmlns:hc="https://handyorg.github.io/handycontrol"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:views="clr-namespace:BotMainApp.Views.Windows"
-    Title="Manual check"
+    Title="Обработка запроса"
     Width="800"
     Height="550"
     d:DataContext="{d:DesignInstance Type=views:ManualCheckProcessWindow}"
@@ -52,10 +52,10 @@
                 <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="120" />
                         <ColumnDefinition Width="130" />
-                        <ColumnDefinition Width="240" />
+                        <ColumnDefinition Width="220" />
                         <ColumnDefinition Width="125" />
                         <ColumnDefinition />
                     </Grid.ColumnDefinitions>
@@ -76,13 +76,13 @@
                         MouseDown="BorderMouseDown"
                         Style="{StaticResource HeaderTextBlock}"
                         Text="Проверка:" />
-                    <TextBox
+                    <Button
                         Grid.Column="1"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
-                        BorderThickness="0"
-                        IsReadOnly="True"
-                        Text="{Binding CheckingModel.Id, StringFormat=#\{0\}}" />
+                        MinWidth="100"
+                        Click="OpenCheckFolderClick"
+                        Cursor="Hand">
+                        <TextBlock Style="{StaticResource HeaderTextBlock}" Text="{Binding CheckingModel.Id, StringFormat=# \{0\}}" />
+                    </Button>
                     <TextBlock
                         Grid.Column="2"
                         MouseDown="BorderMouseDown"

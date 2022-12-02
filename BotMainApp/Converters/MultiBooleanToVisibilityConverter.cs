@@ -24,14 +24,14 @@ namespace BotMainApp.Converters
                     values[2] is bool isErrorChecksShow &&
                     values[3] is bool isOtherChecksShow)
                 {
-                    if (status == CheckStatus.ManualCheckStatus.End)
+                    if (status == CheckStatus.ManualCheckStatus.End || status == CheckStatus.ManualCheckStatus.EndNoValid)
                     {
                         if (!isClosedChecksShow)
                         {
                             return Visibility.Collapsed;
                         }
                     }
-                    else if (status == CheckStatus.ManualCheckStatus.Error)
+                    else if (status == CheckStatus.ManualCheckStatus.Error || status == CheckStatus.ManualCheckStatus.NoAnyUnique)
                     {
                         if (!isErrorChecksShow)
                         {

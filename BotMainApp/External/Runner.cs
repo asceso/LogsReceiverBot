@@ -202,5 +202,30 @@ namespace BotMainApp.External
                 return false;
             }
         }
+
+        /// <summary>
+        /// Run explorer with selected path
+        /// </summary>
+        /// <param name="folderPath">folder path</param>
+        /// <returns>true if opened without error</returns>
+        public static bool RunExplorerWithPath(string folderPath)
+        {
+            try
+            {
+                ProcessStartInfo psi = new()
+                {
+                    FileName = $"explorer",
+                    Arguments = $"\"{folderPath}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+                Process process = Process.Start(psi);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
 }

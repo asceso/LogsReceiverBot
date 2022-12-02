@@ -1,8 +1,10 @@
 ﻿using BotMainApp.External;
 using Models.Database;
 using Notification.Wpf;
+using Services;
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -113,7 +115,7 @@ namespace BotMainApp.Views.Windows
             this.notificationManager = notificationManager;
             CheckingModel = (ManualCheckModel)model.Clone();
             DataContext = this;
-            if (model.Status == Models.Enums.CheckStatus.ManualCheckStatus.End)
+            if (model.Status == Models.Enums.CheckStatus.ManualCheckStatus.End || model.Status == Models.Enums.CheckStatus.ManualCheckStatus.EndNoValid)
             {
                 IsEditEnable = false;
                 IsFieldReadonly = true;
@@ -198,6 +200,19 @@ namespace BotMainApp.Views.Windows
                 {
                     Runner.RunTextFileInNotepad(notepadPath, filepath);
                 }
+            }
+        }
+
+        private void OpenCheckFolderClick(object sender, RoutedEventArgs e)
+        {
+            string folderPath = PathCollection.ChecksFolderPath + $"{CheckingModel.Id}/";
+            if (Directory.Exists(folderPath))
+            {
+                Runner.RunExplorerWithPath(folderPath.Replace("/", "\\"));
+            }
+            else
+            {
+                notificationManager.Show("Ошибка", "Не найден путь к папке", type: NotificationType.Error);
             }
         }
 
