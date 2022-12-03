@@ -6,6 +6,7 @@
         ChangeLanguage,
         WaitCategoryForChecking,
         WaitSubCategoryForChecking,
+        WaitCookiesCategoryForChecking,
         WaitFileForChecking,
         WaitPayoutMethod,
         WaitAmount,

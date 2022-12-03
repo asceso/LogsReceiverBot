@@ -2,6 +2,6 @@
 
 namespace DatabaseEvents
 {
-    public class LogUpdateEvent : PubSubEvent
+    public class DublicateUpdateEvent : PubSubEvent
     { }
 }

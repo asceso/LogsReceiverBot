@@ -3,6 +3,7 @@ using System;
 using DataAdapter;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAdapter.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20221202175629_AddCookiesTable")]
+    partial class AddCookiesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,13 +33,7 @@ namespace DataAdapter.Migrations
                     b.Property<string>("FileLink")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Filesize")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("FolderPath")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Unit")
                         .HasColumnType("longtext");
 
                     b.Property<long>("UploadedByUserId")

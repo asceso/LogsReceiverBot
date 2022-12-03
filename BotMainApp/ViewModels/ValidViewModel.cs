@@ -53,8 +53,9 @@ namespace BotMainApp.ViewModels
             get => selectedUserForFilter ?? new();
             set
             {
+                bool switchToNull = selectedUserForFilter != null && value == null;
                 SetProperty(ref selectedUserForFilter, value);
-                if (!isSwitchingPage)
+                if (!isSwitchingPage && !switchToNull)
                 {
                     Task.Run(async () => await ReloadByPage(currentPage, true));
                 }
@@ -66,8 +67,9 @@ namespace BotMainApp.ViewModels
             get => selectedCategoryForFilter ?? string.Empty;
             set
             {
+                bool switchToNull = selectedCategoryForFilter != null && value == null;
                 SetProperty(ref selectedCategoryForFilter, value);
-                if (!isSwitchingPage)
+                if (!isSwitchingPage && !switchToNull)
                 {
                     Task.Run(async () => await ReloadByPage(currentPage, true));
                 }
@@ -88,7 +90,7 @@ namespace BotMainApp.ViewModels
             notificationManager = memory.GetItem<NotificationManager>("Notification");
             config = memory.GetItem<ConfigModel>("Config");
 
-            aggregator.GetEvent<LogUpdateEvent>().Subscribe(OnLogUpdates);
+            aggregator.GetEvent<DublicateUpdateEvent>().Subscribe(OnLogUpdates);
             aggregator.GetEvent<BotRestartEvent>().Subscribe(OnBotRestart);
             aggregator.GetEvent<SwitchViewTypeEvent>().Subscribe(OnSwitchMainView);
 

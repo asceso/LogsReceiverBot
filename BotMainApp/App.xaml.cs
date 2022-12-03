@@ -28,7 +28,7 @@ namespace BotMainApp
             base.ConfigureViewModelLocator();
             ViewModelLocationProvider.Register<MainView, MainViewModel>();
             ViewModelLocationProvider.Register<UsersView, UsersViewModel>();
-            ViewModelLocationProvider.Register<LogsView, LogsViewModel>();
+            ViewModelLocationProvider.Register<DublicatesView, DublicatesViewModel>();
             ViewModelLocationProvider.Register<ValidView, ValidViewModel>();
             ViewModelLocationProvider.Register<ManualChecksView, ManualChecksViewModel>();
             ViewModelLocationProvider.Register<PayoutsView, PayoutsViewModel>();

@@ -1,6 +1,5 @@
 ﻿using DataAdapter.Controllers;
 using Newtonsoft.Json;
-using System;
 using System.Text.RegularExpressions;
 
 namespace DublicateRemoveRunner
@@ -53,7 +52,7 @@ namespace DublicateRemoveRunner
                 Regex webmailRegex = new(webmailRegexFormat);
                 using StreamReader reader = new(filename);
 
-                List<string> dbLogsData = LogsController.GetLogsData();
+                List<string> dbLogsData = DublicatesController.GetLogsData();
                 List<string> dublicateList = new();
                 List<string> cpanelList = new();
                 List<string> whmList = new();

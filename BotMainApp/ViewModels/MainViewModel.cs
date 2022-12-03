@@ -85,6 +85,7 @@ namespace BotMainApp.ViewModels
 
             if (!Directory.Exists(PathCollection.TempFolderPath)) Directory.CreateDirectory(PathCollection.TempFolderPath);
             if (!Directory.Exists(PathCollection.ChecksFolderPath)) Directory.CreateDirectory(PathCollection.ChecksFolderPath);
+            if (!Directory.Exists(PathCollection.CookiesFolderPath)) Directory.CreateDirectory(PathCollection.CookiesFolderPath);
             TelegramState.SetInfo("работает");
             aggregator.GetEvent<TelegramStateEvent>().Subscribe((st) =>
             {

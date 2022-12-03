@@ -227,5 +227,31 @@ namespace BotMainApp.External
                 return false;
             }
         }
+
+        /// <summary>
+        /// Run drop me files checker
+        /// </summary>
+        /// <param name="fileLink">file link</param>
+        /// <returns>file size json array</returns>
+        public static string RunDropMeLinkChecker(string fileLink)
+        {
+            ProcessStartInfo psi = new()
+            {
+                WorkingDirectory = Environment.CurrentDirectory,
+                FileName = "DropMeLinkChecker.exe",
+                Arguments = $"\"{(fileLink.IsNullOrEmptyString() ? "none" : fileLink)}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            Process process = Process.Start(psi);
+            process.WaitForExit();
+            StreamReader reader = process.StandardOutput;
+            string jsonResult = reader.ReadToEnd();
+            reader.Close();
+            process.Close();
+            return jsonResult;
+        }
     }
 }

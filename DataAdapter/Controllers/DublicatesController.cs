@@ -1,50 +1,49 @@
 ﻿using Extensions;
 using Microsoft.EntityFrameworkCore;
 using Models.Database;
-using Telegram.Bot;
 
 namespace DataAdapter.Controllers
 {
-    public class LogsController
+    public class DublicatesController
     {
-        public static async Task<List<LogModel>> GetLogsAsync()
+        public static async Task<List<DublicateModel>> GetLogsAsync()
         {
             try
             {
                 using DataContext data = new();
-                return await data.Logs.ToListAsync();
+                return await data.Dublicates.ToListAsync();
             }
             catch (Exception)
             {
-                return new List<LogModel>();
+                return new List<DublicateModel>();
             }
         }
 
-        public static async Task<List<LogModel>> GetLogsAsync(UserModel user, string category = null)
+        public static async Task<List<DublicateModel>> GetLogsAsync(UserModel user, string category = null)
         {
             try
             {
                 using DataContext data = new();
                 if (user.Id != 0 && category.IsNullOrEmptyString())
                 {
-                    return await data.Logs.Where(d => d.UploadedByUserId == user.Id).ToListAsync();
+                    return await data.Dublicates.Where(d => d.UploadedByUserId == user.Id).ToListAsync();
                 }
                 if (user.Id == 0 && !category.IsNullOrEmptyString())
                 {
-                    return await data.Logs.Where(d => d.Category == category).ToListAsync();
+                    return await data.Dublicates.Where(d => d.Category == category).ToListAsync();
                 }
                 if (user.Id != 0 && !category.IsNullOrEmptyString())
                 {
-                    return await data.Logs.Where(d => d.UploadedByUserId == user.Id && d.Category == category).ToListAsync();
+                    return await data.Dublicates.Where(d => d.UploadedByUserId == user.Id && d.Category == category).ToListAsync();
                 }
                 else
                 {
-                    return await data.Logs.ToListAsync();
+                    return await data.Dublicates.ToListAsync();
                 }
             }
             catch (Exception)
             {
-                return new List<LogModel>();
+                return new List<DublicateModel>();
             }
         }
 
@@ -53,7 +52,7 @@ namespace DataAdapter.Controllers
             try
             {
                 using DataContext data = new();
-                var logsData = from l in data.Logs
+                var logsData = from l in data.Dublicates
                                select l.ToString();
                 return logsData.ToList();
             }
@@ -68,9 +67,9 @@ namespace DataAdapter.Controllers
             try
             {
                 using DataContext data = new();
-                var logsData = from l in data.Logs
-                               select l.Category;
-                return logsData.Distinct().ToList();
+                var dataNumerable = from l in data.Dublicates
+                                    select l.Category;
+                return dataNumerable.Distinct().ToList();
             }
             catch (Exception)
             {
@@ -78,16 +77,16 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static List<LogModel> TakeShuffleLogs(int take)
+        public static List<DublicateModel> TakeShuffleLogs(int take)
         {
             try
             {
                 using DataContext data = new();
-                return data.Logs.OrderBy(l => l.Login).Take(take).ToList();
+                return data.Dublicates.OrderBy(l => l.Login).Take(take).ToList();
             }
             catch (Exception)
             {
-                return new List<LogModel>();
+                return new List<DublicateModel>();
             }
         }
 
@@ -96,8 +95,8 @@ namespace DataAdapter.Controllers
             try
             {
                 using DataContext data = new();
-                var asyncLogs = data.Logs.AsAsyncEnumerable();
-                await foreach (LogModel logModel in asyncLogs)
+                var asyncLogs = data.Dublicates.AsAsyncEnumerable();
+                await foreach (DublicateModel logModel in asyncLogs)
                 {
                     if (logModel.ToString() == log)
                     {
@@ -117,7 +116,7 @@ namespace DataAdapter.Controllers
             try
             {
                 using DataContext data = new();
-                return data.Logs.AsParallel().Any(l => l.ToString() == log);
+                return data.Dublicates.AsParallel().Any(l => l.ToString() == log);
             }
             catch (Exception)
             {
@@ -125,12 +124,12 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<bool> PostLogAsync(LogModel model)
+        public static async Task<bool> PostLogAsync(DublicateModel model)
         {
             try
             {
                 using DataContext data = new();
-                await data.Logs.AddAsync(model);
+                await data.Dublicates.AddAsync(model);
                 await data.SaveChangesAsync();
                 return true;
             }
@@ -140,13 +139,13 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<int> DeleteLogsAsync(List<LogModel> logs = null)
+        public static async Task<int> DeleteLogsAsync(List<DublicateModel> logs = null)
         {
             try
             {
                 using DataContext data = new();
                 if (logs == null) logs = await GetLogsAsync(new());
-                data.Logs.RemoveRange(logs);
+                data.Dublicates.RemoveRange(logs);
                 return await data.SaveChangesAsync();
             }
             catch (Exception)

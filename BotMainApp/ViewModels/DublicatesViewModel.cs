@@ -21,7 +21,7 @@ using System.Windows.Data;
 
 namespace BotMainApp.ViewModels
 {
-    public class LogsViewModel : BindableBase
+    public class DublicatesViewModel : BindableBase
     {
         private readonly NotificationManager notificationManager;
         private readonly ConfigModel config;
@@ -33,7 +33,7 @@ namespace BotMainApp.ViewModels
         private bool isLoading;
         private int modelsCount;
         private int maxPageCount;
-        private ObservableCollection<LogModel> allData;
+        private ObservableCollection<DublicateModel> allData;
         private ObservableCollection<UserModel> usersForFilter;
         private ObservableCollection<string> categoriesForFilter;
         private UserModel selectedUserForFilter;
@@ -43,7 +43,7 @@ namespace BotMainApp.ViewModels
         public bool IsLoading { get => isLoading; set => SetProperty(ref isLoading, value); }
         public int ModelsCount { get => modelsCount; set => SetProperty(ref modelsCount, value); }
         public int MaxPageCount { get => maxPageCount; set => SetProperty(ref maxPageCount, value); }
-        public ObservableCollection<LogModel> AllData { get => allData; set => SetProperty(ref allData, value); }
+        public ObservableCollection<DublicateModel> AllData { get => allData; set => SetProperty(ref allData, value); }
         public ObservableCollection<UserModel> UsersForFilter { get => usersForFilter; set => SetProperty(ref usersForFilter, value); }
         public ObservableCollection<string> CategoriesForFilter { get => categoriesForFilter; set => SetProperty(ref categoriesForFilter, value); }
         public CollectionViewSource ModelsForView { get => modelsForView; set => SetProperty(ref modelsForView, value); }
@@ -53,8 +53,9 @@ namespace BotMainApp.ViewModels
             get => selectedUserForFilter ?? new();
             set
             {
+                bool switchToNull = selectedUserForFilter != null && value == null;
                 SetProperty(ref selectedUserForFilter, value);
-                if (!isSwitchingPage)
+                if (!isSwitchingPage && !switchToNull)
                 {
                     Task.Run(async () => await ReloadByPage(currentPage, true));
                 }
@@ -66,8 +67,9 @@ namespace BotMainApp.ViewModels
             get => selectedCategoryForFilter ?? string.Empty;
             set
             {
+                bool switchToNull = selectedCategoryForFilter != null && value == null;
                 SetProperty(ref selectedCategoryForFilter, value);
-                if (!isSwitchingPage)
+                if (!isSwitchingPage && !switchToNull)
                 {
                     Task.Run(async () => await ReloadByPage(currentPage, true));
                 }
@@ -77,7 +79,7 @@ namespace BotMainApp.ViewModels
         public DelegateCommand RefreshCommand { get; set; }
         public DelegateCommand SaveToFileCurrentViewLogs { get; set; }
 
-        public LogsViewModel(IEventAggregator aggregator, IMemorySaver memory)
+        public DublicatesViewModel(IEventAggregator aggregator, IMemorySaver memory)
         {
             AllData = new();
             ModelsForView = new();
@@ -88,7 +90,7 @@ namespace BotMainApp.ViewModels
             notificationManager = memory.GetItem<NotificationManager>("Notification");
             config = memory.GetItem<ConfigModel>("Config");
 
-            aggregator.GetEvent<LogUpdateEvent>().Subscribe(OnLogUpdates);
+            aggregator.GetEvent<DublicateUpdateEvent>().Subscribe(OnLogUpdates);
             aggregator.GetEvent<BotRestartEvent>().Subscribe(OnBotRestart);
             aggregator.GetEvent<SwitchViewTypeEvent>().Subscribe(OnSwitchMainView);
 
@@ -135,7 +137,7 @@ namespace BotMainApp.ViewModels
             SaveToFileCurrentViewLogs = new DelegateCommand(OnSaveToFileCurrentLogs);
         }
 
-        private void InitModelCommands(LogModel model)
+        private void InitModelCommands(DublicateModel model)
         {
             model.OnCopyCommand = new DelegateCommand<string>((field) =>
             {
@@ -192,8 +194,8 @@ namespace BotMainApp.ViewModels
             {
                 IsLoading = true;
                 AllData.Clear();
-                AllData.AddRange(await LogsController.GetLogsAsync(SelectedUserForFilter, SelectedCategoryForFilter));
-                foreach (LogModel model in AllData)
+                AllData.AddRange(await DublicatesController.GetLogsAsync(SelectedUserForFilter, SelectedCategoryForFilter));
+                foreach (DublicateModel model in AllData)
                 {
                     InitModelCommands(model);
                 }
@@ -218,7 +220,7 @@ namespace BotMainApp.ViewModels
 
                 SelectedCategoryForFilter = null;
                 CategoriesForFilter.Clear();
-                CategoriesForFilter.AddRange(LogsController.GetLogsCategories());
+                CategoriesForFilter.AddRange(DublicatesController.GetLogsCategories());
                 RaisePropertyChanged(nameof(CategoriesForFilter));
             });
         }
@@ -237,7 +239,7 @@ namespace BotMainApp.ViewModels
                 {
                     IsLoading = true;
                     using TextWriter writer = new StreamWriter(sfd.FileName);
-                    foreach (LogModel model in AllData)
+                    foreach (DublicateModel model in AllData)
                     {
                         await writer.WriteLineAsync(model.ToString());
                     }

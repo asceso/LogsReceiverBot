@@ -8,6 +8,7 @@
 
         public static string TempFolderPath = Environment.CurrentDirectory + "/temp/";
         public static string ChecksFolderPath = Environment.CurrentDirectory + "/checks/";
+        public static string CookiesFolderPath = Environment.CurrentDirectory + "/cookies/";
         public static string CheckerBinPath = Environment.CurrentDirectory + "/checker_bin";
     }
 }

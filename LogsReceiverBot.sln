@@ -37,7 +37,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ext", "Ext", "{4494FAF8-CEE
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Own", "Own", "{D78B0ADF-98A5-4C61-A153-B52F85E5E035}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseValidFillerApp", "DatabaseValidFillerApp\DatabaseValidFillerApp.csproj", "{5FBC83A0-8637-41C5-8DB3-9DDD787B8769}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseValidFillerApp", "DatabaseValidFillerApp\DatabaseValidFillerApp.csproj", "{5FBC83A0-8637-41C5-8DB3-9DDD787B8769}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DropMeLinkChecker", "DropMeLinkChecker\DropMeLinkChecker.csproj", "{1E56202F-50A9-44AE-B614-2C85E6B442E6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -105,6 +107,10 @@ Global
 		{5FBC83A0-8637-41C5-8DB3-9DDD787B8769}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5FBC83A0-8637-41C5-8DB3-9DDD787B8769}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5FBC83A0-8637-41C5-8DB3-9DDD787B8769}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E56202F-50A9-44AE-B614-2C85E6B442E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E56202F-50A9-44AE-B614-2C85E6B442E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E56202F-50A9-44AE-B614-2C85E6B442E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E56202F-50A9-44AE-B614-2C85E6B442E6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -119,6 +125,7 @@ Global
 		{4494FAF8-CEEF-42E0-BDAF-417B32D930DD} = {C477C49B-6A1B-4AF9-AAC0-D06F793E62B1}
 		{D78B0ADF-98A5-4C61-A153-B52F85E5E035} = {C477C49B-6A1B-4AF9-AAC0-D06F793E62B1}
 		{5FBC83A0-8637-41C5-8DB3-9DDD787B8769} = {D78B0ADF-98A5-4C61-A153-B52F85E5E035}
+		{1E56202F-50A9-44AE-B614-2C85E6B442E6} = {D78B0ADF-98A5-4C61-A153-B52F85E5E035}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {78C72E7C-235A-484C-B603-FCFFCF6E8BFA}

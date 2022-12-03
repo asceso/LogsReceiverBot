@@ -1,7 +1,6 @@
 ﻿using BotMainApp.ViewModels;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WpfToolkit.Controls;
 
 namespace BotMainApp.Views
 {
@@ -22,7 +21,7 @@ namespace BotMainApp.Views
 
         private void VirtualizingWrapPanelPreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (sender is VirtualizingWrapPanel vwp)
+            if (sender is VirtualizingStackPanel vwp)
             {
                 if (e.Delta < 0)
                 {
@@ -37,9 +36,10 @@ namespace BotMainApp.Views
 
         private async void PaginationPageUpdated(object sender, HandyControl.Data.FunctionEventArgs<int> e)
         {
-            if (DataContext is LogsViewModel vm)
+            if (DataContext is ValidViewModel vm)
             {
                 await vm.ReloadByPage(e.Info);
+                DataScroller.ScrollToTop();
             }
         }
     }

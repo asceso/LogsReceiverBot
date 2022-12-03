@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DropMeLoader": {
+      "commandName": "Project",
+      "commandLineArgs": "https://dropmefiles.com/uXD0G\r\ntrue"
+    }
+  }
+}

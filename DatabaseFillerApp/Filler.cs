@@ -61,7 +61,7 @@ namespace DatabaseFillerApp
             foreach (var row in rows)
             {
                 string[] parts = row.Split('|');
-                LogModel model;
+                DublicateModel model;
                 if (category == "webmail")
                 {
                     if (parts.Length != 4)
@@ -109,7 +109,7 @@ namespace DatabaseFillerApp
                 }
                 if (fillRecords)
                 {
-                    if (await LogsController.PostLogAsync(model))
+                    if (await DublicatesController.PostLogAsync(model))
                     {
                         addedCount++;
                     }

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Models.Database
 {
-    public class LogModel : BindableBase
+    public class DublicateModel : BindableBase
     {
         private int id;
         private string url;

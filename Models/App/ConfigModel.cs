@@ -6,6 +6,7 @@ namespace Models.App
     {
         private string botToken;
         private string notepadPath;
+        private string cookiesSoft;
         private int requestsPerMinuteAutoBan;
         private int captchaTimer;
         private int captchaAttemptNum;
@@ -17,6 +18,7 @@ namespace Models.App
         private string webmailRegex;
         private int pageMaxCount;
         private int checkerMaxForThread;
+        private double minAcceptingFileSize;
         private bool useOwnCpanelChecker;
         private bool notifyUserWhenAnyErrorOcuredInCheckingProcess;
         private bool enableAdminCheckCommand;
@@ -24,6 +26,7 @@ namespace Models.App
 
         public string BotToken { get => botToken; set => SetProperty(ref botToken, value); }
         public string NotepadPath { get => notepadPath; set => SetProperty(ref notepadPath, value); }
+        public string CookiesSoft { get => cookiesSoft; set => SetProperty(ref cookiesSoft, value); }
         public int RequestsPerMinuteAutoBan { get => requestsPerMinuteAutoBan; set => SetProperty(ref requestsPerMinuteAutoBan, value); }
         public int CaptchaTimer { get => captchaTimer; set => SetProperty(ref captchaTimer, value); }
         public int CaptchaAttemptNum { get => captchaAttemptNum; set => SetProperty(ref captchaAttemptNum, value); }
@@ -35,6 +38,7 @@ namespace Models.App
         public string WebmailRegex { get => webmailRegex; set => SetProperty(ref webmailRegex, value); }
         public int PageMaxCount { get => pageMaxCount; set => SetProperty(ref pageMaxCount, value); }
         public int CheckerMaxForThread { get => checkerMaxForThread; set => SetProperty(ref checkerMaxForThread, value); }
+        public double MinAcceptingFileSize { get => minAcceptingFileSize; set => SetProperty(ref minAcceptingFileSize, value); }
         public bool UseOwnCpanelChecker { get => useOwnCpanelChecker; set => SetProperty(ref useOwnCpanelChecker, value); }
         public bool NotifyUserWhenAnyErrorOcuredInCheckingProcess { get => notifyUserWhenAnyErrorOcuredInCheckingProcess; set => SetProperty(ref notifyUserWhenAnyErrorOcuredInCheckingProcess, value); }
         public bool EnableAdminCheckCommand { get => enableAdminCheckCommand; set => SetProperty(ref enableAdminCheckCommand, value); }

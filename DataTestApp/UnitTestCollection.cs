@@ -50,7 +50,7 @@ namespace DataTestApp
             return random.NextInt64(100000000, 999999999);
         }
 
-        private LogModel MakeRandomLogModel()
+        private DublicateModel MakeRandomLogModel()
         {
             UserModel randomUser = users.GetRandom();
             return new()
@@ -67,7 +67,7 @@ namespace DataTestApp
         [Test]
         public async Task TestLoad100kLogs()
         {
-            List<LogModel> logs = await LogsController.GetLogsAsync();
+            List<DublicateModel> logs = await DublicatesController.GetLogsAsync();
             Assert.That(logs, Has.Count.EqualTo(100000));
         }
 
@@ -76,9 +76,9 @@ namespace DataTestApp
         {
             for (int i = 0; i < 10000; i++)
             {
-                await LogsController.PostLogAsync(MakeRandomLogModel());
+                await DublicatesController.PostLogAsync(MakeRandomLogModel());
             }
-            List<LogModel> logs = await LogsController.GetLogsAsync();
+            List<DublicateModel> logs = await DublicatesController.GetLogsAsync();
             Assert.That(logs, Has.Count.EqualTo(10000));
         }
 
@@ -92,22 +92,22 @@ namespace DataTestApp
                 {
                     for (int i = 0; i < 10000; i++)
                     {
-                        await LogsController.PostLogAsync(MakeRandomLogModel());
+                        await DublicatesController.PostLogAsync(MakeRandomLogModel());
                     }
                 }));
             }
             await Task.WhenAll(waitTasks);
-            List<LogModel> logs = await LogsController.GetLogsAsync();
+            List<DublicateModel> logs = await DublicatesController.GetLogsAsync();
             Assert.That(logs, Has.Count.EqualTo(1000000));
         }
 
         [Test]
         public async Task TestFindThousandLogsInDb()
         {
-            List<LogModel> logs = await LogsController.GetLogsAsync();
+            List<DublicateModel> logs = await DublicatesController.GetLogsAsync();
             logs = logs.OrderBy(l => l.Login).ToList();
 
-            List<LogModel> takedLogs = logs.Take(100).ToList();
+            List<DublicateModel> takedLogs = logs.Take(100).ToList();
 
             List<double> timeEllapsedListV1 = new();
             List<double> timeEllapsedListV2 = new();
@@ -118,7 +118,7 @@ namespace DataTestApp
                 {
                     Stopwatch watcher = new();
                     watcher.Start();
-                    bool isLogExist = await LogsController.IsLogExist(log.ToString());
+                    bool isLogExist = await DublicatesController.IsLogExist(log.ToString());
                     watcher.Stop();
                     timeEllapsedListV1.Add(watcher.Elapsed.TotalSeconds);
                     Assert.That(isLogExist, Is.True);
@@ -130,7 +130,7 @@ namespace DataTestApp
                 {
                     Stopwatch watcher = new();
                     watcher.Start();
-                    bool isLogExist = LogsController.IsLogExistV2(log.ToString());
+                    bool isLogExist = DublicatesController.IsLogExistV2(log.ToString());
                     watcher.Stop();
                     timeEllapsedListV2.Add(watcher.Elapsed.TotalSeconds);
                     Assert.That(isLogExist, Is.True);
@@ -231,12 +231,12 @@ namespace DataTestApp
         public async Task CompareDataLoadTest()
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-            List<LogModel> logs = await LogsController.GetLogsAsync();
+            List<DublicateModel> logs = await DublicatesController.GetLogsAsync();
             stopwatch.Stop();
             Console.WriteLine($"All data ({logs.Count}) loaded with {stopwatch.Elapsed.TotalSeconds} sec");
 
             stopwatch.Restart();
-            var logsData = LogsController.GetLogsData();
+            var logsData = DublicatesController.GetLogsData();
             Console.WriteLine($"Url data ({logsData.Count}) loaded with {stopwatch.Elapsed.TotalSeconds} sec");
         }
     }

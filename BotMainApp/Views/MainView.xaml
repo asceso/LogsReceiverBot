@@ -15,8 +15,9 @@
     prism:ViewModelLocator.AutoWireViewModel="True"
     Closing="WindowClosing"
     FontSize="15"
+    IsFullScreen="False"
     ShowInTaskbar="{Binding ShowInTaskbar, UpdateSourceTrigger=PropertyChanged}"
-    WindowStartupLocation="CenterScreen"
+    WindowStartupLocation="CenterOwner"
     WindowState="{Binding CurrentWindowState, UpdateSourceTrigger=PropertyChanged}"
     mc:Ignorable="d">
     <Window.Resources>
@@ -97,7 +98,7 @@
                 <hc:SideMenuItem
                     Command="{Binding SwithViewCommand}"
                     CommandParameter="Logs"
-                    Header="Логи"
+                    Header="Дубликаты"
                     IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=Logs}">
                     <hc:SideMenuItem.Icon>
                         <Image
@@ -138,7 +139,7 @@
                 <views:ManualChecksView />
             </Grid>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Logs, UpdateSourceTrigger=PropertyChanged}">
-                <views:LogsView />
+                <views:DublicatesView />
             </Grid>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Valid, UpdateSourceTrigger=PropertyChanged}">
                 <views:ValidView />

@@ -1,7 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Windows;
 
 namespace BotMainApp.Views.Windows
