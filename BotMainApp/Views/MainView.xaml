@@ -121,6 +121,18 @@
                 </hc:SideMenuItem>
                 <hc:SideMenuItem
                     Command="{Binding SwithViewCommand}"
+                    CommandParameter="Cookies"
+                    Header="Cookies"
+                    IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=Cookies}">
+                    <hc:SideMenuItem.Icon>
+                        <Image
+                            Width="28"
+                            Height="28"
+                            Source="/Images/cookie.png" />
+                    </hc:SideMenuItem.Icon>
+                </hc:SideMenuItem>
+                <hc:SideMenuItem
+                    Command="{Binding SwithViewCommand}"
                     CommandParameter="Payouts"
                     Header="Выплаты"
                     IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=Payouts}">
@@ -143,6 +155,9 @@
             </Grid>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Valid, UpdateSourceTrigger=PropertyChanged}">
                 <views:ValidView />
+            </Grid>
+            <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Cookies, UpdateSourceTrigger=PropertyChanged}">
+                <views:CookiesView />
             </Grid>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Payouts, UpdateSourceTrigger=PropertyChanged}">
                 <views:PayoutsView />

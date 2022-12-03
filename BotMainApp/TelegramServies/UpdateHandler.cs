@@ -28,6 +28,7 @@ using Telegram.Bot;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using static Models.Enums.CheckStatus;
 
 namespace BotMainApp.TelegramServices
 {
@@ -564,6 +565,8 @@ namespace BotMainApp.TelegramServices
                                             CookieModel model = new()
                                             {
                                                 Category = "Instagram",
+                                                UploadedDateTime = DateTime.Now,
+                                                Status = CheckStatus.CookieCheckStatus.Uploaded,
                                                 Filesize = filesize,
                                                 Unit = unit,
                                                 FileLink = argument,
@@ -600,6 +603,8 @@ namespace BotMainApp.TelegramServices
                                             CookieModel model = new()
                                             {
                                                 Category = "Instagram",
+                                                UploadedDateTime = DateTime.Now,
+                                                Status = CheckStatus.CookieCheckStatus.Created,
                                                 FileLink = string.Empty,
                                                 Filesize = Math.Round(fileSize.Megabytes, 0).ToString(),
                                                 Unit = "MB",
@@ -624,6 +629,8 @@ namespace BotMainApp.TelegramServices
                                             await botClient.DownloadFileAsync(file.FilePath, stream);
                                             stream.Close();
 
+                                            model.UploadedDateTime = DateTime.Now;
+                                            model.Status = CheckStatus.CookieCheckStatus.Uploaded;
                                             model.FolderPath = fileDirectory;
                                             await CookiesController.PutCookieAsync(model, aggregator);
                                         }
@@ -869,30 +876,68 @@ namespace BotMainApp.TelegramServices
                     {
                         switch (check.Status)
                         {
-                            case CheckStatus.ManualCheckStatus.Created or
-                                 CheckStatus.ManualCheckStatus.FillingDb or
-                                 CheckStatus.ManualCheckStatus.SendedToSoftCheck or
-                                 CheckStatus.ManualCheckStatus.CopyingFiles:
+                            case ManualCheckStatus.Created or
+                                 ManualCheckStatus.FillingDb or
+                                 ManualCheckStatus.SendedToSoftCheck or
+                                 ManualCheckStatus.CopyingFiles:
                                 builder.AppendLine(locales.GetByKey("CheckNotStarted", dbUser.Language)
                                                           .Replace("@ID", check.Id.ToString()));
                                 break;
 
-                            case CheckStatus.ManualCheckStatus.Error:
+                            case ManualCheckStatus.Error:
                                 builder.AppendLine(locales.GetByKey("CheckError", dbUser.Language)
                                                           .Replace("@ID", check.Id.ToString()));
                                 break;
 
-                            case CheckStatus.ManualCheckStatus.CheckedBySoft or
-                                 CheckStatus.ManualCheckStatus.OnlyWebmail or
-                                 CheckStatus.ManualCheckStatus.SendToManualChecking:
+                            case ManualCheckStatus.CheckedBySoft or
+                                 ManualCheckStatus.OnlyWebmail or
+                                 ManualCheckStatus.SendToManualChecking:
                                 builder.AppendLine(locales.GetByKey("CheckInProcess", dbUser.Language)
                                                           .Replace("@ID", check.Id.ToString()));
                                 break;
 
-                            case CheckStatus.ManualCheckStatus.End or
-                                 CheckStatus.ManualCheckStatus.EndNoValid:
+                            case ManualCheckStatus.End or
+                                 ManualCheckStatus.EndNoValid:
                                 builder.AppendLine(locales.GetByKey("CheckDone", dbUser.Language)
                                                           .Replace("@ID", check.Id.ToString()));
+                                break;
+                        }
+                    }
+                    await botClient.SendTextMessageAsync(
+                        dbUser.Id,
+                        builder.ToString()
+                        );
+                }
+                return;
+            }
+            if (temp.Message.IsAnyEqual("Cookies in process 📄", "Cookies в обработке 📄"))
+            {
+                List<CookieModel> cookies = await CookiesController.GetCookiesByUserIdAsync(dbUser.Id);
+                if (!cookies.Any())
+                {
+                    await botClient.SendTextMessageAsync(
+                        dbUser.Id,
+                        locales.GetByKey("NoAnyCookiesInProcess", dbUser.Language)
+                        );
+                }
+                else
+                {
+                    StringBuilder builder = new();
+                    foreach (var cookie in cookies)
+                    {
+                        switch (cookie.Status)
+                        {
+                            case CookieCheckStatus.Created or
+                                 CookieCheckStatus.Proceed or
+                                 CookieCheckStatus.Uploaded:
+                                builder.AppendLine(locales.GetByKey("CheckInProcess", dbUser.Language)
+                                                          .Replace("@ID", cookie.Id.ToString()));
+                                break;
+
+                            case CookieCheckStatus.End or
+                                 CookieCheckStatus.EndNoValid:
+                                builder.AppendLine(locales.GetByKey("CookieDone", dbUser.Language)
+                                                          .Replace("@ID", cookie.Id.ToString()));
                                 break;
                         }
                     }
@@ -1546,6 +1591,34 @@ namespace BotMainApp.TelegramServices
             try
             {
                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language)
+                                                                       .Replace("@ID", checkId.ToString()));
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public async Task NotifyUserForEndCheckingCookies(UserModel dbUser, CookieModel model)
+        {
+            try
+            {
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CookieCheckingComplete", dbUser.Language)
+                                                                       .Replace("@ID", model.Id.ToString())
+                                                                       .Replace("@VALID", model.ValidFound.ToString())
+                                                                       .Replace("@BALANCE", model.BalanceToUser.ToString())
+                                                                       .Replace("@CURRENCY", config.Currency)
+                                                                       );
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public async Task NotifyUserForEndCheckingCookiesNoValid(UserModel dbUser, int checkId)
+        {
+            try
+            {
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CookieUniqueEmptyError", dbUser.Language)
                                                                        .Replace("@ID", checkId.ToString()));
             }
             catch (Exception)

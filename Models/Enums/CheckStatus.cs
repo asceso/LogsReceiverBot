@@ -7,9 +7,14 @@
             Created, Error, FillingDb, SendedToSoftCheck, OnlyWebmail, NoAnyUnique, CopyingFiles, CheckedBySoft, SendToManualChecking, End, EndNoValid
         }
 
-        public static string GetEnumValue(ManualCheckStatus checkStatus)
+        public enum CookieCheckStatus
         {
-            return checkStatus switch
+            Created, Uploaded, Proceed, End, EndNoValid
+        }
+
+        public static string GetEnumValue(ManualCheckStatus status)
+        {
+            return status switch
             {
                 ManualCheckStatus.Created => "cоздана",
                 ManualCheckStatus.Error => "ошибка",
@@ -22,6 +27,19 @@
                 ManualCheckStatus.SendToManualChecking => "обрабатывается",
                 ManualCheckStatus.End => "завершена",
                 ManualCheckStatus.EndNoValid => "завершена, нет валида",
+                _ => "неизвестно",
+            };
+        }
+
+        public static string GetEnumValue(CookieCheckStatus status)
+        {
+            return status switch
+            {
+                CookieCheckStatus.Created => "созданы",
+                CookieCheckStatus.Uploaded => "загружены",
+                CookieCheckStatus.Proceed => "обрабатываются",
+                CookieCheckStatus.End => "проверены",
+                CookieCheckStatus.EndNoValid => "проверены, нет валида",
                 _ => "неизвестно",
             };
         }

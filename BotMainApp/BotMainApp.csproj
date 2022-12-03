@@ -17,6 +17,7 @@
     <None Remove="Images\ban.png" />
     <None Remove="Images\cash.png" />
     <None Remove="Images\close.png" />
+    <None Remove="Images\cookie.png" />
     <None Remove="Images\copy.png" />
     <None Remove="Images\dublicate.png" />
     <None Remove="Images\logs.png" />
@@ -36,6 +37,7 @@
     <Resource Include="Images\ban.png" />
     <Resource Include="Images\cash.png" />
     <Resource Include="Images\close.png" />
+    <Resource Include="Images\cookie.png" />
     <Resource Include="Images\copy.png" />
     <Resource Include="Images\dublicate.png" />
     <Resource Include="Images\logs.png" />

@@ -17,6 +17,26 @@ namespace BotMainApp.Converters
                     return !showBanned && isBanned ? Visibility.Collapsed : Visibility.Visible;
                 }
             }
+            if (values.Length == 3)
+            {
+                if (values[0] is CheckStatus.CookieCheckStatus status &&
+                    values[1] is bool isClosedShow &&
+                    values[2] is bool isOtherShow)
+                {
+                    if (status == CheckStatus.CookieCheckStatus.End || status == CheckStatus.CookieCheckStatus.EndNoValid)
+                    {
+                        if (!isClosedShow)
+                        {
+                            return Visibility.Collapsed;
+                        }
+                    }
+                    else if (!isOtherShow)
+                    {
+                        return Visibility.Collapsed;
+                    }
+                    return Visibility.Visible;
+                }
+            }
             if (values.Length == 4)
             {
                 if (values[0] is CheckStatus.ManualCheckStatus status &&

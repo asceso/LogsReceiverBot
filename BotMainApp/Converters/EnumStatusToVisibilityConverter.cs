@@ -31,6 +31,25 @@ namespace BotMainApp.Converters
                     return targetStatuses.Any(ts => ts == (int)manualCheckEnum) ? Visibility.Visible : Visibility.Collapsed;
                 }
             }
+            if (value is CheckStatus.CookieCheckStatus cookieEnum)
+            {
+                if (parameter is string s_param)
+                {
+                    List<int> targetStatuses = new();
+                    if (s_param.Contains(' '))
+                    {
+                        string[] s_params = s_param.Split(' ');
+                        foreach (string p_param in s_params)
+                        {
+                            if (int.TryParse(p_param, out int statusValue))
+                            {
+                                targetStatuses.Add(statusValue);
+                            }
+                        }
+                    }
+                    return targetStatuses.Any(ts => ts == (int)cookieEnum) ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
             if (value is PayoutStatus.PayoutStatusEnum payoutEnum)
             {
                 if (parameter is string s_param && int.TryParse(s_param, out int payoutValue))

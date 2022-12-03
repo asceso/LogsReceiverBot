@@ -229,6 +229,29 @@ namespace BotMainApp.External
         }
 
         /// <summary>
+        /// Run chrome with selected link
+        /// </summary>
+        /// <param name="link">link</param>
+        /// <returns>true if opened without error</returns>
+        public static bool RunChromeWithLink(string link)
+        {
+            try
+            {
+                ProcessStartInfo psi = new()
+                {
+                    FileName = link,
+                    UseShellExecute = true
+                };
+                Process process = Process.Start(psi);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Run drop me files checker
         /// </summary>
         /// <param name="fileLink">file link</param>

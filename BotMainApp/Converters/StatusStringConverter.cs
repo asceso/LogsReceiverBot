@@ -9,6 +9,10 @@ namespace BotMainApp.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            if (value is CheckStatus.CookieCheckStatus cookieEnum)
+            {
+                return CheckStatus.GetEnumValue(cookieEnum);
+            }
             if (value is CheckStatus.ManualCheckStatus manualCheckEnum)
             {
                 return CheckStatus.GetEnumValue(manualCheckEnum);

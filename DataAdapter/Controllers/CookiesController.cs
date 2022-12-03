@@ -20,6 +20,19 @@ namespace DataAdapter.Controllers
             }
         }
 
+        public static async Task<List<CookieModel>> GetCookiesByUserIdAsync(long id)
+        {
+            try
+            {
+                using DataContext data = new();
+                return await data.Cookies.Where(m => m.UploadedByUserId == id).ToListAsync();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         public static async Task<CookieModel> GetCookieByIdAsync(int id)
         {
             try
@@ -105,6 +118,20 @@ namespace DataAdapter.Controllers
             catch (Exception)
             {
                 return false;
+            }
+        }
+
+        public static async Task<int> DeleteCookieAsync(CookieModel model)
+        {
+            try
+            {
+                using DataContext data = new();
+                data.Cookies.Remove(model);
+                return await data.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                return -1;
             }
         }
 

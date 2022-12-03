@@ -3,6 +3,7 @@ using System;
 using DataAdapter;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAdapter.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20221203115301_AddCookieUploadDateTime")]
+    partial class AddCookieUploadDateTime
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,9 +26,6 @@ namespace DataAdapter.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    b.Property<double>("BalanceToUser")
-                        .HasColumnType("double");
 
                     b.Property<string>("Category")
                         .HasColumnType("longtext");
@@ -54,9 +53,6 @@ namespace DataAdapter.Migrations
 
                     b.Property<DateTime>("UploadedDateTime")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<double>("ValidFound")
-                        .HasColumnType("double");
 
                     b.HasKey("Id");
 
