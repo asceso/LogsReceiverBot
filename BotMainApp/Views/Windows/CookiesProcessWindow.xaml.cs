@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using Telegram.Bot.Types;
 
 namespace BotMainApp.Views.Windows
 {
@@ -29,6 +30,7 @@ namespace BotMainApp.Views.Windows
         #region fields
 
         private CookieModel checkingModel;
+        private bool isEndButtonEnabled;
 
         #endregion fields
 
@@ -41,6 +43,16 @@ namespace BotMainApp.Views.Windows
             {
                 checkingModel = value;
                 OnPropertyChanged(nameof(CheckingModel));
+            }
+        }
+
+        public bool IsEndButtonEnabled
+        {
+            get => isEndButtonEnabled;
+            set
+            {
+                isEndButtonEnabled = value;
+                OnPropertyChanged(nameof(IsEndButtonEnabled));
             }
         }
 
@@ -90,6 +102,11 @@ namespace BotMainApp.Views.Windows
         private void CancelButtonClick(object sender, RoutedEventArgs e)
         {
             Dispose();
+        }
+
+        private void NumericValueChanged(object sender, HandyControl.Data.FunctionEventArgs<double> e)
+        {
+            IsEndButtonEnabled = CheckingModel.ValidFound != 0 && CheckingModel.BalanceToUser != 0;
         }
 
         #endregion buttons

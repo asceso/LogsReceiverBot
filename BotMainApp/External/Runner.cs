@@ -3,6 +3,7 @@ using Models.App;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace BotMainApp.External
 {
@@ -15,7 +16,7 @@ namespace BotMainApp.External
         /// <param name="filename">filename for check</param>
         /// <param name="config">config with regex</param>
         /// <returns>json with path collection</returns>
-        public static string RunDublicateChecker(string resultDirectoryPath, string filename, ConfigModel config)
+        public static async Task<string> RunDublicateChecker(string resultDirectoryPath, string filename, ConfigModel config)
         {
             ProcessStartInfo psi = new()
             {
@@ -33,9 +34,9 @@ namespace BotMainApp.External
                 RedirectStandardError = true,
             };
             Process process = Process.Start(psi);
-            process.WaitForExit();
+            await process.WaitForExitAsync();
             StreamReader reader = process.StandardOutput;
-            string jsonResult = reader.ReadToEnd();
+            string jsonResult = await reader.ReadToEndAsync();
             reader.Close();
             process.Close();
             return jsonResult;
@@ -49,7 +50,7 @@ namespace BotMainApp.External
         /// <param name="whmFilepath">whm file</param>
         /// <param name="maxForThread">max for thread count</param>
         /// <returns>json collection</returns>
-        public static string RunCpanelChecker(string folderPath, string cpanelFilepath, string whmFilepath, int maxForThread)
+        public static async Task<string> RunCpanelChecker(string folderPath, string cpanelFilepath, string whmFilepath, int maxForThread)
         {
             ProcessStartInfo psi = new()
             {
@@ -67,9 +68,9 @@ namespace BotMainApp.External
             };
             Process process = Process.Start(psi);
             var processId = process.Id;
-            process.WaitForExitAsync();
+            await process.WaitForExitAsync();
             StreamReader reader = process.StandardOutput;
-            string jsonResult = reader.ReadToEnd();
+            string jsonResult = await reader.ReadToEndAsync();
             reader.Close();
             process.Close();
             return jsonResult;
@@ -83,7 +84,7 @@ namespace BotMainApp.External
         /// <param name="folderPath">main folder for check</param>
         /// <param name="maxForThread">max for thread count</param>
         /// <returns>json collection</returns>
-        public static string RunOwnCpanelChecker(string cpanelFilepath, string whmFilepath, string folderPath, int maxForThread)
+        public static async Task<string> RunOwnCpanelChecker(string cpanelFilepath, string whmFilepath, string folderPath, int maxForThread)
         {
             ProcessStartInfo psi = new()
             {
@@ -100,9 +101,9 @@ namespace BotMainApp.External
                 RedirectStandardError = true,
             };
             Process process = Process.Start(psi);
-            process.WaitForExit();
+            await process.WaitForExitAsync();
             StreamReader reader = process.StandardOutput;
-            string jsonResult = reader.ReadToEnd();
+            string jsonResult = await reader.ReadToEndAsync();
             reader.Close();
             process.Close();
             return jsonResult;
@@ -116,7 +117,7 @@ namespace BotMainApp.External
         /// <param name="cpanelFilePath">cpanel filename</param>
         /// <param name="whmFilePath">whm filename</param>
         /// <returns>json result</returns>
-        public static string RunDublicateFiller(long userId, string webmailFilePath, string cpanelFilePath, string whmFilePath, bool fillRecords)
+        public static async Task<string> RunDublicateFiller(long userId, string webmailFilePath, string cpanelFilePath, string whmFilePath, bool fillRecords)
         {
             ProcessStartInfo psi = new()
             {
@@ -134,9 +135,9 @@ namespace BotMainApp.External
                 RedirectStandardError = true,
             };
             Process process = Process.Start(psi);
-            process.WaitForExit();
+            await process.WaitForExitAsync();
             StreamReader reader = process.StandardOutput;
-            string jsonResult = reader.ReadToEnd();
+            string jsonResult = await reader.ReadToEndAsync();
             reader.Close();
             process.Close();
             return jsonResult;
@@ -149,7 +150,7 @@ namespace BotMainApp.External
         /// <param name="cpanelFilePath">cpanel filename</param>
         /// <param name="whmFilePath">whm filename</param>
         /// <returns>json result</returns>
-        public static string RunValidFiller(long userId, string cpanelFilePath, string whmFilePath)
+        public static async Task<string> RunValidFiller(long userId, string cpanelFilePath, string whmFilePath)
         {
             ProcessStartInfo psi = new()
             {
@@ -165,9 +166,9 @@ namespace BotMainApp.External
                 RedirectStandardError = true,
             };
             Process process = Process.Start(psi);
-            process.WaitForExit();
+            await process.WaitForExitAsync();
             StreamReader reader = process.StandardOutput;
-            string jsonResult = reader.ReadToEnd();
+            string jsonResult = await reader.ReadToEndAsync();
             reader.Close();
             process.Close();
             return jsonResult;
@@ -256,7 +257,7 @@ namespace BotMainApp.External
         /// </summary>
         /// <param name="fileLink">file link</param>
         /// <returns>file size json array</returns>
-        public static string RunDropMeLinkChecker(string fileLink)
+        public static async Task<string> RunDropMeLinkChecker(string fileLink)
         {
             ProcessStartInfo psi = new()
             {
@@ -269,9 +270,9 @@ namespace BotMainApp.External
                 RedirectStandardError = true,
             };
             Process process = Process.Start(psi);
-            process.WaitForExit();
+            await process.WaitForExitAsync();
             StreamReader reader = process.StandardOutput;
-            string jsonResult = reader.ReadToEnd();
+            string jsonResult = await reader.ReadToEndAsync();
             reader.Close();
             process.Close();
             return jsonResult;

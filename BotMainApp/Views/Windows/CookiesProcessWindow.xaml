@@ -109,6 +109,7 @@
                         Grid.Column="2"
                         Margin="7"
                         Minimum="0"
+                        ValueChanged="NumericValueChanged"
                         Value="{Binding DataContext.CheckingModel.ValidFound, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
                 <Grid Grid.Row="2">
@@ -127,6 +128,7 @@
                         Grid.Column="2"
                         Margin="7"
                         Minimum="0"
+                        ValueChanged="NumericValueChanged"
                         Value="{Binding DataContext.CheckingModel.BalanceToUser, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock
                         Name="CurrencyTextBlock"
@@ -153,7 +155,8 @@
                     hc:BorderElement.CornerRadius="10"
                     hc:IconElement.Geometry="{StaticResource SuccessGeometry}"
                     Click="OkButtonClick"
-                    Content="Завершить обработку" />
+                    Content="Завершить обработку"
+                    IsEnabled="{Binding DataContext.IsEndButtonEnabled, UpdateSourceTrigger=PropertyChanged}" />
                 <Button
                     Grid.Column="3"
                     Width="200"

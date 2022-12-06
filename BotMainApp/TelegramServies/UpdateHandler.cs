@@ -505,7 +505,7 @@ namespace BotMainApp.TelegramServices
                                                 return;
                                             }
 
-                                            string fileInfoData = Runner.RunDropMeLinkChecker(argument);
+                                            string fileInfoData = await Runner.RunDropMeLinkChecker(argument);
                                             JObject fileInfoJson = JObject.Parse(fileInfoData);
                                             if (fileInfoJson.ContainsKey("Error"))
                                             {
@@ -1006,6 +1006,7 @@ namespace BotMainApp.TelegramServices
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("ошибка", TelegramStateModel.RedBrush));
+            notificationManager.Show(exception);
             await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
             botClient.StartReceiving(this);
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("работает", TelegramStateModel.GreenBrush));
@@ -1024,7 +1025,7 @@ namespace BotMainApp.TelegramServices
 
             #region check dublicates
 
-            string dublicateData = Runner.RunDublicateChecker(folderPath, inputFilename, config);
+            string dublicateData = await Runner.RunDublicateChecker(folderPath, inputFilename, config);
             JObject dublicateDataJson = JObject.Parse(dublicateData);
             if (dublicateDataJson.ContainsKey("Error"))
             {
@@ -1065,7 +1066,7 @@ namespace BotMainApp.TelegramServices
 
             #region fill logs db
 
-            string fillData = Runner.RunDublicateFiller(dbUser.Id, manualCheckModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath, fillDublicates);
+            string fillData = await Runner.RunDublicateFiller(dbUser.Id, manualCheckModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath, fillDublicates);
             JObject fillDataJson = JObject.Parse(fillData);
             if (fillDataJson.ContainsKey("Error"))
             {
@@ -1196,11 +1197,11 @@ namespace BotMainApp.TelegramServices
             string cpanelData;
             if (config.UseOwnCpanelChecker)
             {
-                cpanelData = Runner.RunOwnCpanelChecker(cpanelDataFilePath, whmDataFilePath, folderPath, config.CheckerMaxForThread);
+                cpanelData = await Runner.RunOwnCpanelChecker(cpanelDataFilePath, whmDataFilePath, folderPath, config.CheckerMaxForThread);
             }
             else
             {
-                cpanelData = Runner.RunCpanelChecker(folderPath, cpanelDataFilePath, whmDataFilePath, config.CheckerMaxForThread);
+                cpanelData = await Runner.RunCpanelChecker(folderPath, cpanelDataFilePath, whmDataFilePath, config.CheckerMaxForThread);
             }
             JObject cpanelDataJson = JObject.Parse(cpanelData);
             if (cpanelDataJson.ContainsKey("Error"))
@@ -1247,7 +1248,7 @@ namespace BotMainApp.TelegramServices
 
             #region fill valid db
 
-            string fillValidData = Runner.RunValidFiller(dbUser.Id, manualCheckModel.CpanelGoodFilePath, manualCheckModel.WhmGoodFilePath);
+            string fillValidData = await Runner.RunValidFiller(dbUser.Id, manualCheckModel.CpanelGoodFilePath, manualCheckModel.WhmGoodFilePath);
             JObject fillValidDataJson = JObject.Parse(fillValidData);
             if (fillValidDataJson.ContainsKey("Error"))
             {

@@ -39,26 +39,60 @@ namespace BotMainApp.Converters
             }
             if (values.Length == 4)
             {
+                bool isClosedShow, isErrorShow, isOtherShow;
                 if (values[0] is CheckStatus.ManualCheckStatus status &&
-                    values[1] is bool isClosedChecksShow &&
-                    values[2] is bool isErrorChecksShow &&
-                    values[3] is bool isOtherChecksShow)
+                    values[1] is bool bv1_manual_check &&
+                    values[2] is bool bv2_manual_check &&
+                    values[3] is bool bv3_manual_check)
                 {
+                    isClosedShow = bv1_manual_check;
+                    isErrorShow = bv2_manual_check;
+                    isOtherShow = bv3_manual_check;
+
                     if (status == CheckStatus.ManualCheckStatus.End || status == CheckStatus.ManualCheckStatus.EndNoValid)
                     {
-                        if (!isClosedChecksShow)
+                        if (!isClosedShow)
                         {
                             return Visibility.Collapsed;
                         }
                     }
                     else if (status == CheckStatus.ManualCheckStatus.Error || status == CheckStatus.ManualCheckStatus.NoAnyUnique)
                     {
-                        if (!isErrorChecksShow)
+                        if (!isErrorShow)
                         {
                             return Visibility.Collapsed;
                         }
                     }
-                    else if (!isOtherChecksShow)
+                    else if (!isOtherShow)
+                    {
+                        return Visibility.Collapsed;
+                    }
+                    return Visibility.Visible;
+                }
+                if (values[0] is PayoutStatus.PayoutStatusEnum payoutStatus &&
+                    values[1] is bool bv1_payout &&
+                    values[2] is bool bv2_payout &&
+                    values[3] is bool bv3_payout)
+                {
+                    isClosedShow = bv1_payout;
+                    isErrorShow = bv2_payout;
+                    isOtherShow = bv3_payout;
+
+                    if (payoutStatus == PayoutStatus.PayoutStatusEnum.Completed)
+                    {
+                        if (!isClosedShow)
+                        {
+                            return Visibility.Collapsed;
+                        }
+                    }
+                    else if (payoutStatus == PayoutStatus.PayoutStatusEnum.Denied)
+                    {
+                        if (!isErrorShow)
+                        {
+                            return Visibility.Collapsed;
+                        }
+                    }
+                    else if (!isOtherShow)
                     {
                         return Visibility.Collapsed;
                     }

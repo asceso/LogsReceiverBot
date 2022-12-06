@@ -30,16 +30,25 @@ namespace BotMainApp.ViewModels
         private bool isLoading;
         private int modelsCount;
         private ObservableCollection<PayoutModel> models;
+        private bool isClosedShow;
+        private bool isErrorShow;
+        private bool isOtherShow;
 
         public bool IsLoading { get => isLoading; set => SetProperty(ref isLoading, value); }
         public int ModelsCount { get => modelsCount; set => SetProperty(ref modelsCount, value); }
         public ObservableCollection<PayoutModel> Models { get => models; set => SetProperty(ref models, value); }
+        public bool IsClosedShow { get => isClosedShow; set => SetProperty(ref isClosedShow, value); }
+        public bool IsErrorShow { get => isErrorShow; set => SetProperty(ref isErrorShow, value); }
+        public bool IsOtherShow { get => isOtherShow; set => SetProperty(ref isOtherShow, value); }
 
         public DelegateCommand RefreshCommand { get; set; }
 
         public PayoutsViewModel(IEventAggregator aggregator, IMemorySaver memory)
         {
             Models = new();
+            IsClosedShow = true;
+            IsErrorShow = true;
+            IsOtherShow = true;
             Models.CollectionChanged += (s, e) => UpdateModelsCount();
             this.memory = memory;
             this.aggregator = aggregator;
@@ -81,6 +90,10 @@ namespace BotMainApp.ViewModels
 
                         case "Username":
                             Clipboard.SetText(model.FromUsername.ToString());
+                            break;
+
+                        case "Requisites":
+                            Clipboard.SetText(model.Requisites);
                             break;
                     }
                 }
