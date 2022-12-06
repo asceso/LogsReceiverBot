@@ -39,7 +39,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Own", "Own", "{D78B0ADF-98A
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseValidFillerApp", "DatabaseValidFillerApp\DatabaseValidFillerApp.csproj", "{5FBC83A0-8637-41C5-8DB3-9DDD787B8769}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DropMeLinkChecker", "DropMeLinkChecker\DropMeLinkChecker.csproj", "{1E56202F-50A9-44AE-B614-2C85E6B442E6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DropMeLinkChecker", "DropMeLinkChecker\DropMeLinkChecker.csproj", "{1E56202F-50A9-44AE-B614-2C85E6B442E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MysqlBackupManager", "MysqlBackupManager\MysqlBackupManager.csproj", "{2E17EA78-7215-4569-9455-095FB804DFC2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -111,6 +113,10 @@ Global
 		{1E56202F-50A9-44AE-B614-2C85E6B442E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E56202F-50A9-44AE-B614-2C85E6B442E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E56202F-50A9-44AE-B614-2C85E6B442E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E17EA78-7215-4569-9455-095FB804DFC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E17EA78-7215-4569-9455-095FB804DFC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E17EA78-7215-4569-9455-095FB804DFC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E17EA78-7215-4569-9455-095FB804DFC2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

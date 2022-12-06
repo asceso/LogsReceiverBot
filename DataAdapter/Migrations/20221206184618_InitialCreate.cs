@@ -102,8 +102,8 @@ namespace DataAdapter.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     category = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    uplaoded_by_user_id = table.Column<long>(type: "bigint", nullable: false),
-                    uplaoded_by_username = table.Column<string>(type: "longtext", nullable: true)
+                    uploaded_by_user_id = table.Column<long>(type: "bigint", nullable: false),
+                    uploaded_by_username = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>

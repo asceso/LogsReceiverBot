@@ -208,11 +208,11 @@ namespace DataAdapter.Migrations
 
                     b.Property<long>("UploadedByUserId")
                         .HasColumnType("bigint")
-                        .HasColumnName("uplaoded_by_user_id");
+                        .HasColumnName("uploaded_by_user_id");
 
                     b.Property<string>("UploadedByUsername")
                         .HasColumnType("longtext")
-                        .HasColumnName("uplaoded_by_username");
+                        .HasColumnName("uploaded_by_username");
 
                     b.Property<string>("Url")
                         .HasColumnType("longtext")

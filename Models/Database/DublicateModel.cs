@@ -31,10 +31,10 @@ namespace Models.Database
         [Column("category")]
         public string Category { get => category; set => SetProperty(ref category, value); }
 
-        [Column("uplaoded_by_user_id")]
+        [Column("uploaded_by_user_id")]
         public long UploadedByUserId { get => uploadedByUserId; set => SetProperty(ref uploadedByUserId, value); }
 
-        [Column("uplaoded_by_username")]
+        [Column("uploaded_by_username")]
         public string UploadedByUsername { get => uploadedByUsername; set => SetProperty(ref uploadedByUsername, value); }
 
         [NotMapped]
