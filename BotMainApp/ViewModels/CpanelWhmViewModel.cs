@@ -21,7 +21,7 @@ using System.Windows;
 
 namespace BotMainApp.ViewModels
 {
-    public class ManualChecksViewModel : BindableBase
+    public class CpanelWhmViewModel : BindableBase
     {
         private readonly NotificationManager notificationManager;
         private readonly ConfigModel config;
@@ -31,7 +31,7 @@ namespace BotMainApp.ViewModels
 
         private bool isLoading;
         private int modelsCount;
-        private ObservableCollection<ManualCheckModel> models;
+        private ObservableCollection<CpanelWhmCheckModel> models;
         private bool isClosedChecksShow;
         private bool isErrorChecksShow;
         private bool isOtherChecksShow;
@@ -39,7 +39,7 @@ namespace BotMainApp.ViewModels
 
         public bool IsLoading { get => isLoading; set => SetProperty(ref isLoading, value); }
         public int ModelsCount { get => modelsCount; set => SetProperty(ref modelsCount, value); }
-        public ObservableCollection<ManualCheckModel> Models { get => models; set => SetProperty(ref models, value); }
+        public ObservableCollection<CpanelWhmCheckModel> Models { get => models; set => SetProperty(ref models, value); }
         public bool IsClosedChecksShow { get => isClosedChecksShow; set => SetProperty(ref isClosedChecksShow, value); }
         public bool IsErrorChecksShow { get => isErrorChecksShow; set => SetProperty(ref isErrorChecksShow, value); }
         public bool IsOtherChecksShow { get => isOtherChecksShow; set => SetProperty(ref isOtherChecksShow, value); }
@@ -47,7 +47,7 @@ namespace BotMainApp.ViewModels
 
         public DelegateCommand RefreshCommand { get; set; }
 
-        public ManualChecksViewModel(IEventAggregator aggregator, IMemorySaver memory)
+        public CpanelWhmViewModel(IEventAggregator aggregator, IMemorySaver memory)
         {
             Models = new();
             Models.CollectionChanged += (s, e) => UpdateModelsCount();
@@ -70,7 +70,7 @@ namespace BotMainApp.ViewModels
 
         private async void OnSwitchMainView(ViewsPayload.ViewTypes selectedType)
         {
-            if (selectedType is ViewsPayload.ViewTypes.ManualChecks)
+            if (selectedType is ViewsPayload.ViewTypes.CpanelWhmChecks)
             {
                 await LoadManualChecksAsync();
             }
@@ -81,7 +81,7 @@ namespace BotMainApp.ViewModels
             RefreshCommand = new DelegateCommand(async () => await LoadManualChecksAsync());
         }
 
-        private void InitModelCommands(ManualCheckModel model)
+        private void InitModelCommands(CpanelWhmCheckModel model)
         {
             model.OnCopyCommand = new DelegateCommand<string>((field) =>
             {
@@ -102,17 +102,17 @@ namespace BotMainApp.ViewModels
                 {
                 }
             });
-            model.OpenManualCheckCommand = new DelegateCommand<ManualCheckModel>(OnOpenManualCheck);
-            model.DeleteCheckCommand = new DelegateCommand<ManualCheckModel>(OnDeleteManualCheck);
+            model.OpenManualCheckCommand = new DelegateCommand<CpanelWhmCheckModel>(OnOpenManualCheck);
+            model.DeleteCheckCommand = new DelegateCommand<CpanelWhmCheckModel>(OnDeleteManualCheck);
         }
 
-        private async void OnOpenManualCheck(ManualCheckModel model)
+        private async void OnOpenManualCheck(CpanelWhmCheckModel model)
         {
             CheckStatus.ManualCheckStatus cancelStatus = model.Status;
             if (cancelStatus != CheckStatus.ManualCheckStatus.End && cancelStatus != CheckStatus.ManualCheckStatus.EndNoValid)
             {
                 model.Status = CheckStatus.ManualCheckStatus.SendToManualChecking;
-                await ManualCheckController.PutCheckAsync(model, aggregator);
+                await CpanelWhmCheckController.PutCheckAsync(model, aggregator);
             }
             ManualCheckProcessWindow checkWindow = new(model, config.NotepadPath, notificationManager);
             checkWindow.ShowDialog();
@@ -120,11 +120,11 @@ namespace BotMainApp.ViewModels
             {
                 if (checkWindow.IsNoAnyValid)
                 {
-                    ManualCheckModel updateModel = checkWindow.CheckingModel;
+                    CpanelWhmCheckModel updateModel = checkWindow.CheckingModel;
                     UserModel checkUser = await UsersController.GetUserByIdAsync(updateModel.FromUserId);
                     updateModel.IsManualCheckEnd = true;
                     updateModel.Status = CheckStatus.ManualCheckStatus.EndNoValid;
-                    await ManualCheckController.PutCheckAsync(updateModel, aggregator);
+                    await CpanelWhmCheckController.PutCheckAsync(updateModel, aggregator);
 
                     await handler.NotifyUserForEndCheckingFileNoValid(checkUser, updateModel.Id);
                 }
@@ -132,7 +132,7 @@ namespace BotMainApp.ViewModels
                 {
                     if (checkWindow.TotalFoundedValid != 0 && checkWindow.AddBalance != 0)
                     {
-                        ManualCheckModel updateModel = checkWindow.CheckingModel;
+                        CpanelWhmCheckModel updateModel = checkWindow.CheckingModel;
 
                         UserModel checkUser = await UsersController.GetUserByIdAsync(updateModel.FromUserId);
                         checkUser.LogsUploaded += checkWindow.TotalFoundedValid;
@@ -141,29 +141,29 @@ namespace BotMainApp.ViewModels
 
                         updateModel.IsManualCheckEnd = true;
                         updateModel.Status = CheckStatus.ManualCheckStatus.End;
-                        await ManualCheckController.PutCheckAsync(updateModel, aggregator);
+                        await CpanelWhmCheckController.PutCheckAsync(updateModel, aggregator);
 
                         await handler.NotifyUserForEndCheckingFile(checkUser, updateModel, checkWindow.TotalFoundedValid, checkWindow.AddBalance);
                     }
                     else
                     {
                         model.Status = cancelStatus;
-                        await ManualCheckController.PutCheckAsync(model, aggregator);
+                        await CpanelWhmCheckController.PutCheckAsync(model, aggregator);
                     }
                 }
             }
             else
             {
                 model.Status = cancelStatus;
-                await ManualCheckController.PutCheckAsync(model, aggregator);
+                await CpanelWhmCheckController.PutCheckAsync(model, aggregator);
             }
         }
 
-        private void OnDeleteManualCheck(ManualCheckModel model)
+        private void OnDeleteManualCheck(CpanelWhmCheckModel model)
         {
             notificationManager.ShowButtonWindow("Удалить проверку?", "Подтверждение", async () =>
             {
-                int deleteCount = await ManualCheckController.DeleteManualCheckAsync(model);
+                int deleteCount = await CpanelWhmCheckController.DeleteManualCheckAsync(model);
                 if (deleteCount == 1)
                 {
                     try
@@ -188,8 +188,8 @@ namespace BotMainApp.ViewModels
             {
                 IsLoading = true;
                 Models.Clear();
-                List<ManualCheckModel> cacheModels = await ManualCheckController.GetChecksAsync();
-                foreach (ManualCheckModel model in cacheModels)
+                List<CpanelWhmCheckModel> cacheModels = await CpanelWhmCheckController.GetChecksAsync();
+                foreach (CpanelWhmCheckModel model in cacheModels)
                 {
                     InitModelCommands(model);
                     Models.Add(model);
@@ -205,7 +205,7 @@ namespace BotMainApp.ViewModels
             }
         }
 
-        private void OnManualCheckUpdate(KeyValuePair<string, ManualCheckModel> update)
+        private void OnManualCheckUpdate(KeyValuePair<string, CpanelWhmCheckModel> update)
         {
             try
             {
@@ -215,7 +215,7 @@ namespace BotMainApp.ViewModels
                     {
                         case "post":
                             {
-                                ManualCheckModel updateModel = update.Value;
+                                CpanelWhmCheckModel updateModel = update.Value;
                                 InitModelCommands(updateModel);
                                 Models.Add(updateModel);
                             }
@@ -223,9 +223,9 @@ namespace BotMainApp.ViewModels
 
                         case "put":
                             {
-                                ManualCheckModel updateModel = update.Value;
+                                CpanelWhmCheckModel updateModel = update.Value;
                                 InitModelCommands(updateModel);
-                                ManualCheckModel targetModel = Models.FirstOrDefault(u => u.Id == updateModel.Id);
+                                CpanelWhmCheckModel targetModel = Models.FirstOrDefault(u => u.Id == updateModel.Id);
                                 if (targetModel is not null)
                                 {
                                     int index = Models.IndexOf(targetModel);

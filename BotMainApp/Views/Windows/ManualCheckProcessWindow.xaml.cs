@@ -33,7 +33,7 @@ namespace BotMainApp.Views.Windows
 
         #region fields
 
-        private ManualCheckModel checkingModel;
+        private CpanelWhmCheckModel checkingModel;
         private bool isEditEnable;
         private bool isFieldReadonly;
         private int totalFoundedValid;
@@ -44,7 +44,7 @@ namespace BotMainApp.Views.Windows
 
         #region props
 
-        public ManualCheckModel CheckingModel
+        public CpanelWhmCheckModel CheckingModel
         {
             get => checkingModel;
             set
@@ -108,12 +108,12 @@ namespace BotMainApp.Views.Windows
 
         #region ctor
 
-        public ManualCheckProcessWindow(ManualCheckModel model, string notepadPath, NotificationManager notificationManager)
+        public ManualCheckProcessWindow(CpanelWhmCheckModel model, string notepadPath, NotificationManager notificationManager)
         {
             InitializeComponent();
             this.notepadPath = notepadPath;
             this.notificationManager = notificationManager;
-            CheckingModel = (ManualCheckModel)model.Clone();
+            CheckingModel = (CpanelWhmCheckModel)model.Clone();
             DataContext = this;
             if (model.Status == Models.Enums.CheckStatus.ManualCheckStatus.End || model.Status == Models.Enums.CheckStatus.ManualCheckStatus.EndNoValid)
             {

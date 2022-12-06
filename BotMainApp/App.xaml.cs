@@ -31,7 +31,7 @@ namespace BotMainApp
             ViewModelLocationProvider.Register<DublicatesView, DublicatesViewModel>();
             ViewModelLocationProvider.Register<ValidView, ValidViewModel>();
             ViewModelLocationProvider.Register<CookiesView, CookiesViewModel>();
-            ViewModelLocationProvider.Register<ManualChecksView, ManualChecksViewModel>();
+            ViewModelLocationProvider.Register<CpanelWhmView, CpanelWhmViewModel>();
             ViewModelLocationProvider.Register<PayoutsView, PayoutsViewModel>();
         }
 

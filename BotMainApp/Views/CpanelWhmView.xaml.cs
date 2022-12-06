@@ -5,9 +5,9 @@ namespace BotMainApp.Views
     /// <summary>
     /// Логика взаимодействия для ManualChecksView.xaml
     /// </summary>
-    public partial class ManualChecksView : UserControl
+    public partial class CpanelWhmView : UserControl
     {
-        public ManualChecksView()
+        public CpanelWhmView()
         {
             InitializeComponent();
         }

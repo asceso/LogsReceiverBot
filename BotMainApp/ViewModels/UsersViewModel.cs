@@ -305,7 +305,7 @@ namespace BotMainApp.ViewModels
                         notificationManager.Show("Успешно", "Баланс пользователя был изменен", NotificationType.Information);
                         if (sendNotification)
                         {
-                            await handler.SendBalanceInfoToUser(user, changeBalance > 0);
+                            await handler.NotifyUserBalanceChanged(user, changeBalance > 0);
                         }
                     }
                 }

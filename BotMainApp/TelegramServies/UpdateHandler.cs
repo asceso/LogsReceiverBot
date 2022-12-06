@@ -34,6 +34,8 @@ namespace BotMainApp.TelegramServices
 {
     public class UpdateHandler : IUpdateHandler
     {
+        #region services
+
         private readonly NotificationManager notificationManager;
         private readonly ReplyKeyboardRemove emptyKeyboard = new();
         private TelegramBotClient botClient;
@@ -47,6 +49,10 @@ namespace BotMainApp.TelegramServices
         private readonly IEventAggregator aggregator;
         private readonly IMemorySaver memory;
         private readonly ICaptchaService captcha;
+
+        #endregion services
+
+        #region ctor
 
         public UpdateHandler(IEventAggregator aggregator, IMemorySaver memory, ICaptchaService captcha)
         {
@@ -66,6 +72,10 @@ namespace BotMainApp.TelegramServices
         }
 
         private void OnRestartBot() => botClient = memory.GetItem<TelegramBotClient>("BotClient");
+
+        #endregion ctor
+
+        #region handling
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
@@ -279,110 +289,414 @@ namespace BotMainApp.TelegramServices
 
             if (temp.Operation != null)
             {
-                string argument = temp.Message;
-                if (argument.IsAnyEqual("Cancel 🚫", "Отмена 🚫", "/cancel"))
-                {
-                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CanceledOpertaion", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled));
-                    operations.Remove(temp.Operation);
-                    return;
-                }
+                await CheckUserOperationAsync(dbUser, temp, payoutEnabled).ConfigureAwait(false);
+            }
 
-                switch (temp.Operation.OperationType)
-                {
-                    case OperationType.ChangeLanguage:
+            #endregion operations
+
+            #region messages
+
+            await CheckUserMessageAsync(dbUser, temp, payoutEnabled).ConfigureAwait(false);
+
+            #endregion messages
+        }
+
+        #region operations
+
+        private async Task CheckUserOperationAsync(UserModel dbUser, TempTelegram temp, bool payoutEnabled)
+        {
+            string argument = temp.Message;
+
+            if (argument.IsAnyEqual("Cancel 🚫", "Отмена 🚫", "/cancel"))
+            {
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CanceledOpertaion", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled));
+                operations.Remove(temp.Operation);
+                return;
+            }
+
+            switch (temp.Operation.OperationType)
+            {
+                case OperationType.ChangeLanguage:
+                    {
+                        if (argument.IsAnyEqual("Russian 🇷🇺", "Русский 🇷🇺"))
                         {
-                            if (argument.IsAnyEqual("Russian 🇷🇺", "Русский 🇷🇺"))
+                            await changeLanguageAsync("ru");
+                            operations.Remove(temp.Operation);
+                        }
+                        else if (argument.IsAnyEqual("English 🇺🇸", "Английский 🇺🇸"))
+                        {
+                            await changeLanguageAsync("en");
+                            operations.Remove(temp.Operation);
+                        }
+                        else
+                        {
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
+                        }
+                        return;
+
+                        async Task changeLanguageAsync(string toLocale)
+                        {
+                            string currentLocale = dbUser.Language;
+                            dbUser.Language = toLocale;
+                            if (await UsersController.PutUserAsync(dbUser, aggregator))
                             {
-                                await changeLanguageAsync("ru");
-                                operations.Remove(temp.Operation);
-                            }
-                            else if (argument.IsAnyEqual("English 🇺🇸", "Английский 🇺🇸"))
-                            {
-                                await changeLanguageAsync("en");
-                                operations.Remove(temp.Operation);
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("Start", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled));
                             }
                             else
                             {
-                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DbError", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", currentLocale, payoutEnabled));
                             }
                             return;
+                        }
+                    }
+                case OperationType.WaitCategoryForChecking:
+                    {
+                        if (argument.IsAnyEqual("Private requests", "Приватные запросы"))
+                        {
+                            operations.Remove(temp.Operation);
+                            operations.Add(new(temp.Uid, OperationType.WaitSubCategoryForChecking, new KeyValuePair<string, object>("Category", argument)));
+                            await botClient.SendTextMessageAsync(
+                                dbUser.Id,
+                                locales.GetByKey("SelectCheckerCategory", dbUser.Language),
+                                replyMarkup: keyboards.GetByLocale("SelectSubCategory", dbUser.Language, payoutEnabled)
+                                );
+                            return;
+                        }
+                        if (argument.IsAnyEqual("Cookies", "Cookie файлы"))
+                        {
+                            operations.Remove(temp.Operation);
+                            operations.Add(new(temp.Uid, OperationType.WaitCookiesCategoryForChecking, new KeyValuePair<string, object>("Category", argument)));
+                            await botClient.SendTextMessageAsync(
+                                dbUser.Id,
+                                locales.GetByKey("SelectCheckerCategory", dbUser.Language),
+                                replyMarkup: keyboards.GetByLocale("SelectCookiesCategory", dbUser.Language, payoutEnabled)
+                                );
+                            return;
+                        }
+                        else
+                        {
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
+                            return;
+                        }
+                    }
+                case OperationType.WaitSubCategoryForChecking:
+                    {
+                        if (argument.IsAnyEqual(":20"))
+                        {
+                            operations.Remove(temp.Operation);
+                            operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
+                                new KeyValuePair<string, object>("Category", temp.Operation.Params["Category"].ToString()),
+                                new KeyValuePair<string, object>("SubCategory", argument)
+                                ));
+                            await botClient.SendTextMessageAsync(
+                                dbUser.Id,
+                                locales.GetByKey("SendFileInstruction", dbUser.Language),
+                                replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                                );
+                            return;
+                        }
+                        else
+                        {
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
+                            return;
+                        }
+                    }
+                case OperationType.WaitCookiesCategoryForChecking:
+                    {
+                        if (argument.IsAnyEqual("Instagram"))
+                        {
+                            operations.Remove(temp.Operation);
+                            operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
+                                new KeyValuePair<string, object>("Category", temp.Operation.Params["Category"].ToString()),
+                                new KeyValuePair<string, object>("SubCategory", argument)
+                                ));
+                            await botClient.SendTextMessageAsync(
+                                dbUser.Id,
+                                locales.GetByKey("SendCookiesInstruction", dbUser.Language).Replace("@SOFT", config.CookiesSoft),
+                                replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                                );
+                            return;
+                        }
+                        else
+                        {
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
+                            return;
+                        }
+                    }
+                case OperationType.WaitFileForChecking:
+                    {
+                        try
+                        {
+                            Regex dropMeRegex = new(@"https:\/\/dropmefiles\.com\/.*");
+                            if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Private requests", "Приватные запросы") &&
+                                temp.Operation.Params["SubCategory"].ToString().IsAnyEqual(":20"))
+                            {
+                                #region load tg file
 
-                            async Task changeLanguageAsync(string toLocale)
-                            {
-                                string currentLocale = dbUser.Language;
-                                dbUser.Language = toLocale;
-                                if (await UsersController.PutUserAsync(dbUser, aggregator))
+                                Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
+                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
+                                using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
+                                await botClient.DownloadFileAsync(file.FilePath, stream);
+                                stream.Close();
+
+                                #endregion load tg file
+
+                                #region accept file
+
+                                operations.Remove(temp.Operation);
+                                CpanelWhmCheckModel manualCheckModel = new()
                                 {
-                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("Start", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled));
-                                }
-                                else
+                                    StartDateTime = DateTime.Now,
+                                    Status = CheckStatus.ManualCheckStatus.Created,
+                                    FromUserId = dbUser.Id,
+                                    FromUsername = dbUser.Username,
+                                };
+                                await CpanelWhmCheckController.PostCheckAsync(manualCheckModel, aggregator);
+                                await botClient.SendTextMessageAsync(
+                                    dbUser.Id,
+                                    locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
+                                           .Replace("@ID", manualCheckModel.Id.ToString()),
+                                    replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                    );
+
+                                #endregion accept file
+
+                                await Task.Factory.StartNew(async () => await StandartCheckProcess(dbUser, filename, manualCheckModel, true)).ConfigureAwait(false);
+                            }
+                            else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("AdminChecking") &&
+                                     temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("AdminChecking"))
+                            {
+                                #region load tg file
+
+                                Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
+                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
+                                using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
+                                await botClient.DownloadFileAsync(file.FilePath, stream);
+                                stream.Close();
+
+                                #endregion load tg file
+
+                                #region accept file
+
+                                operations.Remove(temp.Operation);
+                                CpanelWhmCheckModel manualCheckModel = new()
                                 {
-                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DbError", dbUser.Language), replyMarkup: keyboards.GetByLocale("Main", currentLocale, payoutEnabled));
+                                    StartDateTime = DateTime.Now,
+                                    Status = CheckStatus.ManualCheckStatus.Created,
+                                    FromUserId = dbUser.Id,
+                                    FromUsername = dbUser.Username,
+                                };
+                                await CpanelWhmCheckController.PostCheckAsync(manualCheckModel, aggregator);
+                                await botClient.SendTextMessageAsync(
+                                    dbUser.Id,
+                                    locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
+                                           .Replace("@ID", manualCheckModel.Id.ToString()),
+                                    replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                    );
+
+                                #endregion accept file
+
+                                await Task.Factory.StartNew(async () => await StandartCheckProcess(dbUser, filename, manualCheckModel, false)).ConfigureAwait(false);
+                            }
+                            else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Cookies", "Cookie файлы") &&
+                                     temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("Instagram"))
+                            {
+                                if (!argument.IsNullOrEmptyString())
+                                {
+                                    if (dropMeRegex.IsMatch(argument))
+                                    {
+                                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CheckingCookieFile", dbUser.Language));
+                                    }
+                                    else
+                                    {
+                                        await botClient.SendTextMessageAsync(
+                                            dbUser.Id,
+                                            locales.GetByKey("SendCookiesInstruction", dbUser.Language).Replace("@SOFT", config.CookiesSoft),
+                                            replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                                            );
+                                        return;
+                                    }
+
+                                    #region check dublicate
+
+                                    if (await CookiesController.IsDropMeLinkExist(argument))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkDublicateError", dbUser.Language));
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+
+                                    #endregion check dublicate
+
+                                    #region check drop me link info
+
+                                    string fileInfoData = await Runner.RunDropMeLinkChecker(argument);
+                                    JObject fileInfoJson = JObject.Parse(fileInfoData);
+                                    if (fileInfoJson.ContainsKey("Error"))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingError", dbUser.Language));
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+                                    string filesize = fileInfoJson["Filesize"].ToString();
+                                    string unit = fileInfoJson["Unit"].ToString();
+                                    if (unit.IsAnyEqual("B", "KB"))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingLessThatMinSize", dbUser.Language)
+                                                                                                   .Replace("@MIN", config.MinAcceptingFileSize.ToString()));
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+                                    if (unit.IsAnyEqual("MB"))
+                                    {
+                                        if (double.TryParse(filesize.Replace(".", ","), out double cookiesSize))
+                                        {
+                                            if (cookiesSize < config.MinAcceptingFileSize)
+                                            {
+                                                try
+                                                {
+                                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingLessThatMinSize", dbUser.Language)
+                                                                                                           .Replace("@MIN", config.MinAcceptingFileSize.ToString()));
+                                                }
+                                                catch (Exception)
+                                                {
+                                                }
+                                                return;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingError", dbUser.Language));
+                                            }
+                                            catch (Exception)
+                                            {
+                                            }
+                                            return;
+                                        }
+                                    }
+
+                                    #endregion check drop me link info
+
+                                    #region post cookie
+
+                                    CookieModel model = new()
+                                    {
+                                        Category = "Instagram",
+                                        UploadedDateTime = DateTime.Now,
+                                        Status = CheckStatus.CookieCheckStatus.Uploaded,
+                                        Filesize = filesize,
+                                        Unit = unit,
+                                        FileLink = argument,
+                                        FolderPath = string.Empty,
+                                        UploadedByUserId = dbUser.Id,
+                                        UploadedByUsername = dbUser.Username
+                                    };
+                                    await CookiesController.PostCookieAsync(model, aggregator);
+
+                                    #endregion post cookie
+
+                                    #region end
+
+                                    operations.Remove(temp.Operation);
+                                    await botClient.SendTextMessageAsync(
+                                        dbUser.Id,
+                                        locales.GetByKey("CookiesAcceptedWaitResult", dbUser.Language)
+                                                .Replace("@ID", model.Id.ToString()),
+                                        replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                        );
+                                    return;
+
+                                    #endregion end
                                 }
-                                return;
-                            }
-                        }
-                    case OperationType.WaitCategoryForChecking:
-                        {
-                            if (argument.IsAnyEqual("Private requests", "Приватные запросы"))
-                            {
-                                operations.Remove(temp.Operation);
-                                operations.Add(new(temp.Uid, OperationType.WaitSubCategoryForChecking, new KeyValuePair<string, object>("Category", argument)));
-                                await botClient.SendTextMessageAsync(
-                                    dbUser.Id,
-                                    locales.GetByKey("SelectCheckerCategory", dbUser.Language),
-                                    replyMarkup: keyboards.GetByLocale("SelectSubCategory", dbUser.Language, payoutEnabled)
-                                    );
-                                return;
-                            }
-                            if (argument.IsAnyEqual("Cookies", "Cookie файлы"))
-                            {
-                                operations.Remove(temp.Operation);
-                                operations.Add(new(temp.Uid, OperationType.WaitCookiesCategoryForChecking, new KeyValuePair<string, object>("Category", argument)));
-                                await botClient.SendTextMessageAsync(
-                                    dbUser.Id,
-                                    locales.GetByKey("SelectCheckerCategory", dbUser.Language),
-                                    replyMarkup: keyboards.GetByLocale("SelectCookiesCategory", dbUser.Language, payoutEnabled)
-                                    );
-                                return;
-                            }
-                            else
-                            {
-                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
-                                return;
-                            }
-                        }
-                    case OperationType.WaitSubCategoryForChecking:
-                        {
-                            if (argument.IsAnyEqual(":20"))
-                            {
-                                operations.Remove(temp.Operation);
-                                operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
-                                    new KeyValuePair<string, object>("Category", temp.Operation.Params["Category"].ToString()),
-                                    new KeyValuePair<string, object>("SubCategory", argument)
-                                    ));
-                                await botClient.SendTextMessageAsync(
-                                    dbUser.Id,
-                                    locales.GetByKey("SendFileInstruction", dbUser.Language),
-                                    replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
-                                    );
-                                return;
-                            }
-                            else
-                            {
-                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
-                                return;
-                            }
-                        }
-                    case OperationType.WaitCookiesCategoryForChecking:
-                        {
-                            if (argument.IsAnyEqual("Instagram"))
-                            {
-                                operations.Remove(temp.Operation);
-                                operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
-                                    new KeyValuePair<string, object>("Category", temp.Operation.Params["Category"].ToString()),
-                                    new KeyValuePair<string, object>("SubCategory", argument)
-                                    ));
+                                if (temp.Document != null && (
+                                    temp.Document.FileName.EndsWith(".rar") ||
+                                    temp.Document.FileName.EndsWith(".zip")
+                                    ))
+                                {
+                                    #region checking filesize
+
+                                    ByteSize fileSize = ByteSize.FromBytes((double)temp.Document.FileSize);
+                                    if (fileSize.Megabytes < config.MinAcceptingFileSize)
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingLessThatMinSize", dbUser.Language)
+                                                                                                   .Replace("@MIN", config.MinAcceptingFileSize.ToString()));
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+
+                                    #endregion checking filesize
+
+                                    #region post cookie
+
+                                    CookieModel model = new()
+                                    {
+                                        Category = "Instagram",
+                                        UploadedDateTime = DateTime.Now,
+                                        Status = CheckStatus.CookieCheckStatus.Created,
+                                        FileLink = string.Empty,
+                                        Filesize = Math.Round(fileSize.Megabytes, 0).ToString(),
+                                        Unit = "MB",
+                                        UploadedByUserId = dbUser.Id,
+                                        UploadedByUsername = dbUser.Username
+                                    };
+                                    await CookiesController.PostCookieAsync(model, aggregator);
+
+                                    #endregion post cookie
+
+                                    #region send answer
+
+                                    operations.Remove(temp.Operation);
+                                    await botClient.SendTextMessageAsync(
+                                        dbUser.Id,
+                                        locales.GetByKey("CookiesAcceptedWaitResult", dbUser.Language)
+                                                .Replace("@ID", model.Id.ToString()),
+                                        replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                        );
+
+                                    #endregion send answer
+
+                                    #region copy cookie files to directory
+
+                                    string fileDirectory = PathCollection.CookiesFolderPath + $"{model.Id}/";
+                                    if (!Directory.Exists(fileDirectory)) Directory.CreateDirectory(fileDirectory);
+
+                                    Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
+                                    string filename = temp.Document.FileName;
+                                    using FileStream stream = new(fileDirectory + filename, FileMode.Create);
+                                    await botClient.DownloadFileAsync(file.FilePath, stream);
+                                    stream.Close();
+
+                                    model.UploadedDateTime = DateTime.Now;
+                                    model.Status = CheckStatus.CookieCheckStatus.Uploaded;
+                                    model.FolderPath = fileDirectory;
+                                    await CookiesController.PutCookieAsync(model, aggregator);
+                                    return;
+
+                                    #endregion copy cookie files to directory
+                                }
+
                                 await botClient.SendTextMessageAsync(
                                     dbUser.Id,
                                     locales.GetByKey("SendCookiesInstruction", dbUser.Language).Replace("@SOFT", config.CookiesSoft),
@@ -392,413 +706,166 @@ namespace BotMainApp.TelegramServices
                             }
                             else
                             {
-                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
-                                return;
-                            }
-                        }
-                    case OperationType.WaitFileForChecking:
-                        {
-                            try
-                            {
-                                Regex dropMeRegex = new(@"https:\/\/dropmefiles\.com\/.*");
-                                if (temp.Document != null && temp.Document.FileName.EndsWith(".txt"))
-                                {
-                                    if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Private requests", "Приватные запросы") &&
-                                        temp.Operation.Params["SubCategory"].ToString().IsAnyEqual(":20"))
-                                    {
-                                        #region load tg file
-
-                                        Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
-                                        string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
-                                        using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
-                                        await botClient.DownloadFileAsync(file.FilePath, stream);
-                                        stream.Close();
-
-                                        #endregion load tg file
-
-                                        #region accept file
-
-                                        operations.Remove(temp.Operation);
-                                        ManualCheckModel manualCheckModel = new()
-                                        {
-                                            StartDateTime = DateTime.Now,
-                                            Status = CheckStatus.ManualCheckStatus.Created,
-                                            FromUserId = dbUser.Id,
-                                            FromUsername = dbUser.Username,
-                                        };
-                                        await ManualCheckController.PostCheckAsync(manualCheckModel, aggregator);
-                                        await botClient.SendTextMessageAsync(
-                                            dbUser.Id,
-                                            locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
-                                                   .Replace("@ID", manualCheckModel.Id.ToString()),
-                                            replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
-                                            );
-
-                                        #endregion accept file
-
-                                        await Task.Factory.StartNew(async () => await StandartCheckProcess(dbUser, filename, manualCheckModel, true)).ConfigureAwait(false);
-                                    }
-                                    else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("AdminChecking") &&
-                                             temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("AdminChecking"))
-                                    {
-                                        #region load tg file
-
-                                        Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
-                                        string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
-                                        using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
-                                        await botClient.DownloadFileAsync(file.FilePath, stream);
-                                        stream.Close();
-
-                                        #endregion load tg file
-
-                                        #region accept file
-
-                                        operations.Remove(temp.Operation);
-                                        ManualCheckModel manualCheckModel = new()
-                                        {
-                                            StartDateTime = DateTime.Now,
-                                            Status = CheckStatus.ManualCheckStatus.Created,
-                                            FromUserId = dbUser.Id,
-                                            FromUsername = dbUser.Username,
-                                        };
-                                        await ManualCheckController.PostCheckAsync(manualCheckModel, aggregator);
-                                        await botClient.SendTextMessageAsync(
-                                            dbUser.Id,
-                                            locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
-                                                   .Replace("@ID", manualCheckModel.Id.ToString()),
-                                            replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
-                                            );
-
-                                        #endregion accept file
-
-                                        await Task.Factory.StartNew(async () => await StandartCheckProcess(dbUser, filename, manualCheckModel, false)).ConfigureAwait(false);
-                                    }
-                                    else
-                                    {
-                                        await botClient.SendTextMessageAsync(
-                                            dbUser.Id,
-                                            locales.GetByKey("CanceledOpertaion", dbUser.Language),
-                                            replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
-                                            );
-                                        operations.Remove(temp.Operation);
-                                        return;
-                                    }
-                                }
-                                else if ((!argument.IsNullOrEmptyString() && dropMeRegex.IsMatch(argument)) ||
-                                         (temp.Document != null && (temp.Document.FileName.EndsWith(".zip") || temp.Document.FileName.EndsWith(".rar"))))
-                                {
-                                    if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Cookies", "Cookie файлы") &&
-                                        temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("Instagram"))
-                                    {
-                                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CheckingCookieFile", dbUser.Language));
-                                        if (!argument.IsNullOrEmptyString())
-                                        {
-                                            if (await CookiesController.IsDropMeLinkExist(argument))
-                                            {
-                                                try
-                                                {
-                                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkDublicateError", dbUser.Language));
-                                                }
-                                                catch (Exception)
-                                                {
-                                                }
-                                                return;
-                                            }
-
-                                            string fileInfoData = await Runner.RunDropMeLinkChecker(argument);
-                                            JObject fileInfoJson = JObject.Parse(fileInfoData);
-                                            if (fileInfoJson.ContainsKey("Error"))
-                                            {
-                                                try
-                                                {
-                                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingError", dbUser.Language));
-                                                }
-                                                catch (Exception)
-                                                {
-                                                }
-                                                return;
-                                            }
-                                            string filesize = fileInfoJson["Filesize"].ToString();
-                                            string unit = fileInfoJson["Unit"].ToString();
-                                            if (unit.IsAnyEqual("B", "KB"))
-                                            {
-                                                try
-                                                {
-                                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingLessThatMinSize", dbUser.Language)
-                                                                                                           .Replace("@MIN", config.MinAcceptingFileSize.ToString()));
-                                                }
-                                                catch (Exception)
-                                                {
-                                                }
-                                                return;
-                                            }
-                                            if (unit.IsAnyEqual("MB"))
-                                            {
-                                                if (double.TryParse(filesize.Replace(".", ","), out double cookiesSize))
-                                                {
-                                                    if (cookiesSize < config.MinAcceptingFileSize)
-                                                    {
-                                                        try
-                                                        {
-                                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingLessThatMinSize", dbUser.Language)
-                                                                                                                   .Replace("@MIN", config.MinAcceptingFileSize.ToString()));
-                                                        }
-                                                        catch (Exception)
-                                                        {
-                                                        }
-                                                        return;
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    try
-                                                    {
-                                                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingError", dbUser.Language));
-                                                    }
-                                                    catch (Exception)
-                                                    {
-                                                    }
-                                                    return;
-                                                }
-                                            }
-
-                                            CookieModel model = new()
-                                            {
-                                                Category = "Instagram",
-                                                UploadedDateTime = DateTime.Now,
-                                                Status = CheckStatus.CookieCheckStatus.Uploaded,
-                                                Filesize = filesize,
-                                                Unit = unit,
-                                                FileLink = argument,
-                                                FolderPath = string.Empty,
-                                                UploadedByUserId = dbUser.Id,
-                                                UploadedByUsername = dbUser.Username
-                                            };
-
-                                            await CookiesController.PostCookieAsync(model, aggregator);
-                                            operations.Remove(temp.Operation);
-                                            await botClient.SendTextMessageAsync(
-                                                dbUser.Id,
-                                                locales.GetByKey("CookiesAcceptedWaitResult", dbUser.Language)
-                                                        .Replace("@ID", model.Id.ToString()),
-                                                replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
-                                                );
-                                        }
-                                        if (temp.Document != null)
-                                        {
-                                            ByteSize fileSize = ByteSize.FromBytes((double)temp.Document.FileSize);
-                                            if (fileSize.Megabytes < config.MinAcceptingFileSize)
-                                            {
-                                                try
-                                                {
-                                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingLessThatMinSize", dbUser.Language)
-                                                                                                           .Replace("@MIN", config.MinAcceptingFileSize.ToString()));
-                                                }
-                                                catch (Exception)
-                                                {
-                                                }
-                                                return;
-                                            }
-
-                                            CookieModel model = new()
-                                            {
-                                                Category = "Instagram",
-                                                UploadedDateTime = DateTime.Now,
-                                                Status = CheckStatus.CookieCheckStatus.Created,
-                                                FileLink = string.Empty,
-                                                Filesize = Math.Round(fileSize.Megabytes, 0).ToString(),
-                                                Unit = "MB",
-                                                UploadedByUserId = dbUser.Id,
-                                                UploadedByUsername = dbUser.Username
-                                            };
-                                            await CookiesController.PostCookieAsync(model, aggregator);
-                                            operations.Remove(temp.Operation);
-                                            await botClient.SendTextMessageAsync(
-                                                dbUser.Id,
-                                                locales.GetByKey("CookiesAcceptedWaitResult", dbUser.Language)
-                                                        .Replace("@ID", model.Id.ToString()),
-                                                replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
-                                                );
-
-                                            string fileDirectory = PathCollection.CookiesFolderPath + $"{model.Id}/";
-                                            if (!Directory.Exists(fileDirectory)) Directory.CreateDirectory(fileDirectory);
-
-                                            Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
-                                            string filename = temp.Document.FileName;
-                                            using FileStream stream = new(fileDirectory + filename, FileMode.Create);
-                                            await botClient.DownloadFileAsync(file.FilePath, stream);
-                                            stream.Close();
-
-                                            model.UploadedDateTime = DateTime.Now;
-                                            model.Status = CheckStatus.CookieCheckStatus.Uploaded;
-                                            model.FolderPath = fileDirectory;
-                                            await CookiesController.PutCookieAsync(model, aggregator);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        await botClient.SendTextMessageAsync(
-                                            dbUser.Id,
-                                            locales.GetByKey("CanceledOpertaion", dbUser.Language),
-                                            replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
-                                            );
-                                        operations.Remove(temp.Operation);
-                                        return;
-                                    }
-                                }
-                                else
-                                {
-                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("NotFileSended", dbUser.Language));
-                                    return;
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                if (ex.Message == "Bad Request: file is too big")
-                                {
-                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileTooBigError", dbUser.Language));
-                                }
-                                else
-                                {
-                                    if (config.Chats.ErrorNotificationChat != 0)
-                                    {
-                                        try
-                                        {
-                                            await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при загрузке файла:\r\n{ex.Message}");
-                                        }
-                                        catch (Exception)
-                                        {
-                                        }
-                                    }
-                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUploadError", dbUser.Language));
-                                }
-                            }
-                            return;
-                        }
-
-                    case OperationType.WaitPayoutMethod:
-                        {
-                            if (argument.IsAnyEqual(config.PayoutMethods.ToArray()))
-                            {
-                                operations.Remove(temp.Operation);
-                                operations.Add(new(temp.Uid, OperationType.WaitAmount,
-                                    new KeyValuePair<string, object>("PaymentMethod", argument)
-                                    ));
                                 await botClient.SendTextMessageAsync(
                                     dbUser.Id,
-                                    locales.GetByKey("EnterAmount", dbUser.Language),
-                                    replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                                    locales.GetByKey("CanceledOpertaion", dbUser.Language),
+                                    replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
                                     );
+                                operations.Remove(temp.Operation);
                                 return;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            if (ex.Message == "Bad Request: file is too big")
+                            {
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileTooBigError", dbUser.Language));
                             }
                             else
                             {
-                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
-                                return;
+                                if (config.Chats.ErrorNotificationChat != 0)
+                                {
+                                    try
+                                    {
+                                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при загрузке файла:\r\n{ex.Message}");
+                                    }
+                                    catch (Exception)
+                                    {
+                                    }
+                                }
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUploadError", dbUser.Language));
                             }
                         }
-                    case OperationType.WaitAmount:
-                        {
-                            bool isCorrectedAmmount = int.TryParse(argument, out int ammount);
-                            if (isCorrectedAmmount && dbUser.Balance >= ammount)
-                            {
-                                operations.Remove(temp.Operation);
-                                operations.Add(new(temp.Uid, OperationType.WaitRequisites,
-                                    new KeyValuePair<string, object>("PaymentMethod", temp.Operation.Params["PaymentMethod"].ToString()),
-                                    new KeyValuePair<string, object>("Ammount", ammount)
-                                    ));
-                                await botClient.SendTextMessageAsync(
-                                    dbUser.Id,
-                                    locales.GetByKey("EnterRequisites", dbUser.Language),
-                                    replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
-                                    );
-                                return;
-                            }
-                            else
-                            {
-                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("EnteredIncorrectAmmount", dbUser.Language));
-                                return;
-                            }
-                        }
+                        return;
+                    }
 
-                    case OperationType.WaitRequisites:
+                case OperationType.WaitPayoutMethod:
+                    {
+                        if (argument.IsAnyEqual(config.PayoutMethods.ToArray()))
                         {
                             operations.Remove(temp.Operation);
-                            operations.Add(new(temp.Uid, OperationType.WaitAcceptPayout,
-                                new KeyValuePair<string, object>("PaymentMethod", temp.Operation.Params["PaymentMethod"].ToString()),
-                                new KeyValuePair<string, object>("Ammount", temp.Operation.Params["Ammount"].ToString()),
-                                new KeyValuePair<string, object>("PaymentRequisites", argument)
+                            operations.Add(new(temp.Uid, OperationType.WaitAmount,
+                                new KeyValuePair<string, object>("PaymentMethod", argument)
                                 ));
                             await botClient.SendTextMessageAsync(
                                 dbUser.Id,
-                                locales.GetByKey("AcceptPayoutRequest", dbUser.Language)
-                                       .Replace("@METHOD", temp.Operation.Params["PaymentMethod"].ToString())
-                                       .Replace("@AMMOUNT", temp.Operation.Params["Ammount"].ToString())
-                                       .Replace("@REQ", argument),
-                                replyMarkup: keyboards.GetByLocale("AcceptCancel", dbUser.Language, payoutEnabled)
+                                locales.GetByKey("EnterAmount", dbUser.Language),
+                                replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
                                 );
                             return;
                         }
-
-                    case OperationType.WaitAcceptPayout:
+                        else
                         {
-                            if (argument.IsAnyEqual("Accept ✅", "Подтвердить ✅"))
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
+                            return;
+                        }
+                    }
+                case OperationType.WaitAmount:
+                    {
+                        bool isCorrectedAmmount = int.TryParse(argument, out int ammount);
+                        if (isCorrectedAmmount && dbUser.Balance >= ammount)
+                        {
+                            operations.Remove(temp.Operation);
+                            operations.Add(new(temp.Uid, OperationType.WaitRequisites,
+                                new KeyValuePair<string, object>("PaymentMethod", temp.Operation.Params["PaymentMethod"].ToString()),
+                                new KeyValuePair<string, object>("Ammount", ammount)
+                                ));
+                            await botClient.SendTextMessageAsync(
+                                dbUser.Id,
+                                locales.GetByKey("EnterRequisites", dbUser.Language),
+                                replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                                );
+                            return;
+                        }
+                        else
+                        {
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("EnteredIncorrectAmmount", dbUser.Language));
+                            return;
+                        }
+                    }
+
+                case OperationType.WaitRequisites:
+                    {
+                        operations.Remove(temp.Operation);
+                        operations.Add(new(temp.Uid, OperationType.WaitAcceptPayout,
+                            new KeyValuePair<string, object>("PaymentMethod", temp.Operation.Params["PaymentMethod"].ToString()),
+                            new KeyValuePair<string, object>("Ammount", temp.Operation.Params["Ammount"].ToString()),
+                            new KeyValuePair<string, object>("PaymentRequisites", argument)
+                            ));
+                        await botClient.SendTextMessageAsync(
+                            dbUser.Id,
+                            locales.GetByKey("AcceptPayoutRequest", dbUser.Language)
+                                   .Replace("@METHOD", temp.Operation.Params["PaymentMethod"].ToString())
+                                   .Replace("@AMMOUNT", temp.Operation.Params["Ammount"].ToString())
+                                   .Replace("@REQ", argument),
+                            replyMarkup: keyboards.GetByLocale("AcceptCancel", dbUser.Language, payoutEnabled)
+                            );
+                        return;
+                    }
+
+                case OperationType.WaitAcceptPayout:
+                    {
+                        if (argument.IsAnyEqual("Accept ✅", "Подтвердить ✅"))
+                        {
+                            string method = temp.Operation.Params["PaymentMethod"].ToString();
+                            string requisites = temp.Operation.Params["PaymentRequisites"].ToString();
+                            int ammount = int.Parse(temp.Operation.Params["Ammount"].ToString());
+
+                            dbUser.Balance -= ammount;
+                            await UsersController.PutUserAsync(dbUser, aggregator);
+
+                            PayoutModel model = new()
                             {
-                                string method = temp.Operation.Params["PaymentMethod"].ToString();
-                                string requisites = temp.Operation.Params["PaymentRequisites"].ToString();
-                                int ammount = int.Parse(temp.Operation.Params["Ammount"].ToString());
-
-                                dbUser.Balance -= ammount;
-                                await UsersController.PutUserAsync(dbUser, aggregator);
-
-                                PayoutModel model = new()
+                                FromUserId = dbUser.Id,
+                                FromUsername = dbUser.Username,
+                                StartDateTime = DateTime.Now,
+                                Method = method,
+                                Requisites = requisites,
+                                Ammount = ammount,
+                                Status = PayoutStatus.PayoutStatusEnum.Created
+                            };
+                            if (await PayoutController.PostPayoutAsync(model, aggregator))
+                            {
+                                if (config.Chats.NotifyWhenUserMakePayout != 0)
                                 {
-                                    FromUserId = dbUser.Id,
-                                    FromUsername = dbUser.Username,
-                                    StartDateTime = DateTime.Now,
-                                    Method = method,
-                                    Requisites = requisites,
-                                    Ammount = ammount,
-                                    Status = PayoutStatus.PayoutStatusEnum.Created
-                                };
-                                if (await PayoutController.PostPayoutAsync(model, aggregator))
-                                {
-                                    if (config.Chats.NotifyWhenUserMakePayout != 0)
+                                    try
                                     {
-                                        try
-                                        {
-                                            await botClient.SendTextMessageAsync(config.Chats.NotifyWhenCheckerEndWorkChat,
-                                                $"Пользователь {model.FromUserId} | @{model.FromUsername} создал заявку на выплату\r\n" +
-                                                $"Дата : {model.StartDateTime:dd.MM.yyyy HH.mm}\r\n" +
-                                                $"Метод : {model.Method}\r\n" +
-                                                $"Сумма : {model.Ammount}\r\n" +
-                                                $"Реквизиты : {model.Requisites}");
-                                        }
-                                        catch (Exception)
-                                        {
-                                        }
+                                        await botClient.SendTextMessageAsync(config.Chats.NotifyWhenCheckerEndWorkChat,
+                                            $"Пользователь {model.FromUserId} | @{model.FromUsername} создал заявку на выплату\r\n" +
+                                            $"Дата : {model.StartDateTime:dd.MM.yyyy HH.mm}\r\n" +
+                                            $"Метод : {model.Method}\r\n" +
+                                            $"Сумма : {model.Ammount}\r\n" +
+                                            $"Реквизиты : {model.Requisites}");
+                                    }
+                                    catch (Exception)
+                                    {
                                     }
                                 }
+                            }
 
-                                operations.Remove(temp.Operation);
-                                await botClient.SendTextMessageAsync(
-                                    dbUser.Id,
-                                    locales.GetByKey("PayoutCreated", dbUser.Language),
-                                    replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
-                                    );
-                                return;
-                            }
-                            else
-                            {
-                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
-                                return;
-                            }
+                            operations.Remove(temp.Operation);
+                            await botClient.SendTextMessageAsync(
+                                dbUser.Id,
+                                locales.GetByKey("PayoutCreated", dbUser.Language),
+                                replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                );
+                            return;
                         }
-                }
+                        else
+                        {
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
+                            return;
+                        }
+                    }
             }
+        }
 
-            #endregion operations
+        #endregion operations
 
+        #region messages
+
+        private async Task CheckUserMessageAsync(UserModel dbUser, TempTelegram temp, bool payoutEnabled)
+        {
             if (temp.Message == "/start")
             {
                 await botClient.SendTextMessageAsync(
@@ -807,7 +874,7 @@ namespace BotMainApp.TelegramServices
                     );
                 return;
             }
-            if (temp.Message.IsAnyEqual("Language 🌎", "Язык 🌎"))
+            else if (temp.Message.IsAnyEqual("Language 🌎", "Язык 🌎"))
             {
                 await botClient.SendTextMessageAsync(
                     dbUser.Id, locales.GetByKey("SelectNewLanguage",
@@ -817,7 +884,7 @@ namespace BotMainApp.TelegramServices
                 operations.Add(new(temp.Uid, OperationType.ChangeLanguage));
                 return;
             }
-            if (temp.Message.IsAnyEqual("Upload logs 📄", "Загрузить логи 📄"))
+            else if (temp.Message.IsAnyEqual("Upload logs 📄", "Загрузить логи 📄"))
             {
                 await botClient.SendTextMessageAsync(
                     dbUser.Id,
@@ -827,7 +894,7 @@ namespace BotMainApp.TelegramServices
                 operations.Add(new(temp.Uid, OperationType.WaitCategoryForChecking));
                 return;
             }
-            if (temp.Message.IsAnyEqual("Balance 💰", "Баланс 💰"))
+            else if (temp.Message.IsAnyEqual("Balance 💰", "Баланс 💰"))
             {
                 await botClient.SendTextMessageAsync(
                     dbUser.Id,
@@ -838,7 +905,7 @@ namespace BotMainApp.TelegramServices
                     );
                 return;
             }
-            if (temp.Message.IsAnyEqual("Make payout 🛒", "Запросить выплату 🛒"))
+            else if (temp.Message.IsAnyEqual("Make payout 🛒", "Запросить выплату 🛒"))
             {
                 List<string> keys = new();
                 keys.AddRange(config.PayoutMethods);
@@ -859,9 +926,9 @@ namespace BotMainApp.TelegramServices
                 operations.Add(new(temp.Uid, OperationType.WaitPayoutMethod));
                 return;
             }
-            if (temp.Message.IsAnyEqual("Logs in process 📄", "Логи в обработке 📄"))
+            else if (temp.Message.IsAnyEqual("Logs in process 📄", "Логи в обработке 📄"))
             {
-                List<ManualCheckModel> checks = await ManualCheckController.GetChecksByUserIdAsync(dbUser.Id);
+                List<CpanelWhmCheckModel> checks = await CpanelWhmCheckController.GetChecksByUserIdAsync(dbUser.Id);
                 if (!checks.Any())
                 {
                     await botClient.SendTextMessageAsync(
@@ -910,7 +977,7 @@ namespace BotMainApp.TelegramServices
                 }
                 return;
             }
-            if (temp.Message.IsAnyEqual("Cookies in process 📄", "Cookies в обработке 📄"))
+            else if (temp.Message.IsAnyEqual("Cookies in process 📄", "Cookies в обработке 📄"))
             {
                 List<CookieModel> cookies = await CookiesController.GetCookiesByUserIdAsync(dbUser.Id);
                 if (!cookies.Any())
@@ -948,7 +1015,7 @@ namespace BotMainApp.TelegramServices
                 }
                 return;
             }
-            if (temp.Message.IsAnyEqual("Payout in process 🛒", "Выплаты в обработке 🛒"))
+            else if (temp.Message.IsAnyEqual("Payout in process 🛒", "Выплаты в обработке 🛒"))
             {
                 List<PayoutModel> payouts = await PayoutController.GetByUserIdAsync(dbUser.Id);
                 if (!payouts.Any())
@@ -988,7 +1055,7 @@ namespace BotMainApp.TelegramServices
                 }
                 return;
             }
-            if (temp.Message.IsAnyEqual("/check_log_admin") && config.EnableAdminCheckCommand)
+            else if (temp.Message.IsAnyEqual("/check_log_admin") && config.EnableAdminCheckCommand)
             {
                 operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
                     new KeyValuePair<string, object>("Category", "AdminChecking"),
@@ -1003,6 +1070,10 @@ namespace BotMainApp.TelegramServices
             }
         }
 
+        #endregion messages
+
+        #region error handler
+
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("ошибка", TelegramStateModel.RedBrush));
@@ -1012,7 +1083,13 @@ namespace BotMainApp.TelegramServices
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("работает", TelegramStateModel.GreenBrush));
         }
 
-        private async Task StandartCheckProcess(UserModel dbUser, string filename, ManualCheckModel manualCheckModel, bool fillDublicates)
+        #endregion error handler
+
+        #endregion handling
+
+        #region cpanel and whm checking
+
+        private async Task StandartCheckProcess(UserModel dbUser, string filename, CpanelWhmCheckModel manualCheckModel, bool fillDublicates)
         {
             #region init
 
@@ -1188,7 +1265,7 @@ namespace BotMainApp.TelegramServices
             #region after checks set status to dublicate deleted
 
             manualCheckModel.Status = CheckStatus.ManualCheckStatus.SendedToSoftCheck;
-            await ManualCheckController.PutCheckAsync(manualCheckModel, aggregator);
+            await CpanelWhmCheckController.PutCheckAsync(manualCheckModel, aggregator);
 
             #endregion after checks set status to dublicate deleted
 
@@ -1316,7 +1393,7 @@ namespace BotMainApp.TelegramServices
             #endregion copying last files and set to checked by soft status
         }
 
-        private async void MoveFilesToChecksIdFolderAndUpateCountAndPathes(ManualCheckModel manualCheck, CheckStatus.ManualCheckStatus endStatus, Stopwatch ellapsedWatch)
+        private async void MoveFilesToChecksIdFolderAndUpateCountAndPathes(CpanelWhmCheckModel manualCheck, CheckStatus.ManualCheckStatus endStatus, Stopwatch ellapsedWatch)
         {
             string destinationFolderPath = PathCollection.ChecksFolderPath + manualCheck.Id + "/";
             if (!Directory.Exists(destinationFolderPath)) Directory.CreateDirectory(destinationFolderPath);
@@ -1372,8 +1449,12 @@ namespace BotMainApp.TelegramServices
                 manualCheck.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
                 manualCheck.EndDateTime = DateTime.Now;
             }
-            await ManualCheckController.PutCheckAsync(manualCheck, aggregator);
+            await CpanelWhmCheckController.PutCheckAsync(manualCheck, aggregator);
         }
+
+        #endregion cpanel and whm checking
+
+        #region user managment
 
         public async Task<bool> AcceptTelegramUserAsync(UserModel dbUser)
         {
@@ -1505,6 +1586,10 @@ namespace BotMainApp.TelegramServices
             return updatedUsersFromDb.Count;
         }
 
+        #endregion user managment
+
+        #region mail sender
+
         public async Task<bool> SendMailToUserAsync(UserModel dbUser, string mail, FileStream fs)
         {
             try
@@ -1525,7 +1610,11 @@ namespace BotMainApp.TelegramServices
             }
         }
 
-        public async Task SendBalanceInfoToUser(UserModel dbUser, bool isPositiveBalance)
+        #endregion mail sender
+
+        #region notifications
+
+        public async Task NotifyUserBalanceChanged(UserModel dbUser, bool isPositiveBalance)
         {
             try
             {
@@ -1571,7 +1660,7 @@ namespace BotMainApp.TelegramServices
             }
         }
 
-        public async Task NotifyUserForEndCheckingFile(UserModel dbUser, ManualCheckModel manualCheck, int totalValid, int addBalance)
+        public async Task NotifyUserForEndCheckingFile(UserModel dbUser, CpanelWhmCheckModel manualCheck, int totalValid, int addBalance)
         {
             try
             {
@@ -1626,5 +1715,7 @@ namespace BotMainApp.TelegramServices
             {
             }
         }
+
+        #endregion notifications
     }
 }
