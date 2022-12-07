@@ -110,6 +110,8 @@ namespace BotMainApp.ViewModels
             model.Status = PayoutStatus.PayoutStatusEnum.Completed;
             await PayoutController.PutPayoutAsync(model, aggregator);
             UserModel dbUser = await UsersController.GetUserByIdAsync(model.FromUserId);
+            dbUser.TotalPayoutCompletedCount++;
+            dbUser.TotalPayoutCompletedSummary += model.Ammount;
             await handler.NotifyChangeStatusPayoutToClosed(dbUser, model.Id.ToString());
         }
 

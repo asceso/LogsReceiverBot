@@ -230,7 +230,8 @@ namespace BotMainApp.TelegramServices
                         Language = temp.Language
                     }, aggregator))
                     {
-                        await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("WelcomeNickname", temp.Language).Replace("@USERNAME", temp.Username), replyMarkup: emptyKeyboard);
+                        await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("QuestionForumInfo", temp.Language), replyMarkup: keyboards.GetByLocale("ForumsInfoAnswers", temp.Language, false));
+                        operations.Add(new(temp.Uid, OperationType.WaitUserForumInfo));
                         return;
                     }
                     else
@@ -240,36 +241,13 @@ namespace BotMainApp.TelegramServices
                     }
                 }
             }
-            if (temp.Operation != null && temp.Operation.OperationType == OperationType.NewUserWithoutNickname)
+            if (temp.Operation != null &&
+                (temp.Operation.OperationType == OperationType.NewUserWithoutNickname ||
+                 temp.Operation.OperationType == OperationType.WaitUserForumInfo ||
+                 temp.Operation.OperationType == OperationType.WaitUserLogsOriginInfo))
             {
-                string argument = temp.Message;
-                if (argument.StartsWith("/"))
-                {
-                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("NicknameWrong", dbUser.Language), replyMarkup: emptyKeyboard);
-                    return;
-                }
-
-                UserModel existUser = await UsersController.GetUserByUsernameAsync(argument);
-                if (existUser is not null)
-                {
-                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("NicknameExist", dbUser.Language), replyMarkup: emptyKeyboard);
-                    return;
-                }
-                else
-                {
-                    dbUser.Username = argument;
-                    if (await UsersController.PutUserAsync(dbUser, aggregator))
-                    {
-                        await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("WelcomeNickname", temp.Language).Replace("@USERNAME", argument), replyMarkup: emptyKeyboard);
-                        operations.Remove(temp.Operation);
-                        return;
-                    }
-                    else
-                    {
-                        await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("DbError", temp.Language), replyMarkup: emptyKeyboard);
-                        return;
-                    }
-                }
+                await CheckUserOperationAsync(dbUser, temp, false).ConfigureAwait(false);
+                return;
             }
             if (dbUser.IsBanned)
             {
@@ -290,6 +268,7 @@ namespace BotMainApp.TelegramServices
             if (temp.Operation != null)
             {
                 await CheckUserOperationAsync(dbUser, temp, payoutEnabled).ConfigureAwait(false);
+                return;
             }
 
             #endregion operations
@@ -297,6 +276,7 @@ namespace BotMainApp.TelegramServices
             #region messages
 
             await CheckUserMessageAsync(dbUser, temp, payoutEnabled).ConfigureAwait(false);
+            return;
 
             #endregion messages
         }
@@ -856,6 +836,70 @@ namespace BotMainApp.TelegramServices
                             await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("PleaseSelectFromKeyboard", dbUser.Language));
                             return;
                         }
+                    }
+
+                case OperationType.NewUserWithoutNickname:
+                    {
+                        if (argument.StartsWith("/"))
+                        {
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("NicknameWrong", dbUser.Language), replyMarkup: emptyKeyboard);
+                            return;
+                        }
+
+                        UserModel existUser = await UsersController.GetUserByUsernameAsync(argument);
+                        if (existUser is not null)
+                        {
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("NicknameExist", dbUser.Language), replyMarkup: emptyKeyboard);
+                            return;
+                        }
+                        else
+                        {
+                            dbUser.Username = argument;
+                            if (await UsersController.PutUserAsync(dbUser, aggregator))
+                            {
+                                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("QuestionForumInfo", dbUser.Language), replyMarkup: keyboards.GetByLocale("ForumsInfoAnswers", dbUser.Language, false));
+                                operations.Remove(temp.Operation);
+                                operations.Add(new(temp.Uid, OperationType.WaitUserForumInfo));
+                                return;
+                            }
+                            else
+                            {
+                                await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("DbError", temp.Language), replyMarkup: emptyKeyboard);
+                                return;
+                            }
+                        }
+                    }
+                case OperationType.WaitUserForumInfo:
+                    {
+                        dbUser.ForumsInfo = argument;
+                        await UsersController.PutUserAsync(dbUser, aggregator).ConfigureAwait(false);
+                        await botClient.SendTextMessageAsync(
+                            dbUser.Id,
+                            locales.GetByKey("QuestionLogsOriginInfo", dbUser.Language),
+                            replyMarkup: keyboards.GetByLocale("LogsOriginAnswers", dbUser.Language, false)
+                            );
+                        operations.Remove(temp.Operation);
+                        operations.Add(new(temp.Uid, OperationType.WaitUserLogsOriginInfo));
+                        return;
+                    }
+                case OperationType.WaitUserLogsOriginInfo:
+                    {
+                        dbUser.LogsOriginInfo = argument;
+                        await UsersController.PutUserAsync(dbUser, aggregator).ConfigureAwait(false);
+                        if (dbUser.IsAccepted)
+                        {
+                            await botClient.SendTextMessageAsync(
+                                dbUser.Id,
+                                locales.GetByKey("QuestionCompleteForAcceptedUsers", dbUser.Language),
+                                replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                );
+                        }
+                        else
+                        {
+                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("WelcomeNickname", dbUser.Language).Replace("@USERNAME", dbUser.Username), replyMarkup: emptyKeyboard);
+                        }
+                        operations.Remove(temp.Operation);
+                        return;
                     }
             }
         }
@@ -1608,6 +1652,37 @@ namespace BotMainApp.TelegramServices
             {
                 return false;
             }
+        }
+
+        public async Task<bool> SendQuestionsToUser(UserModel dbUser)
+        {
+            try
+            {
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("QuestionForumInfo", dbUser.Language), replyMarkup: keyboards.GetByLocale("ForumsInfoAnswers", dbUser.Language, false));
+                OperationModel userOperation = operations.FirstOrDefault(o => o.UserId == dbUser.Id);
+                if (userOperation != null)
+                {
+                    operations.Remove(userOperation);
+                }
+                operations.Add(new(dbUser.Id, OperationType.WaitUserForumInfo));
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool IsUserAlreadyInProgressQuestions(UserModel dbUser)
+        {
+            OperationModel userOperation = operations.FirstOrDefault(o => o.UserId == dbUser.Id);
+            if (userOperation != null &&
+                (userOperation.OperationType == OperationType.WaitUserForumInfo ||
+                 userOperation.OperationType == OperationType.WaitUserLogsOriginInfo))
+            {
+                return true;
+            }
+            return false;
         }
 
         #endregion mail sender

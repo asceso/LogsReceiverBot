@@ -11,6 +11,8 @@
         WaitPayoutMethod,
         WaitAmount,
         WaitRequisites,
-        WaitAcceptPayout
+        WaitAcceptPayout,
+        WaitUserForumInfo,
+        WaitUserLogsOriginInfo
     }
 }

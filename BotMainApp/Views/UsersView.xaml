@@ -73,6 +73,18 @@
                             Command="{Binding SendMailToSelectedUsersCommand}"
                             Content="Отправить сообщение выделенным"
                             Cursor="Hand" />
+                        <Button
+                            Width="175"
+                            Margin="5,0,0,0"
+                            Command="{Binding RecalculateUsersTotalPayoutsCommand}"
+                            Content="Пересчитать выплаты"
+                            Cursor="Hand" />
+                        <Button
+                            Width="175"
+                            Margin="5,0,0,0"
+                            Command="{Binding SendQuestionsToUsersCommand}"
+                            Content="Отправить анкеты"
+                            Cursor="Hand" />
                         <CheckBox
                             Width="225"
                             Margin="5,0,0,0"
@@ -97,6 +109,8 @@
                                 <ColumnDefinition Width="75" />
                                 <ColumnDefinition Width="125" />
                                 <ColumnDefinition Width="125" />
+                                <ColumnDefinition Width="125" />
+                                <ColumnDefinition Width="150" />
                                 <ColumnDefinition MinWidth="150" />
                             </Grid.ColumnDefinitions>
                             <Border
@@ -124,6 +138,12 @@
                                 <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Логов" />
                             </Border>
                             <Border Grid.Column="7" Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Кол-во выплат" />
+                            </Border>
+                            <Border Grid.Column="8" Style="{StaticResource HeaderBorder}">
+                                <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Всего выплачено" />
+                            </Border>
+                            <Border Grid.Column="9" Style="{StaticResource HeaderBorder}">
                                 <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Управление" />
                             </Border>
                         </Grid>
@@ -158,6 +178,8 @@
                                             <ColumnDefinition Width="75" />
                                             <ColumnDefinition Width="125" />
                                             <ColumnDefinition Width="125" />
+                                            <ColumnDefinition Width="125" />
+                                            <ColumnDefinition Width="150" />
                                             <ColumnDefinition MinWidth="150" />
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
@@ -320,9 +342,35 @@
                                         </Grid>
 
                                         <!--#endregion-->
-                                        <!--#region manage buttons-->
+                                        <!--#region total payout count-->
 
                                         <Grid Grid.Column="7">
+                                            <Border Style="{StaticResource CellBorder}" />
+                                            <TextBox
+                                                Grid.Column="1"
+                                                HorizontalAlignment="Center"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Text="{Binding TotalPayoutCompletedCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        </Grid>
+
+                                        <!--#endregion-->
+                                        <!--#region total payout summary-->
+
+                                        <Grid Grid.Column="8">
+                                            <Border Style="{StaticResource CellBorder}" />
+                                            <TextBox
+                                                Grid.Column="1"
+                                                HorizontalAlignment="Center"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Text="{Binding TotalPayoutCompletedSummary, UpdateSourceTrigger=PropertyChanged}" />
+                                        </Grid>
+
+                                        <!--#endregion-->
+                                        <!--#region manage buttons-->
+
+                                        <Grid Grid.Column="9">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="1" />
                                                 <ColumnDefinition />
@@ -336,6 +384,73 @@
                                                 <Button
                                                     Width="40"
                                                     Height="40"
+                                                    hc:BorderElement.CornerRadius="10"
+                                                    hc:IconElement.Geometry="{StaticResource InfoGeometry}"
+                                                    hc:IconElement.Height="22"
+                                                    hc:IconElement.Width="22"
+                                                    Cursor="Help">
+                                                    <Button.ToolTip>
+                                                        <ToolTip Placement="Mouse">
+                                                            <Grid Width="400" DataContext="{Binding}">
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="10" />
+                                                                    <RowDefinition Height="30" />
+                                                                    <RowDefinition Height="90" />
+                                                                    <RowDefinition Height="30" />
+                                                                    <RowDefinition Height="90" />
+                                                                    <RowDefinition Height="10" />
+                                                                </Grid.RowDefinitions>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="10" />
+                                                                    <ColumnDefinition />
+                                                                    <ColumnDefinition Width="10" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    Grid.Row="1"
+                                                                    Grid.Column="1"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    FontWeight="SemiBold"
+                                                                    Text="Инфо о форумах:" />
+                                                                <Border
+                                                                    Grid.Row="1"
+                                                                    Grid.Column="1"
+                                                                    Height="1"
+                                                                    VerticalAlignment="Bottom"
+                                                                    Background="Black"
+                                                                    Opacity="0.4" />
+                                                                <TextBlock
+                                                                    Grid.Row="2"
+                                                                    Grid.Column="1"
+                                                                    HorizontalAlignment="Center"
+                                                                    Text="{Binding ForumsInfo, UpdateSourceTrigger=PropertyChanged}" />
+                                                                <TextBlock
+                                                                    Grid.Row="3"
+                                                                    Grid.Column="1"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    FontWeight="SemiBold"
+                                                                    Text="Инфо о логах:" />
+                                                                <Border
+                                                                    Grid.Row="3"
+                                                                    Grid.Column="1"
+                                                                    Height="1"
+                                                                    VerticalAlignment="Bottom"
+                                                                    Background="Black"
+                                                                    Opacity="0.4" />
+                                                                <TextBlock
+                                                                    Grid.Row="4"
+                                                                    Grid.Column="1"
+                                                                    HorizontalAlignment="Center"
+                                                                    Text="{Binding LogsOriginInfo, UpdateSourceTrigger=PropertyChanged}" />
+                                                            </Grid>
+                                                        </ToolTip>
+                                                    </Button.ToolTip>
+                                                </Button>
+                                                <Button
+                                                    Width="40"
+                                                    Height="40"
+                                                    Margin="5,0,0,0"
                                                     hc:BorderElement.CornerRadius="10"
                                                     Command="{Binding SendMailCommand}"
                                                     CommandParameter="{Binding}"
@@ -610,6 +725,70 @@
                                             Grid.Column="15"
                                             Margin="5,0,0,0"
                                             Orientation="Horizontal">
+
+                                            <Button
+                                                Width="40"
+                                                hc:BorderElement.CornerRadius="5"
+                                                hc:IconElement.Geometry="{StaticResource InfoGeometry}"
+                                                Cursor="Help">
+                                                <Button.ToolTip>
+                                                    <ToolTip Placement="Mouse">
+                                                        <Grid Width="400" DataContext="{Binding}">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="10" />
+                                                                <RowDefinition Height="30" />
+                                                                <RowDefinition Height="90" />
+                                                                <RowDefinition Height="30" />
+                                                                <RowDefinition Height="90" />
+                                                                <RowDefinition Height="10" />
+                                                            </Grid.RowDefinitions>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="10" />
+                                                                <ColumnDefinition />
+                                                                <ColumnDefinition Width="10" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock
+                                                                Grid.Row="1"
+                                                                Grid.Column="1"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                FontWeight="SemiBold"
+                                                                Text="Инфо о форумах:" />
+                                                            <Border
+                                                                Grid.Row="1"
+                                                                Grid.Column="1"
+                                                                Height="1"
+                                                                VerticalAlignment="Bottom"
+                                                                Background="Black"
+                                                                Opacity="0.4" />
+                                                            <TextBlock
+                                                                Grid.Row="2"
+                                                                Grid.Column="1"
+                                                                HorizontalAlignment="Center"
+                                                                Text="{Binding ForumsInfo, UpdateSourceTrigger=PropertyChanged}" />
+                                                            <TextBlock
+                                                                Grid.Row="3"
+                                                                Grid.Column="1"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                FontWeight="SemiBold"
+                                                                Text="Инфо о логах:" />
+                                                            <Border
+                                                                Grid.Row="3"
+                                                                Grid.Column="1"
+                                                                Height="1"
+                                                                VerticalAlignment="Bottom"
+                                                                Background="Black"
+                                                                Opacity="0.4" />
+                                                            <TextBlock
+                                                                Grid.Row="4"
+                                                                Grid.Column="1"
+                                                                HorizontalAlignment="Center"
+                                                                Text="{Binding LogsOriginInfo, UpdateSourceTrigger=PropertyChanged}" />
+                                                        </Grid>
+                                                    </ToolTip>
+                                                </Button.ToolTip>
+                                            </Button>
 
                                             <Button
                                                 Width="40"

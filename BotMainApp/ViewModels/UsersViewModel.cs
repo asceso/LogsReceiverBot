@@ -28,6 +28,7 @@ namespace BotMainApp.ViewModels
         private readonly NotificationManager notificationManager;
         private readonly ConfigModel config;
         private readonly IMemorySaver memory;
+        private readonly IEventAggregator aggregator;
         private UpdateHandler handler;
 
         private bool isLoading;
@@ -52,6 +53,8 @@ namespace BotMainApp.ViewModels
         public DelegateCommand BlockSelectedUsersCommand { get; set; }
         public DelegateCommand UnblockSelectedUsersCommand { get; set; }
         public DelegateCommand SendMailToSelectedUsersCommand { get; set; }
+        public DelegateCommand RecalculateUsersTotalPayoutsCommand { get; set; }
+        public DelegateCommand SendQuestionsToUsersCommand { get; set; }
 
         public UsersViewModel(IEventAggregator aggregator, IMemorySaver memory)
         {
@@ -62,6 +65,7 @@ namespace BotMainApp.ViewModels
             DataUsers.CollectionChanged += (s, e) => UpdateDataUsersCounter();
 
             this.memory = memory;
+            this.aggregator = aggregator;
             handler = memory.GetItem<UpdateHandler>("Handler");
             notificationManager = memory.GetItem<NotificationManager>("Notification");
             config = memory.GetItem<ConfigModel>("Config");
@@ -210,12 +214,74 @@ namespace BotMainApp.ViewModels
                             {
                                 successCount++;
                             }
-                            fs.Close();
+                            if (fs != null)
+                            {
+                                fs.Close();
+                            }
                         }
                         notificationManager.Show("Результат", $"Сообщение отправлено {successCount}/{DataUsers.Count(u => u.IsSelected)} пользователям", NotificationType.Information);
                     }
                 }
             }, () => IsHasSelectedDataUsers).ObservesProperty(() => IsHasSelectedDataUsers);
+            RecalculateUsersTotalPayoutsCommand = new DelegateCommand(async () =>
+            {
+                IsLoading = true;
+                List<UserModel> users = await UsersController.GetUsersAsync().ConfigureAwait(false);
+                List<PayoutModel> payouts = await PayoutController.GetPayoutsAsync().ConfigureAwait(false);
+                foreach (var user in users)
+                {
+                    user.TotalPayoutCompletedCount = payouts.Where(p => p.FromUserId == user.Id).Count();
+                    user.TotalPayoutCompletedSummary = payouts.Where(p => p.FromUserId == user.Id).Sum(s => s.Ammount);
+                }
+                await UsersController.PutUsersAsync(users, aggregator).ConfigureAwait(false);
+                IsLoading = false;
+            });
+            SendQuestionsToUsersCommand = new DelegateCommand(async () =>
+            {
+                IsLoading = true;
+                try
+                {
+                    List<UserModel> users = await UsersController.GetUsersAsync().ConfigureAwait(false);
+                    List<UserModel> targetUsers = users.Where(u => u.ForumsInfo.IsNullOrEmptyString() && u.LogsOriginInfo.IsNullOrEmptyString()).ToList();
+                    for (int i = 0; i < targetUsers.Count; i++)
+                    {
+                        if (handler.IsUserAlreadyInProgressQuestions(targetUsers[i]))
+                        {
+                            targetUsers.RemoveAt(i);
+                        }
+                    }
+                    if (!targetUsers.Any())
+                    {
+                        notificationManager.Show("Ошибка", $"Нет пользователей для отправки опроса", NotificationType.Information);
+                    }
+                    else
+                    {
+                        int sendedCount = 0;
+                        foreach (UserModel user in targetUsers)
+                        {
+                            try
+                            {
+                                if (await handler.SendQuestionsToUser(user))
+                                {
+                                    sendedCount++;
+                                }
+                            }
+                            catch (Exception)
+                            {
+                            }
+                        }
+                        notificationManager.Show("Результат", $"Опрос отправлен {sendedCount}/{targetUsers.Count} пользователям", NotificationType.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    notificationManager.Show(ex);
+                }
+                finally
+                {
+                    IsLoading = false;
+                }
+            });
         }
 
         private void InitUserCommands(UserModel user)

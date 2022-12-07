@@ -3,6 +3,7 @@ using System;
 using DataAdapter;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAdapter.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20221207171623_AddTotalPayoutFieldsToUserModel")]
+    partial class AddTotalPayoutFieldsToUserModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -282,10 +284,6 @@ namespace DataAdapter.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("firstname");
 
-                    b.Property<string>("ForumsInfo")
-                        .HasColumnType("longtext")
-                        .HasColumnName("forums_info");
-
                     b.Property<bool>("IsAccepted")
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("is_accepted");
@@ -301,10 +299,6 @@ namespace DataAdapter.Migrations
                     b.Property<string>("Lastname")
                         .HasColumnType("longtext")
                         .HasColumnName("lastname");
-
-                    b.Property<string>("LogsOriginInfo")
-                        .HasColumnType("longtext")
-                        .HasColumnName("logs_origin_info");
 
                     b.Property<int>("LogsUploaded")
                         .HasColumnType("int")

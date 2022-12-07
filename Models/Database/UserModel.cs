@@ -18,6 +18,10 @@ namespace Models.Database
         private DateTime registrationDate;
         private int logsUploaded;
         private double balance;
+        private int totalPayoutCompletedCount;
+        private double totalPayoutCompletedSummary;
+        private string forumsInfo;
+        private string logsOriginInfo;
         private bool isSelected;
 
         [Column("id")]
@@ -52,6 +56,18 @@ namespace Models.Database
 
         [Column("balance")]
         public double Balance { get => balance; set => SetProperty(ref balance, value); }
+
+        [Column("total_payout_count")]
+        public int TotalPayoutCompletedCount { get => totalPayoutCompletedCount; set => SetProperty(ref totalPayoutCompletedCount, value); }
+
+        [Column("total_payout_summary")]
+        public double TotalPayoutCompletedSummary { get => totalPayoutCompletedSummary; set => SetProperty(ref totalPayoutCompletedSummary, value); }
+
+        [Column("forums_info")]
+        public string ForumsInfo { get => forumsInfo; set => SetProperty(ref forumsInfo, value); }
+
+        [Column("logs_origin_info")]
+        public string LogsOriginInfo { get => logsOriginInfo; set => SetProperty(ref logsOriginInfo, value); }
 
         [NotMapped]
         public bool IsSelected { get => isSelected; set => SetProperty(ref isSelected, value); }
