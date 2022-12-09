@@ -11,13 +11,13 @@
         /// Метод возвращает зарегистрированные потоки
         /// </summary>
         /// <returns>Массив зарегистрированных потоков</returns>
-        public string[] GetRegistered();
+        public string[] Threads();
 
         /// <summary>
         /// Метод регистрирует поток с заданным именем
         /// </summary>
         /// <param name="name">Имя потока</param>
-        public void Register(string name);
+        public void Create(string name);
 
         /// <summary>
         /// Метод возвращает поток по его имени
@@ -57,7 +57,14 @@
         /// </summary>
         /// <param name="body">Тело задания</param>
         /// <returns>ИД задания</returns>
-        public IScheduledTask ScheduleNext(Func<object[], string> body);
+        public IScheduledTask ScheduleTask(Func<object[], string> body);
+
+        /// <summary>
+        /// Запланировать асинхронное задание в очередь
+        /// </summary>
+        /// <param name="body">Тело задания</param>
+        /// <returns>ИД задания</returns>
+        public IScheduledTask ScheduleTask(Func<object[], Task<string>> body);
 
         /// <summary>
         /// Останавливает задание с указанным ИД
@@ -87,12 +94,41 @@
 
     #endregion thread interface
 
+    #region scheduled task interace
+
+    /// <summary>
+    /// Интерфейс расширенной задачи с параметрами
+    /// </summary>
     public interface IScheduledTask
     {
+        /// <summary>
+        /// Метод добавляет параметры к задаче
+        /// </summary>
+        /// <param name="parameters">Параметры</param>
+        /// <returns>Возвращает обновленный объект</returns>
         public IScheduledTask AddParameters(params object[] parameters);
 
+        /// <summary>
+        /// Запуск задачи в порядке очереди
+        /// </summary>
+        /// <returns>ИД задачи</returns>
         public Guid StartNext();
+
+        /// <summary>
+        /// Запуск задачи без очереди
+        /// </summary>
+        /// <returns>ИД задачи</returns>
+        public Task<string> StartNowAsync();
+
+        /// <summary>
+        /// Запуск задачи без очереди
+        /// </summary>
+        /// <param name="cancellationToken">Токен для отмены</param>
+        /// <returns>ИД задачи</returns>
+        public Task<string> StartNowAsync(CancellationTokenSource cancellationToken);
     }
+
+    #endregion scheduled task interace
 
     #region handlers
 

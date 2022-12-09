@@ -16,13 +16,13 @@ namespace Services.Implementation
             threads = new();
         }
 
-        public void Register(string name)
+        public void Create(string name)
         {
             ITaskScheduleThread thread = new TaskScheduleThread(name);
             threads.Add(name, thread);
         }
 
-        public string[] GetRegistered() => threads.Keys.ToArray();
+        public string[] Threads() => threads.Keys.ToArray();
 
         public ITaskScheduleThread In(string name)
         {
@@ -102,7 +102,15 @@ namespace Services.Implementation
             if (!tokens[taskWithId.Id].IsCancellationRequested)
             {
                 TaskStarted?.Invoke(taskWithId.Id, Name());
-                string result = await Task.Run(() => taskWithId.Body(taskWithId.Parameters), tokens[taskWithId.Id].Token);
+                string result;
+                if (!taskWithId.IsRunAsync)
+                {
+                    result = await Task.Run(() => taskWithId.Body(taskWithId.Parameters), tokens[taskWithId.Id].Token);
+                }
+                else
+                {
+                    result = await Task.Run(async () => await taskWithId.AsyncBody(taskWithId.Parameters), tokens[taskWithId.Id].Token);
+                }
                 results.Add(taskWithId.Id, result);
                 TaskCompleted?.Invoke(taskWithId.Id, Name());
             }
@@ -114,13 +122,26 @@ namespace Services.Implementation
 
         #region public
 
-        public IScheduledTask ScheduleNext(Func<object[], string> body)
+        public IScheduledTask ScheduleTask(Func<object[], string> body)
         {
             CancellationTokenSource cts = new();
-            TaskWithId taskWithId = new()
+            TaskWithId taskWithId = new(false)
             {
                 Id = Guid.NewGuid(),
                 Body = body
+            };
+            tokens.Add(taskWithId.Id, cts);
+            IScheduledTask scheduledTask = new ScheduledTask(taskWithId, tasks);
+            return scheduledTask;
+        }
+
+        public IScheduledTask ScheduleTask(Func<object[], Task<string>> body)
+        {
+            CancellationTokenSource cts = new();
+            TaskWithId taskWithId = new(true)
+            {
+                Id = Guid.NewGuid(),
+                AsyncBody = body
             };
             tokens.Add(taskWithId.Id, cts);
             IScheduledTask scheduledTask = new ScheduledTask(taskWithId, tasks);
@@ -165,8 +186,8 @@ namespace Services.Implementation
 
     public sealed class ScheduledTask : IScheduledTask
     {
-        private TaskWithId taskWithId;
-        private ObservableCollection<TaskWithId> tasks;
+        private readonly TaskWithId taskWithId;
+        private readonly ObservableCollection<TaskWithId> tasks;
 
         public ScheduledTask(TaskWithId taskWithId, ObservableCollection<TaskWithId> tasks)
         {
@@ -185,16 +206,32 @@ namespace Services.Implementation
             tasks.Add(taskWithId);
             return taskWithId.Id;
         }
+
+        public async Task<string> StartNowAsync() => !taskWithId.IsRunAsync
+                ? await Task.Run(() => taskWithId.Body(taskWithId.Parameters))
+                : await Task.Run(async () => await taskWithId.AsyncBody(taskWithId.Parameters));
+
+        public async Task<string> StartNowAsync(CancellationTokenSource cancellationToken) => !taskWithId.IsRunAsync
+                ? await Task.Run(() => taskWithId.Body(taskWithId.Parameters), cancellationToken.Token)
+                : await Task.Run(async () => await taskWithId.AsyncBody(taskWithId.Parameters), cancellationToken.Token);
     }
 
     #region id task model
 
-    public class TaskWithId
+    public sealed class TaskWithId
     {
+        public readonly bool IsRunAsync;
+
         public Guid Id { get; set; }
         public Func<object[], string> Body { get; set; }
+        public Func<object[], Task<string>> AsyncBody { get; set; }
         public int TaskCount { get; set; }
         public object[] Parameters { get; set; }
+
+        public TaskWithId(bool runAsync)
+        {
+            IsRunAsync = runAsync;
+        }
     }
 
     #endregion id task model

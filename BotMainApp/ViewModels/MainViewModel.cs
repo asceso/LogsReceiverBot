@@ -63,7 +63,7 @@ namespace BotMainApp.ViewModels
             this.aggregator = aggregator;
             this.captcha = captcha;
             this.taskSchedule = taskSchedule;
-            this.taskSchedule.Register(ConstStrings.SeleniumThread);
+            this.taskSchedule.Create(ConstStrings.SeleniumThread);
             Title = "Бот для приема логов";
             TelegramState = new("запуск", TelegramStateModel.BlackBrush);
             TrayIconVisibility = Visibility.Collapsed;
