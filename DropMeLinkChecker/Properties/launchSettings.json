@@ -1,8 +1,16 @@
 {
   "profiles": {
-    "DropMeLoader": {
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "OnlyCheck": {
       "commandName": "Project",
-      "commandLineArgs": "https://dropmefiles.com/uXD0G\r\ntrue"
+      "commandLineArgs": "https://dropmefiles.com/HLbKk\r\nfalse\r\nnone\r\nnone\r\nfalse\r\nfalse"
+    },
+    "LoadFiles": {
+      "commandName": "Project",
+      "commandLineArgs": "https://dropmefiles.com/N8Bna\r\ntrue\r\nC:\\Users\\asces\\Downloads\\folder\r\nresult.txt\r\nfalse\r\nfalse"
     }
   }
 }

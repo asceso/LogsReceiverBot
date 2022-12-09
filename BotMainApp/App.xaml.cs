@@ -21,6 +21,7 @@ namespace BotMainApp
             containerRegistry.Register<IMemorySaver, MemorySaver>();
             containerRegistry.Register<ICaptchaService, CaptchaService>();
             containerRegistry.Register<IKeyboardService, KeyboardService>();
+            containerRegistry.Register<ITaskScheduleService, TaskScheduleService>();
         }
 
         protected override void ConfigureViewModelLocator()

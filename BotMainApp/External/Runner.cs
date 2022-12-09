@@ -257,13 +257,18 @@ namespace BotMainApp.External
         /// </summary>
         /// <param name="fileLink">file link</param>
         /// <returns>file size json array</returns>
-        public static async Task<string> RunDropMeLinkChecker(string fileLink)
+        public static async Task<string> RunDropMeLinkChecker(string fileLink, bool checkFileExtensions, string directoryToSaveFile, string saveFilename)
         {
             ProcessStartInfo psi = new()
             {
                 WorkingDirectory = Environment.CurrentDirectory,
                 FileName = "DropMeLinkChecker.exe",
-                Arguments = $"\"{(fileLink.IsNullOrEmptyString() ? "none" : fileLink)}\"",
+                Arguments =
+                $"\"{(fileLink.IsNullOrEmptyString() ? "none" : fileLink)}\" " +
+                $"\"{checkFileExtensions.ToString().ToLower()}\" " +
+                $"\"{(directoryToSaveFile.IsNullOrEmptyString() ? "none" : directoryToSaveFile)}\" " +
+                $"\"{(saveFilename.IsNullOrEmptyString() ? "none" : saveFilename)}\" " +
+                $"\"false\" ",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,

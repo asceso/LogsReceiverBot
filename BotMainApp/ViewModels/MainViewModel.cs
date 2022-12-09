@@ -1,4 +1,5 @@
-﻿using BotMainApp.Events;
+﻿using BotMainApp.Const;
+using BotMainApp.Events;
 using BotMainApp.LocalEvents;
 using BotMainApp.TelegramServices;
 using Models.App;
@@ -26,6 +27,7 @@ namespace BotMainApp.ViewModels
 
         private readonly IEventAggregator aggregator;
         private readonly ICaptchaService captcha;
+        private readonly ITaskScheduleService taskSchedule;
         private readonly NotificationManager notificationManager;
         private CancellationTokenSource cancelationTokenSource;
 
@@ -55,10 +57,13 @@ namespace BotMainApp.ViewModels
                              IMemorySaver memory,
                              IKeyboardService keyboardService,
                              IEventAggregator aggregator,
-                             ICaptchaService captcha)
+                             ICaptchaService captcha,
+                             ITaskScheduleService taskSchedule)
         {
             this.aggregator = aggregator;
             this.captcha = captcha;
+            this.taskSchedule = taskSchedule;
+            this.taskSchedule.Register(ConstStrings.SeleniumThread);
             Title = "Бот для приема логов";
             TelegramState = new("запуск", TelegramStateModel.BlackBrush);
             TrayIconVisibility = Visibility.Collapsed;
@@ -80,7 +85,7 @@ namespace BotMainApp.ViewModels
             memory.StoreItem("Keyboards", keyboards);
             memory.StoreItem("Operations", operations);
 
-            InitCommands(config, aggregator, memory);
+            InitCommands(config, aggregator, memory, taskSchedule);
             CreateAndStartBot.Execute();
 
             if (!Directory.Exists(PathCollection.TempFolderPath)) Directory.CreateDirectory(PathCollection.TempFolderPath);
@@ -108,9 +113,9 @@ namespace BotMainApp.ViewModels
 
         #region cmd executors
 
-        private void InitCommands(ConfigModel config, IEventAggregator aggregator, IMemorySaver memory)
+        private void InitCommands(ConfigModel config, IEventAggregator aggregator, IMemorySaver memory, ITaskScheduleService taskSchedule)
         {
-            CreateAndStartBot = new DelegateCommand(() => OnCreateAndStartBot(config, aggregator, memory));
+            CreateAndStartBot = new DelegateCommand(() => OnCreateAndStartBot(config, aggregator, memory, taskSchedule));
             OpenMainWindowCommand = new DelegateCommand(OnOpenMainWindow);
             CloseAppCommand = new DelegateCommand(OnCloseApp);
             SwithViewCommand = new DelegateCommand<string>(OnSwitchView);
@@ -136,9 +141,9 @@ namespace BotMainApp.ViewModels
             aggregator.GetEvent<SwitchViewTypeEvent>().Publish(CurrentView);
         }
 
-        private async void OnCreateAndStartBot(ConfigModel config, IEventAggregator aggregator, IMemorySaver memory)
+        private async void OnCreateAndStartBot(ConfigModel config, IEventAggregator aggregator, IMemorySaver memory, ITaskScheduleService taskSchedule)
         {
-            if (cancelationTokenSource != null) cancelationTokenSource.Cancel();
+            cancelationTokenSource?.Cancel();
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("перезапуск", TelegramStateModel.BlackBrush));
             await Task.Delay(TimeSpan.FromSeconds(5));
 
@@ -146,7 +151,7 @@ namespace BotMainApp.ViewModels
             if (memory.ItemExist("BotClient")) memory.RemoveItem("BotClient");
             memory.StoreItem("BotClient", botClient);
 
-            UpdateHandler handler = new(aggregator, memory, captcha);
+            UpdateHandler handler = new(aggregator, memory, captcha, taskSchedule);
             cancelationTokenSource = new();
             botClient.StartReceiving(handler, cancellationToken: cancelationTokenSource.Token);
             if (memory.ItemExist("Handler")) memory.RemoveItem("Handler");

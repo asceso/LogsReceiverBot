@@ -2,7 +2,7 @@
   "profiles": {
     "DublicateRemoveRunner": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Programming\\Work\\LogsReceiverBot\\DublicateRemoveRunner\\bin\\Debug\\net6.0\\temp\\\r\nttttttttttttttt.txt\r\n.*(:2083|:2082|/cpanel).*\r\n.*(:2086|:2087).*\r\n.*(:2096|:2095).*\r\ntrue"
+      "commandLineArgs": "C:\\Programming\\Work\\LogsReceiverBot\\DublicateRemoveRunner\\bin\\Debug\\net6.0\\temp\\\r\npart5.txt\r\n.*(:2083|:2082|/cpanel).*\r\n.*(:2086|:2087).*\r\n.*(:2096|:2095).*\r\ntrue"
     }
   }
 }

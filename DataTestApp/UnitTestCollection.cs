@@ -45,11 +45,6 @@ namespace DataTestApp
             return result;
         }
 
-        private long GetRandomTgId()
-        {
-            return random.NextInt64(100000000, 999999999);
-        }
-
         private DublicateModel MakeRandomLogModel()
         {
             UserModel randomUser = users.GetRandom();

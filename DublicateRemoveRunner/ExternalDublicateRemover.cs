@@ -61,16 +61,25 @@ namespace DublicateRemoveRunner
                 while (!reader.EndOfStream)
                 {
                     string log = reader.ReadLine().Trim();
-                    string[] parts = log.Split('|');
-                    if (parts.Length != 3)
-                    {
-                        continue;
-                    }
+                    string[] parts = log.Split('|', ':');
 
-                    string url, login, password;
-                    url = parts[0];
-                    login = parts[1];
-                    password = parts[2];
+                    string url = string.Empty, login = string.Empty, password = string.Empty;
+                    if (parts.Length == 3)
+                    {
+                        url = parts[0];
+                        login = parts[1];
+                        password = parts[2];
+                    }
+                    else
+                    {
+                        url = string.Empty;
+                        for (int i = 0; i < parts.Length - 2; i++)
+                        {
+                            url += parts[i] + (i == parts.Length - 3 ? "" : ":");
+                        }
+                        login = parts[^2];
+                        password = parts[^1];
+                    }
 
                     Regex urlCleanRegex = new(@"(.*:\/\/.*:\d*|.*:\/\/cpanel[^:|]*)");
                     string cleanUrl = urlCleanRegex.Match(url).Value;

@@ -49,12 +49,13 @@ namespace BotMainApp.TelegramServices
         private readonly IEventAggregator aggregator;
         private readonly IMemorySaver memory;
         private readonly ICaptchaService captcha;
+        private readonly ITaskScheduleService taskSchedule;
 
         #endregion services
 
         #region ctor
 
-        public UpdateHandler(IEventAggregator aggregator, IMemorySaver memory, ICaptchaService captcha)
+        public UpdateHandler(IEventAggregator aggregator, IMemorySaver memory, ICaptchaService captcha, ITaskScheduleService taskSchedule)
         {
             userRequests = new();
             userCaptchas = new();
@@ -62,6 +63,7 @@ namespace BotMainApp.TelegramServices
             this.aggregator = aggregator;
             this.memory = memory;
             this.captcha = captcha;
+            this.taskSchedule = taskSchedule;
             notificationManager = memory.GetItem<NotificationManager>("Notification");
             botClient = memory.GetItem<TelegramBotClient>("BotClient");
             locales = memory.GetItem<List<LocaleStringModel>>("Locales");
@@ -361,7 +363,7 @@ namespace BotMainApp.TelegramServices
                     }
                 case OperationType.WaitSubCategoryForChecking:
                     {
-                        if (argument.IsAnyEqual(":20"))
+                        if (argument.IsAnyEqual(":20", "wp-login.php"))
                         {
                             operations.Remove(temp.Operation);
                             operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
@@ -443,6 +445,10 @@ namespace BotMainApp.TelegramServices
 
                                 await Task.Factory.StartNew(async () => await StandartCheckProcess(dbUser, filename, manualCheckModel, true)).ConfigureAwait(false);
                             }
+                            if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Private requests", "Приватные запросы") &&
+                                temp.Operation.Params["SubCategory"].ToString().IsAnyEqual(":20"))
+                            {
+                            }
                             else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("AdminChecking") &&
                                      temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("AdminChecking"))
                             {
@@ -481,6 +487,8 @@ namespace BotMainApp.TelegramServices
                             else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Cookies", "Cookie файлы") &&
                                      temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("Instagram"))
                             {
+                                #region dropmefiles checking
+
                                 if (!argument.IsNullOrEmptyString())
                                 {
                                     if (dropMeRegex.IsMatch(argument))
@@ -515,7 +523,7 @@ namespace BotMainApp.TelegramServices
 
                                     #region check drop me link info
 
-                                    string fileInfoData = await Runner.RunDropMeLinkChecker(argument);
+                                    string fileInfoData = await Runner.RunDropMeLinkChecker(argument, false, null, null);
                                     JObject fileInfoJson = JObject.Parse(fileInfoData);
                                     if (fileInfoJson.ContainsKey("Error"))
                                     {
@@ -605,6 +613,11 @@ namespace BotMainApp.TelegramServices
 
                                     #endregion end
                                 }
+
+                                #endregion dropmefiles checking
+
+                                #region archive checking
+
                                 if (temp.Document != null && (
                                     temp.Document.FileName.EndsWith(".rar") ||
                                     temp.Document.FileName.EndsWith(".zip")
@@ -677,12 +690,18 @@ namespace BotMainApp.TelegramServices
                                     #endregion copy cookie files to directory
                                 }
 
+                                #endregion archive checking
+
+                                #region end
+
                                 await botClient.SendTextMessageAsync(
-                                    dbUser.Id,
-                                    locales.GetByKey("SendCookiesInstruction", dbUser.Language).Replace("@SOFT", config.CookiesSoft),
-                                    replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
-                                    );
+                                                           dbUser.Id,
+                                                           locales.GetByKey("SendCookiesInstruction", dbUser.Language).Replace("@SOFT", config.CookiesSoft),
+                                                           replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                                                           );
                                 return;
+
+                                #endregion end
                             }
                             else
                             {
