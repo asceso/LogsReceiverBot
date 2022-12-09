@@ -25,8 +25,8 @@ namespace ServicesTest
             taskService.In(MainThread).TaskCanceled += TaskServiceTaskCanceledMain;
             taskService.In(SecondThread).TaskCompleted += TaskServiceTaskCompletedSecond;
 
-            taskService.In(MainThread).ScheduleNext(Method);
-            //taskService.In(MainThread).ScheduleNext(Method);
+            taskService.In(MainThread).ScheduleNext(Method).StartNext();
+            taskService.In(MainThread).ScheduleNext(Method).AddParameters("hello").StartNext();
             //Guid id = taskService.In(MainThread).ScheduleNext(Method);
             //await Task.Delay(1000);
             //taskService.In(MainThread).Kill(id);
@@ -39,10 +39,10 @@ namespace ServicesTest
             Console.WriteLine($"End at {GetTimestamp}");
         }
 
-        private string Method()
+        private string Method(object[] parameters)
         {
             Task.Delay(2000).Wait();
-            return "END";
+            return $"END ({parameters?.Length})";
         }
 
         private void TaskServiceTaskCanceledMain(Guid taskId, string threadName)

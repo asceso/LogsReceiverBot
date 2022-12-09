@@ -102,7 +102,7 @@ namespace Services.Implementation
             if (!tokens[taskWithId.Id].IsCancellationRequested)
             {
                 TaskStarted?.Invoke(taskWithId.Id, Name());
-                string result = await Task.Run(taskWithId.Body, tokens[taskWithId.Id].Token);
+                string result = await Task.Run(() => taskWithId.Body(taskWithId.Parameters), tokens[taskWithId.Id].Token);
                 results.Add(taskWithId.Id, result);
                 TaskCompleted?.Invoke(taskWithId.Id, Name());
             }
@@ -114,7 +114,7 @@ namespace Services.Implementation
 
         #region public
 
-        public Guid ScheduleNext(Func<string> body)
+        public IScheduledTask ScheduleNext(Func<object[], string> body)
         {
             CancellationTokenSource cts = new();
             TaskWithId taskWithId = new()
@@ -123,8 +123,8 @@ namespace Services.Implementation
                 Body = body
             };
             tokens.Add(taskWithId.Id, cts);
-            tasks.Add(taskWithId);
-            return taskWithId.Id;
+            IScheduledTask scheduledTask = new ScheduledTask(taskWithId, tasks);
+            return scheduledTask;
         }
 
         public string GetResult(Guid taskId)
@@ -163,13 +163,38 @@ namespace Services.Implementation
 
     #endregion thread implementation
 
+    public sealed class ScheduledTask : IScheduledTask
+    {
+        private TaskWithId taskWithId;
+        private ObservableCollection<TaskWithId> tasks;
+
+        public ScheduledTask(TaskWithId taskWithId, ObservableCollection<TaskWithId> tasks)
+        {
+            this.taskWithId = taskWithId;
+            this.tasks = tasks;
+        }
+
+        public IScheduledTask AddParameters(params object[] parameters)
+        {
+            taskWithId.Parameters = parameters;
+            return this;
+        }
+
+        public Guid StartNext()
+        {
+            tasks.Add(taskWithId);
+            return taskWithId.Id;
+        }
+    }
+
     #region id task model
 
     public class TaskWithId
     {
         public Guid Id { get; set; }
-        public Func<string> Body { get; set; }
+        public Func<object[], string> Body { get; set; }
         public int TaskCount { get; set; }
+        public object[] Parameters { get; set; }
     }
 
     #endregion id task model

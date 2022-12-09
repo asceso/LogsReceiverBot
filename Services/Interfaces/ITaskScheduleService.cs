@@ -57,7 +57,7 @@
         /// </summary>
         /// <param name="body">Тело задания</param>
         /// <returns>ИД задания</returns>
-        public Guid ScheduleNext(Func<string> body);
+        public IScheduledTask ScheduleNext(Func<object[], string> body);
 
         /// <summary>
         /// Останавливает задание с указанным ИД
@@ -86,6 +86,13 @@
     }
 
     #endregion thread interface
+
+    public interface IScheduledTask
+    {
+        public IScheduledTask AddParameters(params object[] parameters);
+
+        public Guid StartNext();
+    }
 
     #region handlers
 
