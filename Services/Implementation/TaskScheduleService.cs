@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using Services.Interfaces;
+﻿using Services.Interfaces;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 
@@ -184,6 +183,8 @@ namespace Services.Implementation
 
     #endregion thread implementation
 
+    #region scheduled task
+
     public sealed class ScheduledTask : IScheduledTask
     {
         private readonly TaskWithId taskWithId;
@@ -215,6 +216,8 @@ namespace Services.Implementation
                 ? await Task.Run(() => taskWithId.Body(taskWithId.Parameters), cancellationToken.Token)
                 : await Task.Run(async () => await taskWithId.AsyncBody(taskWithId.Parameters), cancellationToken.Token);
     }
+
+    #endregion scheduled task
 
     #region id task model
 

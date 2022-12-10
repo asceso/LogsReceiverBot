@@ -1,3 +1,5 @@
+using Extensions;
+
 namespace DataTestApp
 {
     public class Tests

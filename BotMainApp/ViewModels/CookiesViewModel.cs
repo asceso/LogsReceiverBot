@@ -11,7 +11,6 @@ using Notification.Wpf;
 using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
-using Services;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;

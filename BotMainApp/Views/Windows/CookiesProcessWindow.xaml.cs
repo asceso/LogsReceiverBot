@@ -4,7 +4,6 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using Telegram.Bot.Types;
 
 namespace BotMainApp.Views.Windows
 {
