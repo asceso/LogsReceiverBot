@@ -22,7 +22,7 @@ using System.Windows;
 
 namespace BotMainApp.ViewModels
 {
-    public class CpanelWhmViewModel : BindableBase
+    public class WpLoginViewModel : BindableBase
     {
         private readonly NotificationManager notificationManager;
         private readonly ConfigModel config;
@@ -32,7 +32,7 @@ namespace BotMainApp.ViewModels
 
         private bool isLoading;
         private int modelsCount;
-        private ObservableCollection<CpanelWhmCheckModel> models;
+        private ObservableCollection<WpLoginCheckModel> models;
         private bool isClosedChecksShow;
         private bool isErrorChecksShow;
         private bool isOtherChecksShow;
@@ -40,7 +40,7 @@ namespace BotMainApp.ViewModels
 
         public bool IsLoading { get => isLoading; set => SetProperty(ref isLoading, value); }
         public int ModelsCount { get => modelsCount; set => SetProperty(ref modelsCount, value); }
-        public ObservableCollection<CpanelWhmCheckModel> Models { get => models; set => SetProperty(ref models, value); }
+        public ObservableCollection<WpLoginCheckModel> Models { get => models; set => SetProperty(ref models, value); }
         public bool IsClosedChecksShow { get => isClosedChecksShow; set => SetProperty(ref isClosedChecksShow, value); }
         public bool IsErrorChecksShow { get => isErrorChecksShow; set => SetProperty(ref isErrorChecksShow, value); }
         public bool IsOtherChecksShow { get => isOtherChecksShow; set => SetProperty(ref isOtherChecksShow, value); }
@@ -48,7 +48,7 @@ namespace BotMainApp.ViewModels
 
         public DelegateCommand RefreshCommand { get; set; }
 
-        public CpanelWhmViewModel(IEventAggregator aggregator, IMemorySaver memory)
+        public WpLoginViewModel(IEventAggregator aggregator, IMemorySaver memory)
         {
             Models = new();
             Models.CollectionChanged += (s, e) => UpdateModelsCount();
@@ -62,7 +62,7 @@ namespace BotMainApp.ViewModels
             notificationManager = memory.GetItem<NotificationManager>("Notification");
             config = memory.GetItem<ConfigModel>("Config");
 
-            aggregator.GetEvent<CpanelWhmCheckUpdateEvent>().Subscribe(OnManualCheckUpdate);
+            aggregator.GetEvent<WpLoginCheckUpdateEvent>().Subscribe(OnManualCheckUpdate);
             aggregator.GetEvent<BotRestartEvent>().Subscribe(OnBotRestart);
             aggregator.GetEvent<SwitchViewTypeEvent>().Subscribe(OnSwitchMainView);
 
@@ -71,7 +71,7 @@ namespace BotMainApp.ViewModels
 
         private async void OnSwitchMainView(ViewsPayload.ViewTypes selectedType)
         {
-            if (selectedType is ViewsPayload.ViewTypes.CpanelWhmChecks)
+            if (selectedType is ViewsPayload.ViewTypes.WpLoginChecks)
             {
                 await LoadManualChecksAsync();
             }
@@ -82,7 +82,7 @@ namespace BotMainApp.ViewModels
             RefreshCommand = new DelegateCommand(async () => await LoadManualChecksAsync());
         }
 
-        private void InitModelCommands(CpanelWhmCheckModel model)
+        private void InitModelCommands(WpLoginCheckModel model)
         {
             model.OnCopyCommand = new DelegateCommand<string>((field) =>
             {
@@ -103,30 +103,30 @@ namespace BotMainApp.ViewModels
                 {
                 }
             });
-            model.OpenManualCheckCommand = new DelegateCommand<CpanelWhmCheckModel>(OnOpenManualCheck);
-            model.OpenOriginalFileCommand = new DelegateCommand<CpanelWhmCheckModel>(OnOpenOriginalFile);
-            model.DeleteCheckCommand = new DelegateCommand<CpanelWhmCheckModel>(OnDeleteManualCheck);
+            model.OpenManualCheckCommand = new DelegateCommand<WpLoginCheckModel>(OnOpenManualCheck);
+            model.OpenOriginalFileCommand = new DelegateCommand<WpLoginCheckModel>(OnOpenOriginalFile);
+            model.DeleteCheckCommand = new DelegateCommand<WpLoginCheckModel>(OnDeleteManualCheck);
         }
 
-        private async void OnOpenManualCheck(CpanelWhmCheckModel model)
+        private async void OnOpenManualCheck(WpLoginCheckModel model)
         {
             CheckStatus.ManualCheckStatus cancelStatus = model.Status;
             if (cancelStatus != CheckStatus.ManualCheckStatus.End && cancelStatus != CheckStatus.ManualCheckStatus.EndNoValid)
             {
                 model.Status = CheckStatus.ManualCheckStatus.SendToManualChecking;
-                await CpanelWhmCheckController.PutCheckAsync(model, aggregator);
+                await WpLoginCheckController.PutCheckAsync(model, aggregator);
             }
-            CpanelWhmCheckProcessWindow checkWindow = new(model, config.NotepadPath, notificationManager);
+            WpLoginCheckProcessWindow checkWindow = new(model, config.NotepadPath, notificationManager);
             checkWindow.ShowDialog();
             if (checkWindow.DialogResult.HasValue && checkWindow.DialogResult.Value)
             {
                 if (checkWindow.IsNoAnyValid)
                 {
-                    CpanelWhmCheckModel updateModel = checkWindow.CheckingModel;
+                    WpLoginCheckModel updateModel = checkWindow.CheckingModel;
                     UserModel checkUser = await UsersController.GetUserByIdAsync(updateModel.FromUserId);
                     updateModel.IsManualCheckEnd = true;
                     updateModel.Status = CheckStatus.ManualCheckStatus.EndNoValid;
-                    await CpanelWhmCheckController.PutCheckAsync(updateModel, aggregator);
+                    await WpLoginCheckController.PutCheckAsync(updateModel, aggregator);
 
                     await handler.NotifyUserForEndCheckingFileNoValid(checkUser, updateModel.Id);
                 }
@@ -134,7 +134,7 @@ namespace BotMainApp.ViewModels
                 {
                     if (checkWindow.TotalFoundedValid != 0 && checkWindow.AddBalance != 0)
                     {
-                        CpanelWhmCheckModel updateModel = checkWindow.CheckingModel;
+                        WpLoginCheckModel updateModel = checkWindow.CheckingModel;
 
                         UserModel checkUser = await UsersController.GetUserByIdAsync(updateModel.FromUserId);
                         checkUser.LogsUploaded += checkWindow.TotalFoundedValid;
@@ -143,29 +143,29 @@ namespace BotMainApp.ViewModels
 
                         updateModel.IsManualCheckEnd = true;
                         updateModel.Status = CheckStatus.ManualCheckStatus.End;
-                        await CpanelWhmCheckController.PutCheckAsync(updateModel, aggregator);
+                        await WpLoginCheckController.PutCheckAsync(updateModel, aggregator);
 
                         await handler.NotifyUserForEndCheckingFile(checkUser, updateModel, checkWindow.TotalFoundedValid, checkWindow.AddBalance);
                     }
                     else
                     {
                         model.Status = cancelStatus;
-                        await CpanelWhmCheckController.PutCheckAsync(model, aggregator);
+                        await WpLoginCheckController.PutCheckAsync(model, aggregator);
                     }
                 }
             }
             else
             {
                 model.Status = cancelStatus;
-                await CpanelWhmCheckController.PutCheckAsync(model, aggregator);
+                await WpLoginCheckController.PutCheckAsync(model, aggregator);
             }
         }
 
-        private void OnDeleteManualCheck(CpanelWhmCheckModel model)
+        private void OnDeleteManualCheck(WpLoginCheckModel model)
         {
             notificationManager.ShowButtonWindow("Удалить проверку?", "Подтверждение", async () =>
             {
-                int deleteCount = await CpanelWhmCheckController.DeleteCheckAsync(model);
+                int deleteCount = await WpLoginCheckController.DeleteCheckAsync(model);
                 if (deleteCount == 1)
                 {
                     try
@@ -182,7 +182,7 @@ namespace BotMainApp.ViewModels
             });
         }
 
-        private void OnOpenOriginalFile(CpanelWhmCheckModel model)
+        private void OnOpenOriginalFile(WpLoginCheckModel model)
         {
             if (!File.Exists(model.OriginalFilePath))
             {
@@ -202,8 +202,8 @@ namespace BotMainApp.ViewModels
             {
                 IsLoading = true;
                 Models.Clear();
-                List<CpanelWhmCheckModel> cacheModels = await CpanelWhmCheckController.GetChecksAsync();
-                foreach (CpanelWhmCheckModel model in cacheModels)
+                List<WpLoginCheckModel> cacheModels = await WpLoginCheckController.GetChecksAsync();
+                foreach (WpLoginCheckModel model in cacheModels)
                 {
                     InitModelCommands(model);
                     Models.Add(model);
@@ -219,7 +219,7 @@ namespace BotMainApp.ViewModels
             }
         }
 
-        private void OnManualCheckUpdate(KeyValuePair<string, CpanelWhmCheckModel> update)
+        private void OnManualCheckUpdate(KeyValuePair<string, WpLoginCheckModel> update)
         {
             try
             {
@@ -229,7 +229,7 @@ namespace BotMainApp.ViewModels
                     {
                         case "post":
                             {
-                                CpanelWhmCheckModel updateModel = update.Value;
+                                WpLoginCheckModel updateModel = update.Value;
                                 InitModelCommands(updateModel);
                                 Models.Add(updateModel);
                             }
@@ -237,9 +237,9 @@ namespace BotMainApp.ViewModels
 
                         case "put":
                             {
-                                CpanelWhmCheckModel updateModel = update.Value;
+                                WpLoginCheckModel updateModel = update.Value;
                                 InitModelCommands(updateModel);
-                                CpanelWhmCheckModel targetModel = Models.FirstOrDefault(u => u.Id == updateModel.Id);
+                                WpLoginCheckModel targetModel = Models.FirstOrDefault(u => u.Id == updateModel.Id);
                                 if (targetModel is not null)
                                 {
                                     int index = Models.IndexOf(targetModel);

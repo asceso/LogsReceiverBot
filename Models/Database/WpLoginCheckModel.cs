@@ -1,4 +1,5 @@
-﻿using Prism.Mvvm;
+﻿using Prism.Commands;
+using Prism.Mvvm;
 using System.ComponentModel.DataAnnotations.Schema;
 using static Models.Enums.CheckStatus;
 
@@ -103,6 +104,18 @@ namespace Models.Database
 
         [Column("is_manual_check_end")]
         public bool IsManualCheckEnd { get => isManualCheckEnd; set => SetProperty(ref isManualCheckEnd, value); }
+
+        [NotMapped]
+        public DelegateCommand<string> OnCopyCommand { get; set; }
+
+        [NotMapped]
+        public DelegateCommand<WpLoginCheckModel> OpenManualCheckCommand { get; set; }
+
+        [NotMapped]
+        public DelegateCommand<WpLoginCheckModel> OpenOriginalFileCommand { get; set; }
+
+        [NotMapped]
+        public DelegateCommand<WpLoginCheckModel> DeleteCheckCommand { get; set; }
 
         public WpLoginCheckModel()
         {

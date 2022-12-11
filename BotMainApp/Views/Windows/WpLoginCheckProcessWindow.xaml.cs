@@ -12,9 +12,9 @@ using System.Windows.Controls;
 namespace BotMainApp.Views.Windows
 {
     /// <summary>
-    /// Логика взаимодействия для ManualCheckProcessWindow.xaml
+    /// Логика взаимодействия для WpLoginCheckProcessWindow.xaml
     /// </summary>
-    public partial class ManualCheckProcessWindow : Window, INotifyPropertyChanged, IDisposable
+    public partial class WpLoginCheckProcessWindow : Window, INotifyPropertyChanged, IDisposable
     {
         #region services
 
@@ -33,7 +33,7 @@ namespace BotMainApp.Views.Windows
 
         #region fields
 
-        private CpanelWhmCheckModel checkingModel;
+        private WpLoginCheckModel checkingModel;
         private bool isEditEnable;
         private bool isFieldReadonly;
         private int totalFoundedValid;
@@ -44,7 +44,7 @@ namespace BotMainApp.Views.Windows
 
         #region props
 
-        public CpanelWhmCheckModel CheckingModel
+        public WpLoginCheckModel CheckingModel
         {
             get => checkingModel;
             set
@@ -108,12 +108,12 @@ namespace BotMainApp.Views.Windows
 
         #region ctor
 
-        public ManualCheckProcessWindow(CpanelWhmCheckModel model, string notepadPath, NotificationManager notificationManager)
+        public WpLoginCheckProcessWindow(WpLoginCheckModel model, string notepadPath, NotificationManager notificationManager)
         {
             InitializeComponent();
             this.notepadPath = notepadPath;
             this.notificationManager = notificationManager;
-            CheckingModel = (CpanelWhmCheckModel)model.Clone();
+            CheckingModel = (WpLoginCheckModel)model.Clone();
             DataContext = this;
             if (model.Status == Models.Enums.CheckStatus.ManualCheckStatus.End || model.Status == Models.Enums.CheckStatus.ManualCheckStatus.EndNoValid)
             {
@@ -128,15 +128,15 @@ namespace BotMainApp.Views.Windows
                 IsFieldReadonly = false;
 
                 CheckingModel.DublicateFoundedCountManual = CheckingModel.DublicateFoundedCount;
-                CheckingModel.WebmailFoundedCountManual = CheckingModel.WebmailFoundedCount;
-                CheckingModel.CpanelGoodCountManual = CheckingModel.CpanelGoodCount;
-                CheckingModel.CpanelBadCountManual = CheckingModel.CpanelBadCount;
-                CheckingModel.WhmGoodCountManual = CheckingModel.WhmGoodCount;
-                CheckingModel.WhmBadCountManual = CheckingModel.WhmBadCount;
+                CheckingModel.ShellsFoundedCountManual = CheckingModel.ShellsFoundedCount;
+                CheckingModel.CpanelsResetedFoundedCountManual = CheckingModel.CpanelsResetedFoundedCount;
+                CheckingModel.SmtpsFoundedCountManual = CheckingModel.SmtpsFoundedCount;
+                CheckingModel.LoggedWordpressFoundedCountManual = CheckingModel.LoggedWordpressFoundedCount;
 
-                TotalFoundedValid = CheckingModel.WebmailFoundedCountManual +
-                                    CheckingModel.CpanelGoodCountManual +
-                                    CheckingModel.WhmGoodCountManual;
+                TotalFoundedValid = CheckingModel.ShellsFoundedCountManual +
+                                    CheckingModel.CpanelsResetedFoundedCountManual +
+                                    CheckingModel.SmtpsFoundedCountManual +
+                                    CheckingModel.LoggedWordpressFoundedCountManual;
 
                 TwoButtonsGrid.Visibility = Visibility.Visible;
                 OneButtonGrid.Visibility = Visibility.Collapsed;
@@ -185,11 +185,10 @@ namespace BotMainApp.Views.Windows
                 string filepath = btn.Tag switch
                 {
                     "DublicateFile" => CheckingModel.DublicateFilePath,
-                    "WebmailFile" => CheckingModel.WebmailFilePath,
-                    "CpanelGoodFile" => CheckingModel.CpanelGoodFilePath,
-                    "CpanelBadFile" => CheckingModel.CpanelBadFilePath,
-                    "WhmGoodFile" => CheckingModel.WhmGoodFilePath,
-                    "WhmBadFile" => CheckingModel.WhmBadFilePath,
+                    "ShellsFile" => CheckingModel.ShellsFilePath,
+                    "CpanelsResetedFile" => CheckingModel.CpanelsFilePath,
+                    "SmtpsFile" => CheckingModel.SmtpsFilePath,
+                    "LoggedWordpressFile" => CheckingModel.LoggedWordpressFilePath,
                     _ => "",
                 };
                 if (filepath == "")
@@ -205,7 +204,7 @@ namespace BotMainApp.Views.Windows
 
         private void OpenCheckFolderClick(object sender, RoutedEventArgs e)
         {
-            string folderPath = PathCollection.CpanelAndWhmFolderPath + $"{CheckingModel.Id}/";
+            string folderPath = PathCollection.WpLoginFolderPath + $"{CheckingModel.Id}/";
             if (Directory.Exists(folderPath))
             {
                 Runner.RunExplorerWithPath(folderPath.Replace("/", "\\"));
@@ -226,24 +225,20 @@ namespace BotMainApp.Views.Windows
                         CheckingModel.DublicateFoundedCountManual = CheckingModel.DublicateFoundedCount;
                         break;
 
-                    case "WebmailFile":
-                        CheckingModel.WebmailFoundedCountManual = CheckingModel.WebmailFoundedCount;
+                    case "ShellsFile":
+                        CheckingModel.ShellsFoundedCountManual = CheckingModel.ShellsFoundedCount;
                         break;
 
-                    case "CpanelGoodFile":
-                        CheckingModel.CpanelGoodCountManual = CheckingModel.CpanelGoodCount;
+                    case "CpanelsResetedFile":
+                        CheckingModel.CpanelsResetedFoundedCountManual = CheckingModel.CpanelsResetedFoundedCount;
                         break;
 
-                    case "CpanelBadFile":
-                        CheckingModel.CpanelBadCountManual = CheckingModel.CpanelBadCount;
+                    case "SmtpsFile":
+                        CheckingModel.SmtpsFoundedCountManual = CheckingModel.SmtpsFoundedCount;
                         break;
 
-                    case "WhmGoodFile":
-                        CheckingModel.WhmGoodCountManual = CheckingModel.WhmGoodCount;
-                        break;
-
-                    case "WhmBadFile":
-                        CheckingModel.WhmBadCountManual = CheckingModel.WhmBadCount;
+                    case "LoggedWordpressFile":
+                        CheckingModel.LoggedWordpressFoundedCountManual = CheckingModel.LoggedWordpressFoundedCount;
                         break;
 
                     default:

@@ -4,7 +4,7 @@
     {
         public enum ViewTypes
         {
-            None, Users, Logs, Valid, CpanelWhmChecks, Cookies, Payouts
+            None, Users, Logs, Valid, CpanelWhmChecks, WpLoginChecks, Cookies, Payouts
         }
 
         public static ViewTypes GetByName(string name)

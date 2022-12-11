@@ -1,5 +1,4 @@
-﻿<Window
-    x:Class="BotMainApp.Views.Windows.ManualCheckProcessWindow"
+﻿<Window x:Class="BotMainApp.Views.Windows.WpLoginCheckProcessWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="clr-namespace:BotMainApp.Converters"
@@ -9,8 +8,8 @@
     xmlns:views="clr-namespace:BotMainApp.Views.Windows"
     Title="Обработка запроса"
     Width="800"
-    Height="550"
-    d:DataContext="{d:DesignInstance Type=views:ManualCheckProcessWindow}"
+    Height="450"
+    d:DataContext="{d:DesignInstance Type=views:WpLoginCheckProcessWindow}"
     AllowsTransparency="True"
     Background="Transparent"
     FontSize="16"
@@ -40,7 +39,6 @@
             </Grid.RowDefinitions>
             <Grid Grid.Row="1" Grid.Column="1">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="50" />
                     <RowDefinition Height="50" />
                     <RowDefinition Height="50" />
                     <RowDefinition Height="50" />
@@ -178,7 +176,7 @@
                         Margin="10,0,0,0"
                         HorizontalAlignment="Left"
                         Style="{StaticResource HeaderTextBlock}"
-                        Text="Webmail найдено:" />
+                        Text="Shells найдено:" />
                     <hc:TextBox
                         Grid.Column="1"
                         Width="120"
@@ -186,7 +184,7 @@
                         Margin="10,0,0,0"
                         HorizontalAlignment="Left"
                         IsReadOnly="True"
-                        Text="{Binding CheckingModel.WebmailFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
+                        Text="{Binding CheckingModel.ShellsFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock
                         Grid.Column="2"
                         Margin="10,0,0,0"
@@ -201,7 +199,7 @@
                         HorizontalAlignment="Left"
                         IsReadOnly="{Binding IsFieldReadonly, UpdateSourceTrigger=PropertyChanged}"
                         Minimum="0"
-                        Value="{Binding CheckingModel.WebmailFoundedCountManual, UpdateSourceTrigger=PropertyChanged}" />
+                        Value="{Binding CheckingModel.ShellsFoundedCountManual, UpdateSourceTrigger=PropertyChanged}" />
                     <Button
                         Grid.Column="4"
                         Width="100"
@@ -209,15 +207,15 @@
                         Content="копировать"
                         Cursor="Hand"
                         IsEnabled="{Binding IsEditEnable, UpdateSourceTrigger=PropertyChanged}"
-                        Tag="WebmailFile" />
+                        Tag="ShellsFile" />
                     <Button
                         Grid.Column="5"
                         Width="120"
                         Click="OpenFileClick"
                         Content="открыть файл"
                         Cursor="Hand"
-                        IsEnabled="{Binding CheckingModel.WebmailFilePath, Converter={StaticResource FilePathToEnabled}}"
-                        Tag="WebmailFile" />
+                        IsEnabled="{Binding CheckingModel.ShellsFilePath, Converter={StaticResource FilePathToEnabled}}"
+                        Tag="ShellsFile" />
                 </Grid>
                 <Grid Grid.Row="3" HorizontalAlignment="Center">
                     <Grid.ColumnDefinitions>
@@ -233,7 +231,7 @@
                         Margin="10,0,0,0"
                         HorizontalAlignment="Left"
                         Style="{StaticResource HeaderTextBlock}"
-                        Text="Cpanel (good) найдено:" />
+                        Text="Cpanels найдено:" />
                     <hc:TextBox
                         Grid.Column="1"
                         Width="120"
@@ -241,7 +239,7 @@
                         Margin="10,0,0,0"
                         HorizontalAlignment="Left"
                         IsReadOnly="True"
-                        Text="{Binding CheckingModel.CpanelGoodCount, UpdateSourceTrigger=PropertyChanged}" />
+                        Text="{Binding CheckingModel.CpanelsResetedFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock
                         Grid.Column="2"
                         Margin="10,0,0,0"
@@ -256,7 +254,7 @@
                         HorizontalAlignment="Left"
                         IsReadOnly="{Binding IsFieldReadonly, UpdateSourceTrigger=PropertyChanged}"
                         Minimum="0"
-                        Value="{Binding CheckingModel.CpanelGoodCountManual, UpdateSourceTrigger=PropertyChanged}" />
+                        Value="{Binding CheckingModel.CpanelsResetedFoundedCountManual, UpdateSourceTrigger=PropertyChanged}" />
                     <Button
                         Grid.Column="4"
                         Width="100"
@@ -264,15 +262,15 @@
                         Content="копировать"
                         Cursor="Hand"
                         IsEnabled="{Binding IsEditEnable, UpdateSourceTrigger=PropertyChanged}"
-                        Tag="CpanelGoodFile" />
+                        Tag="CpanelsResetedFile" />
                     <Button
                         Grid.Column="5"
                         Width="120"
                         Click="OpenFileClick"
                         Content="открыть файл"
                         Cursor="Hand"
-                        IsEnabled="{Binding CheckingModel.CpanelGoodFilePath, Converter={StaticResource FilePathToEnabled}}"
-                        Tag="CpanelGoodFile" />
+                        IsEnabled="{Binding CheckingModel.CpanelsFilePath, Converter={StaticResource FilePathToEnabled}}"
+                        Tag="CpanelsResetedFile" />
                 </Grid>
                 <Grid Grid.Row="4" HorizontalAlignment="Center">
                     <Grid.ColumnDefinitions>
@@ -288,7 +286,7 @@
                         Margin="10,0,0,0"
                         HorizontalAlignment="Left"
                         Style="{StaticResource HeaderTextBlock}"
-                        Text="Cpanel (bad) найдено:" />
+                        Text="SMTPs найдено:" />
                     <hc:TextBox
                         Grid.Column="1"
                         Width="120"
@@ -296,7 +294,7 @@
                         Margin="10,0,0,0"
                         HorizontalAlignment="Left"
                         IsReadOnly="True"
-                        Text="{Binding CheckingModel.CpanelBadCount, UpdateSourceTrigger=PropertyChanged}" />
+                        Text="{Binding CheckingModel.SmtpsFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock
                         Grid.Column="2"
                         Margin="10,0,0,0"
@@ -311,7 +309,7 @@
                         HorizontalAlignment="Left"
                         IsReadOnly="{Binding IsFieldReadonly, UpdateSourceTrigger=PropertyChanged}"
                         Minimum="0"
-                        Value="{Binding CheckingModel.CpanelBadCountManual, UpdateSourceTrigger=PropertyChanged}" />
+                        Value="{Binding CheckingModel.SmtpsFoundedCountManual, UpdateSourceTrigger=PropertyChanged}" />
                     <Button
                         Grid.Column="4"
                         Width="100"
@@ -319,15 +317,15 @@
                         Content="копировать"
                         Cursor="Hand"
                         IsEnabled="{Binding IsEditEnable, UpdateSourceTrigger=PropertyChanged}"
-                        Tag="CpanelBadFile" />
+                        Tag="SmtpsFile" />
                     <Button
                         Grid.Column="5"
                         Width="120"
                         Click="OpenFileClick"
                         Content="открыть файл"
                         Cursor="Hand"
-                        IsEnabled="{Binding CheckingModel.CpanelBadFilePath, Converter={StaticResource FilePathToEnabled}}"
-                        Tag="CpanelBadFile" />
+                        IsEnabled="{Binding CheckingModel.SmtpsFilePath, Converter={StaticResource FilePathToEnabled}}"
+                        Tag="SmtpsFile" />
                 </Grid>
                 <Grid Grid.Row="5" HorizontalAlignment="Center">
                     <Grid.ColumnDefinitions>
@@ -343,7 +341,7 @@
                         Margin="10,0,0,0"
                         HorizontalAlignment="Left"
                         Style="{StaticResource HeaderTextBlock}"
-                        Text="Whm (good) найдено:" />
+                        Text="Wordpress найдено:" />
                     <hc:TextBox
                         Grid.Column="1"
                         Width="120"
@@ -351,7 +349,7 @@
                         Margin="10,0,0,0"
                         HorizontalAlignment="Left"
                         IsReadOnly="True"
-                        Text="{Binding CheckingModel.WhmGoodCount, UpdateSourceTrigger=PropertyChanged}" />
+                        Text="{Binding CheckingModel.LoggedWordpressFoundedCount, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock
                         Grid.Column="2"
                         Margin="10,0,0,0"
@@ -366,7 +364,7 @@
                         HorizontalAlignment="Left"
                         IsReadOnly="{Binding IsFieldReadonly, UpdateSourceTrigger=PropertyChanged}"
                         Minimum="0"
-                        Value="{Binding CheckingModel.WhmGoodCountManual, UpdateSourceTrigger=PropertyChanged}" />
+                        Value="{Binding CheckingModel.LoggedWordpressFoundedCountManual, UpdateSourceTrigger=PropertyChanged}" />
                     <Button
                         Grid.Column="4"
                         Width="100"
@@ -374,72 +372,17 @@
                         Content="копировать"
                         Cursor="Hand"
                         IsEnabled="{Binding IsEditEnable, UpdateSourceTrigger=PropertyChanged}"
-                        Tag="WhmGoodFile" />
+                        Tag="LoggedWordpressFile" />
                     <Button
                         Grid.Column="5"
                         Width="120"
                         Click="OpenFileClick"
                         Content="открыть файл"
                         Cursor="Hand"
-                        IsEnabled="{Binding CheckingModel.WhmGoodFilePath, Converter={StaticResource FilePathToEnabled}}"
-                        Tag="WhmGoodFile" />
+                        IsEnabled="{Binding CheckingModel.LoggedWordpressFilePath, Converter={StaticResource FilePathToEnabled}}"
+                        Tag="LoggedWordpressFile" />
                 </Grid>
-                <Grid Grid.Row="6" HorizontalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="180" />
-                        <ColumnDefinition Width="130" />
-                        <ColumnDefinition Width="50" />
-                        <ColumnDefinition Width="130" />
-                        <ColumnDefinition Width="120" />
-                        <ColumnDefinition Width="140" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock
-                        Grid.Column="0"
-                        Margin="10,0,0,0"
-                        HorizontalAlignment="Left"
-                        Style="{StaticResource HeaderTextBlock}"
-                        Text="Whm (bad) найдено:" />
-                    <hc:TextBox
-                        Grid.Column="1"
-                        Width="120"
-                        Height="35"
-                        Margin="10,0,0,0"
-                        HorizontalAlignment="Left"
-                        IsReadOnly="True"
-                        Text="{Binding CheckingModel.WhmBadCount, UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBlock
-                        Grid.Column="2"
-                        Margin="10,0,0,0"
-                        HorizontalAlignment="Left"
-                        Style="{StaticResource HeaderTextBlock}"
-                        Text="факт:" />
-                    <hc:NumericUpDown
-                        Grid.Column="3"
-                        Width="120"
-                        Height="35"
-                        Margin="10,0,0,0"
-                        HorizontalAlignment="Left"
-                        IsReadOnly="{Binding IsFieldReadonly, UpdateSourceTrigger=PropertyChanged}"
-                        Minimum="0"
-                        Value="{Binding CheckingModel.WhmBadCountManual, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button
-                        Grid.Column="4"
-                        Width="100"
-                        Click="CopyToManualCountClick"
-                        Content="копировать"
-                        Cursor="Hand"
-                        IsEnabled="{Binding IsEditEnable, UpdateSourceTrigger=PropertyChanged}"
-                        Tag="WhmBadFile" />
-                    <Button
-                        Grid.Column="5"
-                        Width="120"
-                        Click="OpenFileClick"
-                        Content="открыть файл"
-                        Cursor="Hand"
-                        IsEnabled="{Binding CheckingModel.WhmBadFilePath, Converter={StaticResource FilePathToEnabled}}"
-                        Tag="WhmBadFile" />
-                </Grid>
-                <Grid Grid.Row="7" Visibility="{Binding CheckingModel.IsManualCheckEnd, Converter={StaticResource BooleanToVisibility}, ConverterParameter=direct}">
+                <Grid Grid.Row="6" Visibility="{Binding CheckingModel.IsManualCheckEnd, Converter={StaticResource BooleanToVisibility}, ConverterParameter=direct}">
                     <TextBlock
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"

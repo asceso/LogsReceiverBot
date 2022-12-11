@@ -11,6 +11,10 @@
     "LoadFiles": {
       "commandName": "Project",
       "commandLineArgs": "https://dropmefiles.com/F3nDs\r\ntrue\r\nC:\\Programming\\Work\\LogsReceiverBot\\BotMainApp\\bin\\Debug\\net6.0-windows\\temp\r\nresult.txt\r\nfalse\r\ntrue"
+    },
+    "MakeProfile": {
+      "commandName": "Project",
+      "commandLineArgs": "https://dropmefiles.com/HLbKk\r\nfalse\r\nnone\r\nnone\r\ntrue\r\nfalse"
     }
   }
 }

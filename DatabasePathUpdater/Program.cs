@@ -10,6 +10,7 @@ namespace DatabasePathUpdater
             List<CpanelWhmCheckModel> models = await CpanelWhmCheckController.GetChecksAsync();
             foreach (CpanelWhmCheckModel model in models)
             {
+                model.OriginalFilePath = string.Empty;
                 model.OriginalFilePath = model.OriginalFilePath.Replace("/checks/", "/cpanel_whm/");
                 model.DublicateFilePath = model.DublicateFilePath.Replace("/checks/", "/cpanel_whm/");
                 model.WebmailFilePath = model.WebmailFilePath.Replace("/checks/", "/cpanel_whm/");
@@ -20,6 +21,7 @@ namespace DatabasePathUpdater
                 await CpanelWhmCheckController.PutCheckAsync(model, null);
             }
             Console.WriteLine("Done");
+            Console.ReadKey();
         }
     }
 }

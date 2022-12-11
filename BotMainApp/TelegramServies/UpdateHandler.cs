@@ -1941,6 +1941,7 @@ namespace BotMainApp.TelegramServices
             {
                 if (totalAddedCount == 0)
                 {
+                    checkModel.DublicateFoundedCountManual = checkModel.DublicateFoundedCount;
                     await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language)
                                                                            .Replace("@ID", checkModel.Id.ToString()));
 
@@ -2303,6 +2304,7 @@ namespace BotMainApp.TelegramServices
             {
                 if (wpLoginAddedCount == 0)
                 {
+                    checkModel.DublicateFoundedCountManual = checkModel.DublicateFoundedCount;
                     await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language)
                                                                            .Replace("@ID", checkModel.Id.ToString()));
 
@@ -2751,12 +2753,28 @@ namespace BotMainApp.TelegramServices
             }
         }
 
-        public async Task NotifyUserForEndCheckingFile(UserModel dbUser, CpanelWhmCheckModel manualCheck, int totalValid, int addBalance)
+        public async Task NotifyUserForEndCheckingFile(UserModel dbUser, CpanelWhmCheckModel cpanelWhmCheck, int totalValid, int addBalance)
         {
             try
             {
                 await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingComplete", dbUser.Language)
-                                                                       .Replace("@ID", manualCheck.Id.ToString())
+                                                                       .Replace("@ID", cpanelWhmCheck.Id.ToString())
+                                                                       .Replace("@VALID", totalValid.ToString())
+                                                                       .Replace("@BALANCE", addBalance.ToString())
+                                                                       .Replace("@CURRENCY", config.Currency)
+                                                                       );
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public async Task NotifyUserForEndCheckingFile(UserModel dbUser, WpLoginCheckModel wpLoginCheck, int totalValid, int addBalance)
+        {
+            try
+            {
+                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingComplete", dbUser.Language)
+                                                                       .Replace("@ID", wpLoginCheck.Id.ToString())
                                                                        .Replace("@VALID", totalValid.ToString())
                                                                        .Replace("@BALANCE", addBalance.ToString())
                                                                        .Replace("@CURRENCY", config.Currency)

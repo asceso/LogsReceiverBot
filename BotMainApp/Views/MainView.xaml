@@ -97,6 +97,18 @@
                 </hc:SideMenuItem>
                 <hc:SideMenuItem
                     Command="{Binding SwithViewCommand}"
+                    CommandParameter="WpLoginChecks"
+                    Header="WP-login"
+                    IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=WpLoginChecks}">
+                    <hc:SideMenuItem.Icon>
+                        <Image
+                            Width="24"
+                            Height="24"
+                            Source="/Images/search.png" />
+                    </hc:SideMenuItem.Icon>
+                </hc:SideMenuItem>
+                <hc:SideMenuItem
+                    Command="{Binding SwithViewCommand}"
                     CommandParameter="Cookies"
                     Header="Cookies"
                     IsSelected="{Binding CurrentView, Converter={StaticResource ViewTypeToBoolean}, ConverterParameter=Cookies}">
@@ -149,6 +161,9 @@
             </Grid>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=CpanelWhmChecks, UpdateSourceTrigger=PropertyChanged}">
                 <views:CpanelWhmView />
+            </Grid>
+            <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=WpLoginChecks, UpdateSourceTrigger=PropertyChanged}">
+                <views:WpLoginView />
             </Grid>
             <Grid Grid.Column="1" Visibility="{Binding CurrentView, Converter={StaticResource ViewTypeToVisibility}, ConverterParameter=Cookies, UpdateSourceTrigger=PropertyChanged}">
                 <views:CookiesView />
