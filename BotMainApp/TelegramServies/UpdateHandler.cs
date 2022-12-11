@@ -812,6 +812,293 @@ namespace BotMainApp.TelegramServices
 
                             #endregion checks for wp-login
 
+                            #region admin checkings wp-login
+
+                            else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("AdminCheckingPrivateRequests") &&
+                                     temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("AdminCheckingWpLogin"))
+                            {
+                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.GetFilenameTimestamp() + ".txt";
+                                if (!argument.IsNullOrEmptyString())
+                                {
+                                    #region check regex for link
+
+                                    if (dropMeRegex.IsMatch(argument))
+                                    {
+                                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CheckingWpLoginDropmelinkFile", dbUser.Language));
+                                    }
+                                    else
+                                    {
+                                        await botClient.SendTextMessageAsync(
+                                            dbUser.Id,
+                                            locales.GetByKey("SendWpLoginInstruction", dbUser.Language),
+                                            replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                                            );
+                                        return;
+                                    }
+
+                                    #endregion check regex for link
+
+                                    #region check dublicate
+
+                                    if (await CookiesController.IsDropMeLinkExist(argument))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkDublicateError", dbUser.Language));
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+
+                                    #endregion check dublicate
+
+                                    #region check drop me link and download file
+
+                                    Guid taskId = taskSchedule.In(ConstStrings.SeleniumThread).ScheduleTask(DropMeCheckingAsync).StartNext();
+                                    async Task<string> DropMeCheckingAsync(object[] arg) => await Runner.RunDropMeLinkChecker(argument, true, PathCollection.TempFolderPath, filename);
+
+                                    await taskSchedule.In(ConstStrings.SeleniumThread).WaitForTaskFinish(taskId).ConfigureAwait(false);
+                                    string dropmelinkCheckerInfo = taskSchedule.In(ConstStrings.SeleniumThread).GetResult(taskId);
+
+                                    JObject dropmelinkCheckerJson = JObject.Parse(dropmelinkCheckerInfo);
+                                    if (dropmelinkCheckerJson.ContainsKey("Error"))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingError", dbUser.Language));
+                                            if (System.IO.File.Exists(PathCollection.TempFolderPath + filename))
+                                            {
+                                                System.IO.File.Delete(PathCollection.TempFolderPath + filename);
+                                            }
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+
+                                    bool isOnlyTxtFilesFounded = dropmelinkCheckerJson["IsOnlyTxtFiles"].Value<bool>();
+                                    if (!isOnlyTxtFilesFounded)
+                                    {
+                                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("WpLoginInvalidFilesOnDropmelink", dbUser.Language));
+                                        return;
+                                    }
+
+                                    bool isFilesDownloaded = dropmelinkCheckerJson["FilesDownloaded"].Value<bool>();
+                                    if (isFilesDownloaded)
+                                    {
+                                        List<string> mainFileList = new();
+                                        using StreamReader reader = new(PathCollection.TempFolderPath + filename);
+                                        string buffer = await reader.ReadToEndAsync();
+                                        reader.Close();
+                                        foreach (var line in buffer.Split(Environment.NewLine).Where(l => !l.IsNullOrEmptyString()))
+                                        {
+                                            mainFileList.Add(line);
+                                        }
+                                        if (System.IO.File.Exists(PathCollection.TempFolderPath + filename))
+                                        {
+                                            System.IO.File.Delete(PathCollection.TempFolderPath + filename);
+                                        }
+
+                                        List<int> checkingModelsList = new();
+                                        List<List<string>> partitions = mainFileList.Split(50000);
+                                        foreach (List<string> partition in partitions)
+                                        {
+                                            WpLoginCheckModel checkModel = new()
+                                            {
+                                                StartDateTime = DateTime.Now,
+                                                Status = ManualCheckStatus.Created,
+                                                FromUserId = dbUser.Id,
+                                                FromUsername = dbUser.Username,
+                                            };
+                                            await WpLoginCheckController.PostCheckAsync(checkModel, aggregator);
+
+                                            string folderPath = PathCollection.WpLoginFolderPath + $"/{checkModel.Id}";
+                                            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+                                            string checkModelOriginalFilename = PathCollection.WpLoginFolderPath + $"{checkModel.Id}/@{dbUser.Username}_id{checkModel.Id}.txt";
+                                            await partition.SaveToFile(checkModelOriginalFilename);
+                                            checkModel.OriginalFilePath = checkModelOriginalFilename;
+                                            await WpLoginCheckController.PutCheckAsync(checkModel, aggregator);
+
+                                            taskSchedule.In(ConstStrings.FoxCheckerThread)
+                                                        .ScheduleTask(FoxThreadAsync)
+                                                        .AddParameters(dbUser, checkModelOriginalFilename, checkModel, false)
+                                                        .StartNext();
+                                            async Task FoxThreadAsync(object[] args) => await StandartCheckProcessForWpLogin((UserModel)args[0],
+                                                                                                                             (string)args[1],
+                                                                                                                             (WpLoginCheckModel)args[2],
+                                                                                                                             (bool)args[3]);
+                                            checkingModelsList.Add(checkModel.Id);
+                                        }
+
+                                        if (checkingModelsList.Count == 1)
+                                        {
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(
+                                                    dbUser.Id,
+                                                    locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
+                                                           .Replace("@ID", checkingModelsList.FirstOrDefault().ToString()),
+                                                    replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                                    );
+                                            }
+                                            catch (Exception)
+                                            {
+                                            }
+                                        }
+                                        else
+                                        {
+                                            string ids = string.Empty;
+                                            for (int i = 0; i < checkingModelsList.Count; i++)
+                                            {
+                                                if (i == checkingModelsList.Count - 1)
+                                                {
+                                                    ids += checkingModelsList[i];
+                                                }
+                                                else
+                                                {
+                                                    ids += checkingModelsList[i] + ", ";
+                                                }
+                                            }
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(
+                                                    dbUser.Id,
+                                                    locales.GetByKey("FileListAcceptedWaitResult", dbUser.Language)
+                                                           .Replace("@ID", ids),
+                                                    replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                                    );
+                                            }
+                                            catch (Exception)
+                                            {
+                                            }
+                                        }
+
+                                        operations.Remove(temp.Operation);
+                                        return;
+                                    }
+
+                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingError", dbUser.Language));
+                                    return;
+
+                                    #endregion check drop me link and download file
+                                }
+                                else if (temp.Document.FileName.EndsWith(".txt"))
+                                {
+                                    #region load tg file
+
+                                    Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
+                                    using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
+                                    await botClient.DownloadFileAsync(file.FilePath, stream);
+                                    stream.Close();
+
+                                    #endregion load tg file
+
+                                    #region accept file
+
+                                    List<string> mainFileList = new();
+                                    using StreamReader reader = new(PathCollection.TempFolderPath + filename);
+                                    string buffer = await reader.ReadToEndAsync();
+                                    reader.Close();
+                                    foreach (var line in buffer.Split(Environment.NewLine).Where(l => !l.IsNullOrEmptyString()))
+                                    {
+                                        mainFileList.Add(line);
+                                    }
+                                    if (System.IO.File.Exists(PathCollection.TempFolderPath + filename))
+                                    {
+                                        System.IO.File.Delete(PathCollection.TempFolderPath + filename);
+                                    }
+
+                                    List<int> checkingModelsList = new();
+                                    List<List<string>> partitions = mainFileList.Split(50000);
+                                    foreach (List<string> partition in partitions)
+                                    {
+                                        WpLoginCheckModel checkModel = new()
+                                        {
+                                            StartDateTime = DateTime.Now,
+                                            Status = ManualCheckStatus.Created,
+                                            FromUserId = dbUser.Id,
+                                            FromUsername = dbUser.Username,
+                                        };
+                                        await WpLoginCheckController.PostCheckAsync(checkModel, aggregator);
+
+                                        string folderPath = PathCollection.WpLoginFolderPath + $"/{checkModel.Id}";
+                                        if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+                                        string checkModelOriginalFilename = PathCollection.WpLoginFolderPath + $"{checkModel.Id}/@{dbUser.Username}_id{checkModel.Id}.txt";
+                                        await partition.SaveToFile(checkModelOriginalFilename);
+                                        checkModel.OriginalFilePath = checkModelOriginalFilename;
+                                        await WpLoginCheckController.PutCheckAsync(checkModel, aggregator);
+
+                                        taskSchedule.In(ConstStrings.FoxCheckerThread)
+                                                    .ScheduleTask(FoxThreadAsync)
+                                                    .AddParameters(dbUser, checkModelOriginalFilename, checkModel, false)
+                                                    .StartNext();
+                                        async Task FoxThreadAsync(object[] args) => await StandartCheckProcessForWpLogin((UserModel)args[0],
+                                                                                                                         (string)args[1],
+                                                                                                                         (WpLoginCheckModel)args[2],
+                                                                                                                         (bool)args[3]);
+                                        checkingModelsList.Add(checkModel.Id);
+                                    }
+
+                                    if (checkingModelsList.Count == 1)
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(
+                                                dbUser.Id,
+                                                locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
+                                                       .Replace("@ID", checkingModelsList.FirstOrDefault().ToString()),
+                                                replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                                );
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                    }
+                                    else
+                                    {
+                                        string ids = string.Empty;
+                                        for (int i = 0; i < checkingModelsList.Count; i++)
+                                        {
+                                            if (i == checkingModelsList.Count - 1)
+                                            {
+                                                ids += checkingModelsList[i];
+                                            }
+                                            else
+                                            {
+                                                ids += checkingModelsList[i] + ", ";
+                                            }
+                                        }
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(
+                                                dbUser.Id,
+                                                locales.GetByKey("FileListAcceptedWaitResult", dbUser.Language)
+                                                       .Replace("@ID", ids),
+                                                replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                                );
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                    }
+
+                                    operations.Remove(temp.Operation);
+                                    return;
+
+                                    #endregion accept file
+                                }
+                                else
+                                {
+                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUploadError", dbUser.Language));
+                                    return;
+                                }
+                            }
+
+                            #endregion admin checkings wp-login
+
                             #region instagram cookies
 
                             else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Cookies", "Cookie файлы") &&
@@ -1505,6 +1792,19 @@ namespace BotMainApp.TelegramServices
                 await botClient.SendTextMessageAsync(
                     dbUser.Id,
                     locales.GetByKey("SendFileInstruction", dbUser.Language),
+                    replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                    );
+                return;
+            }
+            else if (temp.Message.IsAnyEqual("/check_wp_login_logs_admin") && config.EnableAdminCheckCommand)
+            {
+                operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
+                    new KeyValuePair<string, object>("Category", "AdminCheckingPrivateRequests"),
+                    new KeyValuePair<string, object>("SubCategory", "AdminCheckingWpLogin")
+                    ));
+                await botClient.SendTextMessageAsync(
+                    dbUser.Id,
+                    locales.GetByKey("SendWpLoginInstruction", dbUser.Language),
                     replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
                     );
                 return;
