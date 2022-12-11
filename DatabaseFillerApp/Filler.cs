@@ -2,6 +2,7 @@
 using Extensions;
 using Models.Database;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace DatabaseFillerApp
 {
@@ -15,8 +16,9 @@ namespace DatabaseFillerApp
             string webmailFilePath;
             string cpanelFilePath;
             string whmFilePath;
+            string wploginFilePath;
 
-            if (arguments.Length < 5)
+            if (arguments.Length < 6)
             {
                 return;
             }
@@ -25,8 +27,9 @@ namespace DatabaseFillerApp
             webmailFilePath = arguments[2];
             cpanelFilePath = arguments[3];
             whmFilePath = arguments[4];
-            bool fillRecords = arguments.Length > 5 && arguments[5] == "true";
-            bool showOutput = arguments.Length > 6 && arguments[6] == "true";
+            wploginFilePath = arguments[5];
+            bool fillRecords = arguments.Length > 6 && arguments[6] == "true";
+            bool showOutput = arguments.Length > 7 && arguments[7] == "true";
 
             try
             {
@@ -35,6 +38,7 @@ namespace DatabaseFillerApp
                 answer.WebmailAddedCount = await CheckFileAndPostLogsAsync(user, webmailFilePath, "webmail", fillRecords);
                 answer.CpanelAddedCount = await CheckFileAndPostLogsAsync(user, cpanelFilePath, "cpanel", fillRecords);
                 answer.WhmAddedCount = await CheckFileAndPostLogsAsync(user, whmFilePath, "whm", fillRecords);
+                answer.WpLoginAddedCount = await CheckFileAndPostLogsAsync(user, wploginFilePath, "wp-login", fillRecords);
                 Console.WriteLine(JsonConvert.SerializeObject(answer));
             }
             catch (Exception ex)
@@ -60,52 +64,82 @@ namespace DatabaseFillerApp
             int addedCount = 0;
             foreach (var row in rows)
             {
-                string[] parts = row.Split('|');
                 DublicateModel model;
-                if (category == "webmail")
+                if (category == "wp-login")
                 {
-                    if (parts.Length != 4)
+                    try
+                    {
+                        string toReplaceString = row;
+                        string url, login, password;
+                        url = toReplaceString.Remove(toReplaceString.IndexOf("#"));
+                        toReplaceString = toReplaceString.Replace(url + "#", string.Empty);
+                        login = toReplaceString.Remove(toReplaceString.IndexOf("@"));
+                        toReplaceString = toReplaceString.Replace(login + "@", string.Empty);
+                        password = toReplaceString;
+
+                        model = new()
+                        {
+                            Url = url,
+                            Login = login,
+                            Password = password,
+                            Category = category,
+                            UploadedByUserId = user.Id,
+                            UploadedByUsername = user.Username
+                        };
+                    }
+                    catch (Exception)
                     {
                         continue;
                     }
-
-                    string url, port, login, password;
-                    url = parts[0];
-                    port = parts[1];
-                    login = parts[2];
-                    password = parts[3];
-
-                    model = new()
-                    {
-                        Url = url + "|" + port,
-                        Login = login,
-                        Password = password,
-                        Category = category,
-                        UploadedByUserId = user.Id,
-                        UploadedByUsername = user.Username
-                    };
                 }
                 else
                 {
-                    if (parts.Length != 3)
+                    string[] parts = row.Split('|');
+                    if (category == "webmail")
                     {
-                        continue;
+                        if (parts.Length != 4)
+                        {
+                            continue;
+                        }
+
+                        string url, port, login, password;
+                        url = parts[0];
+                        port = parts[1];
+                        login = parts[2];
+                        password = parts[3];
+
+                        model = new()
+                        {
+                            Url = url + "|" + port,
+                            Login = login,
+                            Password = password,
+                            Category = category,
+                            UploadedByUserId = user.Id,
+                            UploadedByUsername = user.Username
+                        };
                     }
-
-                    string url, login, password;
-                    url = parts[0];
-                    login = parts[1];
-                    password = parts[2];
-
-                    model = new()
+                    else
                     {
-                        Url = url,
-                        Login = login,
-                        Password = password,
-                        Category = category,
-                        UploadedByUserId = user.Id,
-                        UploadedByUsername = user.Username
-                    };
+                        if (parts.Length != 3)
+                        {
+                            continue;
+                        }
+
+                        string url, login, password;
+                        url = parts[0];
+                        login = parts[1];
+                        password = parts[2];
+
+                        model = new()
+                        {
+                            Url = url,
+                            Login = login,
+                            Password = password,
+                            Category = category,
+                            UploadedByUserId = user.Id,
+                            UploadedByUsername = user.Username
+                        };
+                    }
                 }
                 if (fillRecords)
                 {
@@ -124,5 +158,6 @@ namespace DatabaseFillerApp
         public int WebmailAddedCount { get; set; }
         public int CpanelAddedCount { get; set; }
         public int WhmAddedCount { get; set; }
+        public int WpLoginAddedCount { get; set; }
     }
 }

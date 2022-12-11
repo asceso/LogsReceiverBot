@@ -205,7 +205,7 @@ namespace BotMainApp.Views.Windows
 
         private void OpenCheckFolderClick(object sender, RoutedEventArgs e)
         {
-            string folderPath = PathCollection.ChecksFolderPath + $"{CheckingModel.Id}/";
+            string folderPath = PathCollection.CpanelAndWhmFolderPath + $"{CheckingModel.Id}/";
             if (Directory.Exists(folderPath))
             {
                 Runner.RunExplorerWithPath(folderPath.Replace("/", "\\"));

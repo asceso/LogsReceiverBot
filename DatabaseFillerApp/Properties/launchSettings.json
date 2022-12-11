@@ -1,8 +1,16 @@
 {
   "profiles": {
-    "DatabaseFillerApp": {
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "WebmailAndCpanel": {
       "commandName": "Project",
-      "commandLineArgs": "1114923089\r\nC:\\Programming/Work/LogsReceiverBot/BotMainApp/bin/Debug/net6.0-windows/temp/u_1114923089_check_23_11_2022_16_36_00/webmail.txt\r\nC:\\Programming/Work/LogsReceiverBot/BotMainApp/bin/Debug/net6.0-windows/temp/u_1114923089_check_23_11_2022_16_36_00/cpanel.txt\r\nnone"
+      "commandLineArgs": "1114923089\r\nC:\\Programming/Work/LogsReceiverBot/BotMainApp/bin/Debug/net6.0-windows/temp/u_1114923089_check_23_11_2022_16_36_00/webmail.txt\r\nC:\\Programming/Work/LogsReceiverBot/BotMainApp/bin/Debug/net6.0-windows/temp/u_1114923089_check_23_11_2022_16_36_00/cpanel.txt\r\nnone\r\nnone\r\nfalse\r\ntrue"
+    },
+    "WpLogin": {
+      "commandName": "Project",
+      "commandLineArgs": "1114923089\r\nnone\r\nnone\r\nnone\r\nC:\\Programming\\Work\\LogsReceiverBot\\WpShellFilePreparer\\bin\\Debug\\net6.0\\temp\\result\\unique.txt\r\nfalse\r\ntrue"
     }
   }
 }

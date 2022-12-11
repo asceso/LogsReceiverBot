@@ -53,7 +53,7 @@ namespace DataAdapter.Controllers
                 using DataContext data = new();
                 await data.Payouts.AddAsync(model);
                 await data.SaveChangesAsync();
-                aggregator.GetEvent<PayoutUpdateEvent>().Publish(new("post", model));
+                aggregator?.GetEvent<PayoutUpdateEvent>().Publish(new("post", model));
                 return true;
             }
             catch (Exception)
@@ -62,7 +62,7 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<bool> PutPayoutAsync(PayoutModel model, IEventAggregator aggregator = null)
+        public static async Task<bool> PutPayoutAsync(PayoutModel model, IEventAggregator aggregator)
         {
             try
             {
@@ -73,10 +73,7 @@ namespace DataAdapter.Controllers
                 data.Entry(target).CurrentValues.SetValues(model);
                 data.Update(target);
                 await data.SaveChangesAsync();
-                if (aggregator != null)
-                {
-                    aggregator.GetEvent<PayoutUpdateEvent>().Publish(new("put", model));
-                }
+                aggregator?.GetEvent<PayoutUpdateEvent>().Publish(new("put", model));
                 return true;
             }
             catch (Exception)

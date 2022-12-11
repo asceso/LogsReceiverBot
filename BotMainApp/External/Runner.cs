@@ -16,7 +16,9 @@ namespace BotMainApp.External
         /// <param name="filename">filename for check</param>
         /// <param name="config">config with regex</param>
         /// <returns>json with path collection</returns>
-        public static async Task<string> RunDublicateChecker(string resultDirectoryPath, string filename, ConfigModel config)
+        public static async Task<string> RunDublicateChecker(string resultDirectoryPath,
+                                                             string filename,
+                                                             ConfigModel config)
         {
             ProcessStartInfo psi = new()
             {
@@ -50,7 +52,10 @@ namespace BotMainApp.External
         /// <param name="whmFilepath">whm file</param>
         /// <param name="maxForThread">max for thread count</param>
         /// <returns>json collection</returns>
-        public static async Task<string> RunCpanelChecker(string folderPath, string cpanelFilepath, string whmFilepath, int maxForThread)
+        public static async Task<string> RunCpanelChecker(string folderPath,
+                                                          string cpanelFilepath,
+                                                          string whmFilepath,
+                                                          int maxForThread)
         {
             ProcessStartInfo psi = new()
             {
@@ -84,7 +89,10 @@ namespace BotMainApp.External
         /// <param name="folderPath">main folder for check</param>
         /// <param name="maxForThread">max for thread count</param>
         /// <returns>json collection</returns>
-        public static async Task<string> RunOwnCpanelChecker(string cpanelFilepath, string whmFilepath, string folderPath, int maxForThread)
+        public static async Task<string> RunOwnCpanelChecker(string cpanelFilepath,
+                                                             string whmFilepath,
+                                                             string folderPath,
+                                                             int maxForThread)
         {
             ProcessStartInfo psi = new()
             {
@@ -117,7 +125,12 @@ namespace BotMainApp.External
         /// <param name="cpanelFilePath">cpanel filename</param>
         /// <param name="whmFilePath">whm filename</param>
         /// <returns>json result</returns>
-        public static async Task<string> RunDublicateFiller(long userId, string webmailFilePath, string cpanelFilePath, string whmFilePath, bool fillRecords)
+        public static async Task<string> RunDublicateFiller(long userId,
+                                                            string webmailFilePath,
+                                                            string cpanelFilePath,
+                                                            string whmFilePath,
+                                                            string wpLoginFilePath,
+                                                            bool fillRecords)
         {
             ProcessStartInfo psi = new()
             {
@@ -128,6 +141,7 @@ namespace BotMainApp.External
                 $"\"{(webmailFilePath.IsNullOrEmptyString() ? "none" : webmailFilePath)}\" " +
                 $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
                 $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\" " +
+                $"\"{(wpLoginFilePath.IsNullOrEmptyString() ? "none" : wpLoginFilePath)}\" " +
                 $"\"{fillRecords.ToString().ToLower()}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -150,7 +164,13 @@ namespace BotMainApp.External
         /// <param name="cpanelFilePath">cpanel filename</param>
         /// <param name="whmFilePath">whm filename</param>
         /// <returns>json result</returns>
-        public static async Task<string> RunValidFiller(long userId, string cpanelFilePath, string whmFilePath)
+        public static async Task<string> RunValidFiller(long userId,
+                                                        string cpanelFilePath,
+                                                        string whmFilePath,
+                                                        string shellsFilePath,
+                                                        string cpanelsResetedFilePath,
+                                                        string smtpsFilePath,
+                                                        string loggedWordpressFilePath)
         {
             ProcessStartInfo psi = new()
             {
@@ -159,7 +179,11 @@ namespace BotMainApp.External
                 Arguments =
                 $"\"{userId}\" " +
                 $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
-                $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\"",
+                $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\" " +
+                $"\"{(shellsFilePath.IsNullOrEmptyString() ? "none" : shellsFilePath)}\" " +
+                $"\"{(cpanelsResetedFilePath.IsNullOrEmptyString() ? "none" : cpanelsResetedFilePath)}\" " +
+                $"\"{(smtpsFilePath.IsNullOrEmptyString() ? "none" : smtpsFilePath)}\" " +
+                $"\"{(loggedWordpressFilePath.IsNullOrEmptyString() ? "none" : loggedWordpressFilePath)}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -180,7 +204,8 @@ namespace BotMainApp.External
         /// <param name="notepadPath">path to notepad</param>
         /// <param name="filepath">filename</param>
         /// <returns>true if opened without error</returns>
-        public static bool RunTextFileInNotepad(string notepadPath, string filepath)
+        public static bool RunTextFileInNotepad(string notepadPath,
+                                                string filepath)
         {
             try
             {
@@ -257,7 +282,10 @@ namespace BotMainApp.External
         /// </summary>
         /// <param name="fileLink">file link</param>
         /// <returns>file size json array</returns>
-        public static async Task<string> RunDropMeLinkChecker(string fileLink, bool checkFileExtensions, string directoryToSaveFile, string saveFilename)
+        public static async Task<string> RunDropMeLinkChecker(string fileLink,
+                                                              bool checkFileExtensions,
+                                                              string directoryToSaveFile,
+                                                              string saveFilename)
         {
             ProcessStartInfo psi = new()
             {
@@ -277,6 +305,65 @@ namespace BotMainApp.External
             Process process = Process.Start(psi);
             await process.WaitForExitAsync();
             StreamReader reader = process.StandardOutput;
+            string jsonResult = await reader.ReadToEndAsync();
+            reader.Close();
+            process.Close();
+            return jsonResult;
+        }
+
+        /// <summary>
+        /// Run file preparer for wp-login
+        /// </summary>
+        /// <param name="resultDirectoryPath">result dir path</param>
+        /// <param name="filename">file for checking</param>
+        /// <returns>json with dublicate and unique</returns>
+        public static async Task<string> RunWpLoginFilePreparer(string resultDirectoryPath,
+                                                                string filename)
+        {
+            ProcessStartInfo psi = new()
+            {
+                WorkingDirectory = Environment.CurrentDirectory,
+                FileName = "WpShellFilePreparer.exe",
+                Arguments =
+                $"\"{resultDirectoryPath}\" " +
+                $"\"{filename}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            Process process = Process.Start(psi);
+            await process.WaitForExitAsync();
+            StreamReader reader = process.StandardOutput;
+            string jsonResult = await reader.ReadToEndAsync();
+            reader.Close();
+            process.Close();
+            return jsonResult;
+        }
+
+        /// <summary>
+        /// Run checker app
+        /// </summary>
+        /// <param name="folderPath">main folder for check</param>
+        /// <param name="workingFilePath">file to check</param>
+        /// <returns>json collection</returns>
+        public static async Task<string> RunFoxChecker(string folderPath,
+                                                       string workingFilePath,
+                                                       int maxForThread)
+        {
+            ProcessStartInfo psi = new()
+            {
+                WorkingDirectory = Environment.CurrentDirectory,
+                FileName = "FoxCheckerRunner.exe",
+                Arguments =
+                $"\"{folderPath}\" " +
+                $"\"{(workingFilePath.IsNullOrEmptyString() ? "none" : workingFilePath)}\" " +
+                $"\"{maxForThread}\""
+            };
+            Process process = Process.Start(psi);
+            var processId = process.Id;
+            await process.WaitForExitAsync();
+            StreamReader reader = new(folderPath + "/answer.json");
             string jsonResult = await reader.ReadToEndAsync();
             reader.Close();
             process.Close();

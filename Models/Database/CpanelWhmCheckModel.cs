@@ -33,6 +33,7 @@ namespace Models.Database
         private string cpanelBadFilePath;
         private string whmGoodFilePath;
         private string whmBadFilePath;
+        private string originalFilePath;
         private bool isManualCheckEnd;
 
         [Column("id")]
@@ -110,6 +111,9 @@ namespace Models.Database
         [Column("whm_bad_file_path")]
         public string WhmBadFilePath { get => whmBadFilePath; set => SetProperty(ref whmBadFilePath, value); }
 
+        [Column("original_file_path")]
+        public string OriginalFilePath { get => originalFilePath; set => SetProperty(ref originalFilePath, value); }
+
         [Column("is_manual_check_end")]
         public bool IsManualCheckEnd { get => isManualCheckEnd; set => SetProperty(ref isManualCheckEnd, value); }
 
@@ -118,6 +122,9 @@ namespace Models.Database
 
         [NotMapped]
         public DelegateCommand<CpanelWhmCheckModel> OpenManualCheckCommand { get; set; }
+
+        [NotMapped]
+        public DelegateCommand<CpanelWhmCheckModel> OpenOriginalFileCommand { get; set; }
 
         [NotMapped]
         public DelegateCommand<CpanelWhmCheckModel> DeleteCheckCommand { get; set; }
@@ -130,6 +137,7 @@ namespace Models.Database
             CpanelBadFilePath = "";
             WhmGoodFilePath = "";
             WhmBadFilePath = "";
+            OriginalFilePath = "";
         }
 
         public object Clone() => MemberwiseClone();

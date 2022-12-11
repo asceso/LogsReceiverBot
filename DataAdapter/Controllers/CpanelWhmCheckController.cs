@@ -53,7 +53,7 @@ namespace DataAdapter.Controllers
                 using DataContext data = new();
                 await data.CpanelWhmChecks.AddAsync(model);
                 await data.SaveChangesAsync();
-                aggregator.GetEvent<ManualCheckUpdateEvent>().Publish(new("post", model));
+                aggregator?.GetEvent<CpanelWhmCheckUpdateEvent>().Publish(new("post", model));
                 return true;
             }
             catch (Exception)
@@ -73,10 +73,7 @@ namespace DataAdapter.Controllers
                 data.Entry(target).CurrentValues.SetValues(model);
                 data.Update(target);
                 await data.SaveChangesAsync();
-                if (aggregator != null)
-                {
-                    aggregator.GetEvent<ManualCheckUpdateEvent>().Publish(new("put", model));
-                }
+                aggregator?.GetEvent<CpanelWhmCheckUpdateEvent>().Publish(new("put", model));
                 return true;
             }
             catch (Exception)
@@ -85,7 +82,7 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<int> DeleteManualCheckAsync(CpanelWhmCheckModel model)
+        public static async Task<int> DeleteCheckAsync(CpanelWhmCheckModel model)
         {
             try
             {

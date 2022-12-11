@@ -67,6 +67,13 @@
         public IScheduledTask ScheduleTask(Func<object[], Task<string>> body);
 
         /// <summary>
+        /// Запланировать асинхронное задание в очередь
+        /// </summary>
+        /// <param name="body">Тело задания</param>
+        /// <returns>ИД задания</returns>
+        public IScheduledTask ScheduleTask(Func<object[], Task> body);
+
+        /// <summary>
         /// Останавливает задание с указанным ИД
         /// </summary>
         /// <param name="id">ИД задания</param>
@@ -90,6 +97,13 @@
         /// </summary>
         /// <returns>Ничего</returns>
         public Task WaitForSchedulerFinish();
+
+        /// <summary>
+        /// Ожидать завершения задачи
+        /// </summary>
+        /// <param name="taskId">ИД задачи</param>
+        /// <returns>Ничего</returns>
+        public Task WaitForTaskFinish(Guid taskId);
     }
 
     #endregion thread interface

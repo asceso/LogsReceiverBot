@@ -1,44 +1,31 @@
-﻿using AgregatorEvents;
+﻿using DatabaseEvents;
 using Microsoft.EntityFrameworkCore;
 using Models.Database;
 using Prism.Events;
 
 namespace DataAdapter.Controllers
 {
-    public class UsersController
+    public class WpLoginCheckController
     {
-        public static async Task<List<UserModel>> GetUsersAsync()
+        public static async Task<List<WpLoginCheckModel>> GetChecksAsync()
         {
             try
             {
                 using DataContext data = new();
-                return await data.Users.ToListAsync();
+                return await data.WpLoginChecks.ToListAsync();
             }
             catch (Exception)
             {
-                return new List<UserModel>();
+                return new List<WpLoginCheckModel>();
             }
         }
 
-        public static async Task<UserModel> GetUserByIdAsync(long id)
+        public static async Task<WpLoginCheckModel> GetCheckByIdAsync(int id)
         {
             try
             {
                 using DataContext data = new();
-                return await data.Users.FirstOrDefaultAsync(m => m.Id == id);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        }
-
-        public static async Task<UserModel> GetUserByUsernameAsync(string username)
-        {
-            try
-            {
-                using DataContext data = new();
-                return await data.Users.FirstOrDefaultAsync(m => m.Username == username);
+                return await data.WpLoginChecks.FirstOrDefaultAsync(m => m.Id == id);
             }
             catch (Exception)
             {
@@ -46,14 +33,27 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<bool> PostUserAsync(UserModel model, IEventAggregator aggregator)
+        public static async Task<List<WpLoginCheckModel>> GetChecksByUserIdAsync(long id)
         {
             try
             {
                 using DataContext data = new();
-                await data.Users.AddAsync(model);
+                return await data.WpLoginChecks.Where(m => m.FromUserId == id).ToListAsync();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static async Task<bool> PostCheckAsync(WpLoginCheckModel model, IEventAggregator aggregator)
+        {
+            try
+            {
+                using DataContext data = new();
+                await data.WpLoginChecks.AddAsync(model);
                 await data.SaveChangesAsync();
-                aggregator?.GetEvent<UserUpdateEvent>().Publish(new("post", model));
+                aggregator?.GetEvent<WpLoginCheckUpdateEvent>().Publish(new("post", model));
                 return true;
             }
             catch (Exception)
@@ -62,18 +62,18 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<bool> PutUserAsync(UserModel model, IEventAggregator aggregator = null)
+        public static async Task<bool> PutCheckAsync(WpLoginCheckModel model, IEventAggregator aggregator)
         {
             try
             {
-                UserModel target = await GetUserByIdAsync(model.Id);
+                WpLoginCheckModel target = await GetCheckByIdAsync(model.Id);
                 if (target == null) throw new Exception("Not found");
 
                 using DataContext data = new();
                 data.Entry(target).CurrentValues.SetValues(model);
                 data.Update(target);
                 await data.SaveChangesAsync();
-                aggregator?.GetEvent<UserUpdateEvent>().Publish(new("put", model));
+                aggregator?.GetEvent<WpLoginCheckUpdateEvent>().Publish(new("put", model));
                 return true;
             }
             catch (Exception)
@@ -82,19 +82,17 @@ namespace DataAdapter.Controllers
             }
         }
 
-        public static async Task<List<UserModel>> PutUsersAsync(List<UserModel> models, IEventAggregator aggregator)
+        public static async Task<int> DeleteCheckAsync(WpLoginCheckModel model)
         {
             try
             {
-                foreach (var user in models)
-                {
-                    await PutUserAsync(user, aggregator);
-                }
-                return models;
+                using DataContext data = new();
+                data.WpLoginChecks.Remove(model);
+                return await data.SaveChangesAsync();
             }
             catch (Exception)
             {
-                return new();
+                return -1;
             }
         }
     }

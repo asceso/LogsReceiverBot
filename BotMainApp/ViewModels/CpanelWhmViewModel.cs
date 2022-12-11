@@ -1,4 +1,5 @@
-﻿using BotMainApp.LocalEvents;
+﻿using BotMainApp.External;
+using BotMainApp.LocalEvents;
 using BotMainApp.TelegramServices;
 using BotMainApp.Views.Windows;
 using DataAdapter.Controllers;
@@ -61,7 +62,7 @@ namespace BotMainApp.ViewModels
             notificationManager = memory.GetItem<NotificationManager>("Notification");
             config = memory.GetItem<ConfigModel>("Config");
 
-            aggregator.GetEvent<ManualCheckUpdateEvent>().Subscribe(OnManualCheckUpdate);
+            aggregator.GetEvent<CpanelWhmCheckUpdateEvent>().Subscribe(OnManualCheckUpdate);
             aggregator.GetEvent<BotRestartEvent>().Subscribe(OnBotRestart);
             aggregator.GetEvent<SwitchViewTypeEvent>().Subscribe(OnSwitchMainView);
 
@@ -103,6 +104,7 @@ namespace BotMainApp.ViewModels
                 }
             });
             model.OpenManualCheckCommand = new DelegateCommand<CpanelWhmCheckModel>(OnOpenManualCheck);
+            model.OpenOriginalFileCommand = new DelegateCommand<CpanelWhmCheckModel>(OnOpenOriginalFile);
             model.DeleteCheckCommand = new DelegateCommand<CpanelWhmCheckModel>(OnDeleteManualCheck);
         }
 
@@ -163,7 +165,7 @@ namespace BotMainApp.ViewModels
         {
             notificationManager.ShowButtonWindow("Удалить проверку?", "Подтверждение", async () =>
             {
-                int deleteCount = await CpanelWhmCheckController.DeleteManualCheckAsync(model);
+                int deleteCount = await CpanelWhmCheckController.DeleteCheckAsync(model);
                 if (deleteCount == 1)
                 {
                     try
@@ -178,6 +180,18 @@ namespace BotMainApp.ViewModels
                 }
                 ;
             });
+        }
+
+        private void OnOpenOriginalFile(CpanelWhmCheckModel model)
+        {
+            if (!File.Exists(model.OriginalFilePath))
+            {
+                notificationManager.Show("Ошибка", "Не найден файл", type: NotificationType.Error);
+            }
+            else
+            {
+                Runner.RunTextFileInNotepad(config.NotepadPath, model.OriginalFilePath);
+            }
         }
 
         private void UpdateModelsCount() => ModelsCount = Models.Count;

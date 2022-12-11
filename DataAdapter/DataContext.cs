@@ -9,6 +9,7 @@ namespace DataAdapter
         public DbSet<DublicateModel> Dublicates { get; set; }
         public DbSet<ValidModel> Valid { get; set; }
         public DbSet<CpanelWhmCheckModel> CpanelWhmChecks { get; set; }
+        public DbSet<WpLoginCheckModel> WpLoginChecks { get; set; }
         public DbSet<PayoutModel> Payouts { get; set; }
         public DbSet<CookieModel> Cookies { get; set; }
 

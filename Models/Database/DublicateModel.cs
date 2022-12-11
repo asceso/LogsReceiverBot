@@ -52,6 +52,16 @@ namespace Models.Database
         [NotMapped]
         public DelegateCommand<string> OnCopyCommand { get; set; }
 
-        public override string ToString() => $"{url}|{login}|{password}";
+        public override string ToString()
+        {
+            if (category == "wp-login")
+            {
+                return $"{url}#{login}@{password}";
+            }
+            else
+            {
+                return $"{url}|{login}|{password}";
+            }
+        }
     }
 }

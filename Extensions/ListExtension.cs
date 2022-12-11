@@ -28,6 +28,43 @@ namespace Extensions
             return partitions;
         }
 
+        public static List<List<TData>> Split<TData>(this List<TData> source, int splitCount)
+        {
+            List<List<TData>> split = new();
+            if (source.Count <= splitCount)
+            {
+                split.Add(source);
+                return split;
+            }
+            int partCount = (int)source.Count / splitCount;
+            if (splitCount * partCount < source.Count)
+            {
+                partCount++;
+            }
+            for (int i = 0; i < partCount; i++)
+            {
+                split.Add(source.Skip(i * splitCount).Take(splitCount).ToList());
+            }
+            return split;
+        }
+
+        public static async Task SaveToFile(this List<string> source, string filename)
+        {
+            using StreamWriter writer = new(filename);
+            for (int i = 0; i < source.Count; i++)
+            {
+                if (i == source.Count - 1)
+                {
+                    await writer.WriteAsync(source[i]);
+                }
+                else
+                {
+                    await writer.WriteLineAsync(source[i]);
+                }
+            }
+            writer.Close();
+        }
+
         public static TData GetRandom<TData>(this ICollection<TData> source)
         {
             int randomIndex = Random.Shared.Next(source.Count);

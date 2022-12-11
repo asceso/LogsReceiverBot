@@ -68,7 +68,7 @@ namespace DataAdapter.Controllers
                 using DataContext data = new();
                 await data.Cookies.AddAsync(model);
                 await data.SaveChangesAsync();
-                aggregator.GetEvent<CookieUpdateEvent>().Publish(new("post", model));
+                aggregator?.GetEvent<CookieUpdateEvent>().Publish(new("post", model));
                 return true;
             }
             catch (Exception)
@@ -88,10 +88,7 @@ namespace DataAdapter.Controllers
                 data.Entry(target).CurrentValues.SetValues(model);
                 data.Update(target);
                 await data.SaveChangesAsync();
-                if (aggregator != null)
-                {
-                    aggregator.GetEvent<CookieUpdateEvent>().Publish(new("put", model));
-                }
+                aggregator?.GetEvent<CookieUpdateEvent>().Publish(new("put", model));
                 return true;
             }
             catch (Exception)

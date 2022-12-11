@@ -1,5 +1,4 @@
-﻿using BotMainApp.Const;
-using BotMainApp.Events;
+﻿using BotMainApp.Events;
 using BotMainApp.LocalEvents;
 using BotMainApp.TelegramServices;
 using Models.App;
@@ -64,6 +63,7 @@ namespace BotMainApp.ViewModels
             this.captcha = captcha;
             this.taskSchedule = taskSchedule;
             this.taskSchedule.Create(ConstStrings.SeleniumThread);
+            this.taskSchedule.Create(ConstStrings.FoxCheckerThread);
             Title = "Бот для приема логов";
             TelegramState = new("запуск", TelegramStateModel.BlackBrush);
             TrayIconVisibility = Visibility.Collapsed;
@@ -89,7 +89,8 @@ namespace BotMainApp.ViewModels
             CreateAndStartBot.Execute();
 
             if (!Directory.Exists(PathCollection.TempFolderPath)) Directory.CreateDirectory(PathCollection.TempFolderPath);
-            if (!Directory.Exists(PathCollection.ChecksFolderPath)) Directory.CreateDirectory(PathCollection.ChecksFolderPath);
+            if (!Directory.Exists(PathCollection.CpanelAndWhmFolderPath)) Directory.CreateDirectory(PathCollection.CpanelAndWhmFolderPath);
+            if (!Directory.Exists(PathCollection.WpLoginFolderPath)) Directory.CreateDirectory(PathCollection.WpLoginFolderPath);
             if (!Directory.Exists(PathCollection.CookiesFolderPath)) Directory.CreateDirectory(PathCollection.CookiesFolderPath);
             TelegramState.SetInfo("работает");
             aggregator.GetEvent<TelegramStateEvent>().Subscribe((st) =>

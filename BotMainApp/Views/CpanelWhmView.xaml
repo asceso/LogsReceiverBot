@@ -90,13 +90,13 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="150" />
-                        <ColumnDefinition Width="300" />
+                        <ColumnDefinition Width="250" />
                         <ColumnDefinition Width="150" />
                         <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="200" />
                         <ColumnDefinition Width="200" />
-                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="175" />
                         <ColumnDefinition MinWidth="175" />
                     </Grid.ColumnDefinitions>
                     <Border
@@ -180,7 +180,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="150" />
-                                    <ColumnDefinition Width="300" />
+                                    <ColumnDefinition Width="250" />
                                     <ColumnDefinition Width="150" />
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="100" />
@@ -188,7 +188,7 @@
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="200" />
+                                    <ColumnDefinition Width="175" />
                                     <ColumnDefinition MinWidth="175" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
@@ -485,7 +485,7 @@
                                         Margin="5,0,0,0"
                                         Orientation="Horizontal">
                                         <Button
-                                            Width="125"
+                                            Width="135"
                                             Height="40"
                                             Margin="5,0,0,0"
                                             hc:BorderElement.CornerRadius="10"
@@ -495,7 +495,7 @@
                                             Cursor="Hand"
                                             Visibility="{Binding Status, Converter={StaticResource StatusToVisibility}, ConverterParameter=4 7}" />
                                         <Button
-                                            Width="150"
+                                            Width="135"
                                             Height="40"
                                             Margin="5,0,0,0"
                                             hc:BorderElement.CornerRadius="10"
@@ -512,7 +512,20 @@
                                             hc:IconElement.Geometry="{StaticResource DeleteFillCircleGeometry}"
                                             hc:IconElement.Height="20"
                                             hc:IconElement.Width="20"
+                                            ToolTip="Удалить"
                                             Command="{Binding DeleteCheckCommand}"
+                                            CommandParameter="{Binding}"
+                                            Cursor="Hand" />
+                                        <Button
+                                            Width="50"
+                                            Height="40"
+                                            Margin="5,0,0,0"
+                                            hc:BorderElement.CornerRadius="10"
+                                            hc:IconElement.Geometry="{StaticResource EyeOpenGeometry}"
+                                            hc:IconElement.Height="20"
+                                            hc:IconElement.Width="20"
+                                            ToolTip="Открыть оригинальный файл"
+                                            Command="{Binding OpenOriginalFileCommand}"
                                             CommandParameter="{Binding}"
                                             Cursor="Hand" />
                                     </StackPanel>

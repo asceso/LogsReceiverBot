@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WpShellFilePreparer": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Programming\\Work\\LogsReceiverBot\\BotMainApp\\bin\\Debug\\net6.0-windows\\temp\\u_1114923089_d_11_12_2022_02_55_52\\\r\nC:\\Programming\\Work\\LogsReceiverBot\\BotMainApp\\bin\\Debug\\net6.0-windows\\temp\\u_1114923089_d_11_12_2022_02_55_52\\qwe.txt\r\ntrue"
+    }
+  }
+}

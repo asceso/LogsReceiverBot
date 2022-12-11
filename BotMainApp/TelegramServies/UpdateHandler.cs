@@ -36,12 +36,12 @@ namespace BotMainApp.TelegramServices
     {
         #region services
 
+        private TelegramBotClient botClient;
         private readonly NotificationManager notificationManager;
         private readonly ReplyKeyboardRemove emptyKeyboard = new();
-        private TelegramBotClient botClient;
-        private List<LocaleStringModel> locales;
-        private Dictionary<string, ReplyKeyboardMarkup> keyboards;
-        private ObservableCollection<OperationModel> operations;
+        private readonly List<LocaleStringModel> locales;
+        private readonly Dictionary<string, ReplyKeyboardMarkup> keyboards;
+        private readonly ObservableCollection<OperationModel> operations;
         private readonly List<Tuple<Guid, long>> userRequests;
         private readonly Dictionary<long, string> userCaptchas;
         private readonly Dictionary<long, int> userCaptchasAttempts;
@@ -363,7 +363,7 @@ namespace BotMainApp.TelegramServices
                     }
                 case OperationType.WaitSubCategoryForChecking:
                     {
-                        if (argument.IsAnyEqual(":20", "wp-login.php"))
+                        if (argument.IsAnyEqual(":20"))
                         {
                             operations.Remove(temp.Operation);
                             operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
@@ -373,6 +373,20 @@ namespace BotMainApp.TelegramServices
                             await botClient.SendTextMessageAsync(
                                 dbUser.Id,
                                 locales.GetByKey("SendFileInstruction", dbUser.Language),
+                                replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                                );
+                            return;
+                        }
+                        else if (argument.IsAnyEqual("wp-login.php"))
+                        {
+                            operations.Remove(temp.Operation);
+                            operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
+                                new KeyValuePair<string, object>("Category", temp.Operation.Params["Category"].ToString()),
+                                new KeyValuePair<string, object>("SubCategory", argument)
+                                ));
+                            await botClient.SendTextMessageAsync(
+                                dbUser.Id,
+                                locales.GetByKey("SendWpLoginInstruction", dbUser.Language),
                                 replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
                                 );
                             return;
@@ -409,14 +423,21 @@ namespace BotMainApp.TelegramServices
                     {
                         try
                         {
+                            #region common regex for dropmefiles
+
                             Regex dropMeRegex = new(@"https:\/\/dropmefiles\.com\/.*");
+
+                            #endregion common regex for dropmefiles
+
+                            #region checks for port :20
+
                             if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Private requests", "Приватные запросы") &&
                                 temp.Operation.Params["SubCategory"].ToString().IsAnyEqual(":20"))
                             {
                                 #region load tg file
 
                                 Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
-                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
+                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.GetFilenameTimestamp() + ".txt";
                                 using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
                                 await botClient.DownloadFileAsync(file.FilePath, stream);
                                 stream.Close();
@@ -425,15 +446,16 @@ namespace BotMainApp.TelegramServices
 
                                 #region accept file
 
-                                operations.Remove(temp.Operation);
                                 CpanelWhmCheckModel manualCheckModel = new()
                                 {
                                     StartDateTime = DateTime.Now,
-                                    Status = CheckStatus.ManualCheckStatus.Created,
+                                    Status = ManualCheckStatus.Created,
                                     FromUserId = dbUser.Id,
                                     FromUsername = dbUser.Username,
                                 };
                                 await CpanelWhmCheckController.PostCheckAsync(manualCheckModel, aggregator);
+
+                                operations.Remove(temp.Operation);
                                 await botClient.SendTextMessageAsync(
                                     dbUser.Id,
                                     locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
@@ -443,19 +465,27 @@ namespace BotMainApp.TelegramServices
 
                                 #endregion accept file
 
-                                await Task.Factory.StartNew(async () => await StandartCheckProcess(dbUser, filename, manualCheckModel, true)).ConfigureAwait(false);
+                                #region start async task and create model
+
+                                manualCheckModel.OriginalFilePath = CopyOriginalTelegramFileToChecksFolder(filename, dbUser, manualCheckModel.Id.ToString(), PathCollection.CpanelAndWhmFolderPath, ".txt");
+                                await CpanelWhmCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                await Task.Factory.StartNew(async () => await StandartCheckProcessForPort20(dbUser, filename, manualCheckModel, true)).ConfigureAwait(false);
+                                return;
+
+                                #endregion start async task and create model
                             }
-                            if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Private requests", "Приватные запросы") &&
-                                temp.Operation.Params["SubCategory"].ToString().IsAnyEqual(":20"))
-                            {
-                            }
-                            else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("AdminChecking") &&
-                                     temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("AdminChecking"))
+
+                            #endregion checks for port :20
+
+                            #region admin checking port :20
+
+                            else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("AdminCheckingPrivateRequests") &&
+                                     temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("AdminCheckingPort20"))
                             {
                                 #region load tg file
 
                                 Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
-                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.ToString("dd_MM_yyyyy_HH_mm_ss") + ".txt";
+                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.GetFilenameTimestamp() + ".txt";
                                 using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
                                 await botClient.DownloadFileAsync(file.FilePath, stream);
                                 stream.Close();
@@ -464,15 +494,16 @@ namespace BotMainApp.TelegramServices
 
                                 #region accept file
 
-                                operations.Remove(temp.Operation);
                                 CpanelWhmCheckModel manualCheckModel = new()
                                 {
                                     StartDateTime = DateTime.Now,
-                                    Status = CheckStatus.ManualCheckStatus.Created,
+                                    Status = ManualCheckStatus.Created,
                                     FromUserId = dbUser.Id,
                                     FromUsername = dbUser.Username,
                                 };
                                 await CpanelWhmCheckController.PostCheckAsync(manualCheckModel, aggregator);
+
+                                operations.Remove(temp.Operation);
                                 await botClient.SendTextMessageAsync(
                                     dbUser.Id,
                                     locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
@@ -482,8 +513,307 @@ namespace BotMainApp.TelegramServices
 
                                 #endregion accept file
 
-                                await Task.Factory.StartNew(async () => await StandartCheckProcess(dbUser, filename, manualCheckModel, false)).ConfigureAwait(false);
+                                #region start async task and create model
+
+                                manualCheckModel.OriginalFilePath = CopyOriginalTelegramFileToChecksFolder(filename, dbUser, manualCheckModel.Id.ToString(), PathCollection.CpanelAndWhmFolderPath, ".txt");
+                                await CpanelWhmCheckController.PutCheckAsync(manualCheckModel, aggregator);
+                                await Task.Factory.StartNew(async () => await StandartCheckProcessForPort20(dbUser, filename, manualCheckModel, false)).ConfigureAwait(false);
+                                return;
+
+                                #endregion start async task and create model
                             }
+
+                            #endregion admin checking port :20
+
+                            #region checks for wp-login
+
+                            else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Private requests", "Приватные запросы") &&
+                                     temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("wp-login.php"))
+                            {
+                                string filename = "u_" + dbUser.Id + "_check_" + DateTime.Now.GetFilenameTimestamp() + ".txt";
+                                if (!argument.IsNullOrEmptyString())
+                                {
+                                    #region check regex for link
+
+                                    if (dropMeRegex.IsMatch(argument))
+                                    {
+                                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CheckingWpLoginDropmelinkFile", dbUser.Language));
+                                    }
+                                    else
+                                    {
+                                        await botClient.SendTextMessageAsync(
+                                            dbUser.Id,
+                                            locales.GetByKey("SendWpLoginInstruction", dbUser.Language),
+                                            replyMarkup: keyboards.GetByLocale("Cancel", dbUser.Language, payoutEnabled)
+                                            );
+                                        return;
+                                    }
+
+                                    #endregion check regex for link
+
+                                    #region check dublicate
+
+                                    if (await CookiesController.IsDropMeLinkExist(argument))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkDublicateError", dbUser.Language));
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+
+                                    #endregion check dublicate
+
+                                    #region check drop me link and download file
+
+                                    Guid taskId = taskSchedule.In(ConstStrings.SeleniumThread).ScheduleTask(DropMeCheckingAsync).StartNext();
+                                    async Task<string> DropMeCheckingAsync(object[] arg) => await Runner.RunDropMeLinkChecker(argument, true, PathCollection.TempFolderPath, filename);
+
+                                    await taskSchedule.In(ConstStrings.SeleniumThread).WaitForTaskFinish(taskId).ConfigureAwait(false);
+                                    string dropmelinkCheckerInfo = taskSchedule.In(ConstStrings.SeleniumThread).GetResult(taskId);
+
+                                    JObject dropmelinkCheckerJson = JObject.Parse(dropmelinkCheckerInfo);
+                                    if (dropmelinkCheckerJson.ContainsKey("Error"))
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingError", dbUser.Language));
+                                            if (System.IO.File.Exists(PathCollection.TempFolderPath + filename))
+                                            {
+                                                System.IO.File.Delete(PathCollection.TempFolderPath + filename);
+                                            }
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                        return;
+                                    }
+
+                                    bool isOnlyTxtFilesFounded = dropmelinkCheckerJson["IsOnlyTxtFiles"].Value<bool>();
+                                    if (!isOnlyTxtFilesFounded)
+                                    {
+                                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("WpLoginInvalidFilesOnDropmelink", dbUser.Language));
+                                        return;
+                                    }
+
+                                    bool isFilesDownloaded = dropmelinkCheckerJson["FilesDownloaded"].Value<bool>();
+                                    if (isFilesDownloaded)
+                                    {
+                                        List<string> mainFileList = new();
+                                        using StreamReader reader = new(PathCollection.TempFolderPath + filename);
+                                        string buffer = await reader.ReadToEndAsync();
+                                        reader.Close();
+                                        foreach (var line in buffer.Split(Environment.NewLine).Where(l => !l.IsNullOrEmptyString()))
+                                        {
+                                            mainFileList.Add(line);
+                                        }
+                                        if (System.IO.File.Exists(PathCollection.TempFolderPath + filename))
+                                        {
+                                            System.IO.File.Delete(PathCollection.TempFolderPath + filename);
+                                        }
+
+                                        List<int> checkingModelsList = new();
+                                        List<List<string>> partitions = mainFileList.Split(50000);
+                                        foreach (List<string> partition in partitions)
+                                        {
+                                            WpLoginCheckModel checkModel = new()
+                                            {
+                                                StartDateTime = DateTime.Now,
+                                                Status = ManualCheckStatus.Created,
+                                                FromUserId = dbUser.Id,
+                                                FromUsername = dbUser.Username,
+                                            };
+                                            await WpLoginCheckController.PostCheckAsync(checkModel, aggregator);
+
+                                            string folderPath = PathCollection.WpLoginFolderPath + $"/{checkModel.Id}";
+                                            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+                                            string checkModelOriginalFilename = PathCollection.WpLoginFolderPath + $"{checkModel.Id}/@{dbUser.Username}_id{checkModel.Id}.txt";
+                                            await partition.SaveToFile(checkModelOriginalFilename);
+                                            checkModel.OriginalFilePath = checkModelOriginalFilename;
+                                            await WpLoginCheckController.PutCheckAsync(checkModel, aggregator);
+
+                                            taskSchedule.In(ConstStrings.FoxCheckerThread)
+                                                        .ScheduleTask(FoxThreadAsync)
+                                                        .AddParameters(dbUser, checkModelOriginalFilename, checkModel, true)
+                                                        .StartNext();
+                                            async Task FoxThreadAsync(object[] args) => await StandartCheckProcessForWpLogin((UserModel)args[0],
+                                                                                                                             (string)args[1],
+                                                                                                                             (WpLoginCheckModel)args[2],
+                                                                                                                             (bool)args[3]);
+                                            checkingModelsList.Add(checkModel.Id);
+                                        }
+
+                                        if (checkingModelsList.Count == 1)
+                                        {
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(
+                                                    dbUser.Id,
+                                                    locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
+                                                           .Replace("@ID", checkingModelsList.FirstOrDefault().ToString()),
+                                                    replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                                    );
+                                            }
+                                            catch (Exception)
+                                            {
+                                            }
+                                        }
+                                        else
+                                        {
+                                            string ids = string.Empty;
+                                            for (int i = 0; i < checkingModelsList.Count; i++)
+                                            {
+                                                if (i == checkingModelsList.Count - 1)
+                                                {
+                                                    ids += checkingModelsList[i];
+                                                }
+                                                else
+                                                {
+                                                    ids += checkingModelsList[i] + ", ";
+                                                }
+                                            }
+                                            try
+                                            {
+                                                await botClient.SendTextMessageAsync(
+                                                    dbUser.Id,
+                                                    locales.GetByKey("FileListAcceptedWaitResult", dbUser.Language)
+                                                           .Replace("@ID", ids),
+                                                    replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                                    );
+                                            }
+                                            catch (Exception)
+                                            {
+                                            }
+                                        }
+
+                                        operations.Remove(temp.Operation);
+                                        return;
+                                    }
+
+                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("DropMeLinkCheckingError", dbUser.Language));
+                                    return;
+
+                                    #endregion check drop me link and download file
+                                }
+                                else if (temp.Document.FileName.EndsWith(".txt"))
+                                {
+                                    #region load tg file
+
+                                    Telegram.Bot.Types.File file = await botClient.GetFileAsync(temp.Document.FileId);
+                                    using FileStream stream = new(PathCollection.TempFolderPath + filename, FileMode.Create);
+                                    await botClient.DownloadFileAsync(file.FilePath, stream);
+                                    stream.Close();
+
+                                    #endregion load tg file
+
+                                    #region accept file
+
+                                    List<string> mainFileList = new();
+                                    using StreamReader reader = new(PathCollection.TempFolderPath + filename);
+                                    string buffer = await reader.ReadToEndAsync();
+                                    reader.Close();
+                                    foreach (var line in buffer.Split(Environment.NewLine).Where(l => !l.IsNullOrEmptyString()))
+                                    {
+                                        mainFileList.Add(line);
+                                    }
+                                    if (System.IO.File.Exists(PathCollection.TempFolderPath + filename))
+                                    {
+                                        System.IO.File.Delete(PathCollection.TempFolderPath + filename);
+                                    }
+
+                                    List<int> checkingModelsList = new();
+                                    List<List<string>> partitions = mainFileList.Split(50000);
+                                    foreach (List<string> partition in partitions)
+                                    {
+                                        WpLoginCheckModel checkModel = new()
+                                        {
+                                            StartDateTime = DateTime.Now,
+                                            Status = ManualCheckStatus.Created,
+                                            FromUserId = dbUser.Id,
+                                            FromUsername = dbUser.Username,
+                                        };
+                                        await WpLoginCheckController.PostCheckAsync(checkModel, aggregator);
+
+                                        string folderPath = PathCollection.WpLoginFolderPath + $"/{checkModel.Id}";
+                                        if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+                                        string checkModelOriginalFilename = PathCollection.WpLoginFolderPath + $"{checkModel.Id}/@{dbUser.Username}_id{checkModel.Id}.txt";
+                                        await partition.SaveToFile(checkModelOriginalFilename);
+                                        checkModel.OriginalFilePath = checkModelOriginalFilename;
+                                        await WpLoginCheckController.PutCheckAsync(checkModel, aggregator);
+
+                                        taskSchedule.In(ConstStrings.FoxCheckerThread)
+                                                    .ScheduleTask(FoxThreadAsync)
+                                                    .AddParameters(dbUser, checkModelOriginalFilename, checkModel, true)
+                                                    .StartNext();
+                                        async Task FoxThreadAsync(object[] args) => await StandartCheckProcessForWpLogin((UserModel)args[0],
+                                                                                                                         (string)args[1],
+                                                                                                                         (WpLoginCheckModel)args[2],
+                                                                                                                         (bool)args[3]);
+                                        checkingModelsList.Add(checkModel.Id);
+                                    }
+
+                                    if (checkingModelsList.Count == 1)
+                                    {
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(
+                                                dbUser.Id,
+                                                locales.GetByKey("FileAcceptedWaitResult", dbUser.Language)
+                                                       .Replace("@ID", checkingModelsList.FirstOrDefault().ToString()),
+                                                replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                                );
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                    }
+                                    else
+                                    {
+                                        string ids = string.Empty;
+                                        for (int i = 0; i < checkingModelsList.Count; i++)
+                                        {
+                                            if (i == checkingModelsList.Count - 1)
+                                            {
+                                                ids += checkingModelsList[i];
+                                            }
+                                            else
+                                            {
+                                                ids += checkingModelsList[i] + ", ";
+                                            }
+                                        }
+                                        try
+                                        {
+                                            await botClient.SendTextMessageAsync(
+                                                dbUser.Id,
+                                                locales.GetByKey("FileListAcceptedWaitResult", dbUser.Language)
+                                                       .Replace("@ID", ids),
+                                                replyMarkup: keyboards.GetByLocale("Main", dbUser.Language, payoutEnabled)
+                                                );
+                                        }
+                                        catch (Exception)
+                                        {
+                                        }
+                                    }
+
+                                    operations.Remove(temp.Operation);
+                                    return;
+
+                                    #endregion accept file
+                                }
+                                else
+                                {
+                                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUploadError", dbUser.Language));
+                                    return;
+                                }
+                            }
+
+                            #endregion checks for wp-login
+
+                            #region instagram cookies
+
                             else if (temp.Operation.Params["Category"].ToString().IsAnyEqual("Cookies", "Cookie файлы") &&
                                      temp.Operation.Params["SubCategory"].ToString().IsAnyEqual("Instagram"))
                             {
@@ -491,6 +821,8 @@ namespace BotMainApp.TelegramServices
 
                                 if (!argument.IsNullOrEmptyString())
                                 {
+                                    #region check regex for link
+
                                     if (dropMeRegex.IsMatch(argument))
                                     {
                                         await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("CheckingCookieFile", dbUser.Language));
@@ -504,6 +836,8 @@ namespace BotMainApp.TelegramServices
                                             );
                                         return;
                                     }
+
+                                    #endregion check regex for link
 
                                     #region check dublicate
 
@@ -536,6 +870,7 @@ namespace BotMainApp.TelegramServices
                                         }
                                         return;
                                     }
+
                                     string filesize = fileInfoJson["Filesize"].ToString();
                                     string unit = fileInfoJson["Unit"].ToString();
                                     if (unit.IsAnyEqual("B", "KB"))
@@ -703,6 +1038,11 @@ namespace BotMainApp.TelegramServices
 
                                 #endregion end
                             }
+
+                            #endregion instagram cookies
+
+                            #region cant found variant, cancel operation
+
                             else
                             {
                                 await botClient.SendTextMessageAsync(
@@ -713,6 +1053,8 @@ namespace BotMainApp.TelegramServices
                                 operations.Remove(temp.Operation);
                                 return;
                             }
+
+                            #endregion cant found variant, cancel operation
                         }
                         catch (Exception ex)
                         {
@@ -737,7 +1079,6 @@ namespace BotMainApp.TelegramServices
                         }
                         return;
                     }
-
                 case OperationType.WaitPayoutMethod:
                     {
                         if (argument.IsAnyEqual(config.PayoutMethods.ToArray()))
@@ -782,7 +1123,6 @@ namespace BotMainApp.TelegramServices
                             return;
                         }
                     }
-
                 case OperationType.WaitRequisites:
                     {
                         operations.Remove(temp.Operation);
@@ -801,7 +1141,6 @@ namespace BotMainApp.TelegramServices
                             );
                         return;
                     }
-
                 case OperationType.WaitAcceptPayout:
                     {
                         if (argument.IsAnyEqual("Accept ✅", "Подтвердить ✅"))
@@ -856,7 +1195,6 @@ namespace BotMainApp.TelegramServices
                             return;
                         }
                     }
-
                 case OperationType.NewUserWithoutNickname:
                     {
                         if (argument.StartsWith("/"))
@@ -991,8 +1329,9 @@ namespace BotMainApp.TelegramServices
             }
             else if (temp.Message.IsAnyEqual("Logs in process 📄", "Логи в обработке 📄"))
             {
-                List<CpanelWhmCheckModel> checks = await CpanelWhmCheckController.GetChecksByUserIdAsync(dbUser.Id);
-                if (!checks.Any())
+                List<CpanelWhmCheckModel> cpanelWhmChecks = await CpanelWhmCheckController.GetChecksByUserIdAsync(dbUser.Id);
+                List<WpLoginCheckModel> wpLoginChecks = await WpLoginCheckController.GetChecksByUserIdAsync(dbUser.Id);
+                if (!cpanelWhmChecks.Any() && !wpLoginChecks.Any())
                 {
                     await botClient.SendTextMessageAsync(
                         dbUser.Id,
@@ -1002,7 +1341,46 @@ namespace BotMainApp.TelegramServices
                 else
                 {
                     StringBuilder builder = new();
-                    foreach (var check in checks)
+                    if (cpanelWhmChecks.Any())
+                    {
+                        builder.AppendLine(locales.GetByKey("ChecksPort20Header", dbUser.Language));
+                    }
+                    foreach (var check in cpanelWhmChecks)
+                    {
+                        switch (check.Status)
+                        {
+                            case ManualCheckStatus.Created or
+                                 ManualCheckStatus.FillingDb or
+                                 ManualCheckStatus.SendedToSoftCheck or
+                                 ManualCheckStatus.CopyingFiles:
+                                builder.AppendLine(locales.GetByKey("CheckNotStarted", dbUser.Language)
+                                                          .Replace("@ID", check.Id.ToString()));
+                                break;
+
+                            case ManualCheckStatus.Error:
+                                builder.AppendLine(locales.GetByKey("CheckError", dbUser.Language)
+                                                          .Replace("@ID", check.Id.ToString()));
+                                break;
+
+                            case ManualCheckStatus.CheckedBySoft or
+                                 ManualCheckStatus.OnlyWebmail or
+                                 ManualCheckStatus.SendToManualChecking:
+                                builder.AppendLine(locales.GetByKey("CheckInProcess", dbUser.Language)
+                                                          .Replace("@ID", check.Id.ToString()));
+                                break;
+
+                            case ManualCheckStatus.End or
+                                 ManualCheckStatus.EndNoValid:
+                                builder.AppendLine(locales.GetByKey("CheckDone", dbUser.Language)
+                                                          .Replace("@ID", check.Id.ToString()));
+                                break;
+                        }
+                    }
+                    if (wpLoginChecks.Any())
+                    {
+                        builder.AppendLine(locales.GetByKey("ChecksWpLoginHeader", dbUser.Language));
+                    }
+                    foreach (var check in wpLoginChecks)
                     {
                         switch (check.Status)
                         {
@@ -1118,11 +1496,11 @@ namespace BotMainApp.TelegramServices
                 }
                 return;
             }
-            else if (temp.Message.IsAnyEqual("/check_log_admin") && config.EnableAdminCheckCommand)
+            else if (temp.Message.IsAnyEqual("/check_port20_logs_admin") && config.EnableAdminCheckCommand)
             {
                 operations.Add(new(temp.Uid, OperationType.WaitFileForChecking,
-                    new KeyValuePair<string, object>("Category", "AdminChecking"),
-                    new KeyValuePair<string, object>("SubCategory", "AdminChecking")
+                    new KeyValuePair<string, object>("Category", "AdminCheckingPrivateRequests"),
+                    new KeyValuePair<string, object>("SubCategory", "AdminCheckingPort20")
                     ));
                 await botClient.SendTextMessageAsync(
                     dbUser.Id,
@@ -1150,9 +1528,22 @@ namespace BotMainApp.TelegramServices
 
         #endregion handling
 
+        #region common methods
+
+        private static string CopyOriginalTelegramFileToChecksFolder(string originalFilename, UserModel user, string checkingId, string checkFolderPath, string extension)
+        {
+            if (!Directory.Exists(checkFolderPath + $"/{checkingId}/")) Directory.CreateDirectory(checkFolderPath + $"/{checkingId}/");
+            string inputFilename = PathCollection.TempFolderPath + "/" + originalFilename;
+            string targetFilename = checkFolderPath + $"/{checkingId}/" + $"@{user.Username}_id{checkingId}{extension}";
+            System.IO.File.Copy(inputFilename, targetFilename, true);
+            return targetFilename;
+        }
+
+        #endregion common methods
+
         #region cpanel and whm checking
 
-        private async Task StandartCheckProcess(UserModel dbUser, string filename, CpanelWhmCheckModel manualCheckModel, bool fillDublicates)
+        private async Task StandartCheckProcessForPort20(UserModel dbUser, string filename, CpanelWhmCheckModel checkModel, bool fillDublicates)
         {
             #region init
 
@@ -1174,14 +1565,14 @@ namespace BotMainApp.TelegramServices
                     try
                     {
                         await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
-                                                                               .Replace("@ID", manualCheckModel.Id.ToString()));
+                                                                               .Replace("@ID", checkModel.Id.ToString()));
                     }
                     catch (Exception)
                     {
                     }
                 }
 
-                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.Error, ellapsedWatch);
                 Directory.Delete(folderPath, true);
                 if (config.Chats.ErrorNotificationChat != 0)
                 {
@@ -1196,17 +1587,17 @@ namespace BotMainApp.TelegramServices
                 return;
             }
 
-            manualCheckModel.DublicateFilePath = dublicateDataJson["Dublicates"].ToString();
-            manualCheckModel.WebmailFilePath = dublicateDataJson["Webmail"].ToString();
+            checkModel.DublicateFilePath = dublicateDataJson["Dublicates"].ToString();
+            checkModel.WebmailFilePath = dublicateDataJson["Webmail"].ToString();
             string cpanelDataFilePath = dublicateDataJson["Cpanel"].ToString();
             string whmDataFilePath = dublicateDataJson["Whm"].ToString();
-            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.FillingDb, null);
+            MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.FillingDb, null);
 
             #endregion check dublicates
 
             #region fill logs db
 
-            string fillData = await Runner.RunDublicateFiller(dbUser.Id, manualCheckModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath, fillDublicates);
+            string fillData = await Runner.RunDublicateFiller(dbUser.Id, checkModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath, null, fillDublicates);
             JObject fillDataJson = JObject.Parse(fillData);
             if (fillDataJson.ContainsKey("Error"))
             {
@@ -1215,7 +1606,7 @@ namespace BotMainApp.TelegramServices
                     try
                     {
                         await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
-                                                                               .Replace("@ID", manualCheckModel.Id.ToString()));
+                                                                               .Replace("@ID", checkModel.Id.ToString()));
                     }
                     catch (Exception)
                     {
@@ -1225,14 +1616,14 @@ namespace BotMainApp.TelegramServices
                 {
                     try
                     {
-                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{fillData}");
                     }
                     catch (Exception)
                     {
                     }
                 }
 
-                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.Error, ellapsedWatch);
                 Directory.Delete(folderPath, true);
                 return;
             }
@@ -1251,9 +1642,9 @@ namespace BotMainApp.TelegramServices
                 if (totalAddedCount == 0)
                 {
                     await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language)
-                                                                           .Replace("@ID", manualCheckModel.Id.ToString()));
+                                                                           .Replace("@ID", checkModel.Id.ToString()));
 
-                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.NoAnyUnique, ellapsedWatch);
+                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.NoAnyUnique, ellapsedWatch);
                     Directory.Delete(folderPath, true);
                     return;
                 }
@@ -1290,7 +1681,7 @@ namespace BotMainApp.TelegramServices
             {
                 if (webmailAddedCount != 0)
                 {
-                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.OnlyWebmail, ellapsedWatch);
+                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, CheckStatus.ManualCheckStatus.OnlyWebmail, ellapsedWatch);
                     Directory.Delete(folderPath, true);
 
                     if (config.Chats.NotifyWhenCheckerEndWorkChat != 0)
@@ -1298,15 +1689,15 @@ namespace BotMainApp.TelegramServices
                         try
                         {
                             await botClient.SendTextMessageAsync(config.Chats.NotifyWhenCheckerEndWorkChat,
-                                $"Закончена проверка логов ID: {manualCheckModel.Id} от {manualCheckModel.StartDateTime:dd.MM.yyyy} :\r\n" +
-                                $"Загрузил : @{manualCheckModel.FromUsername}\r\n" +
-                                $"Затрачено всего : {Math.Round(manualCheckModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
-                                $"Дубликатов найдено: {manualCheckModel.DublicateFoundedCount}\r\n" +
-                                $"Webmail найдено: {manualCheckModel.WebmailFoundedCount}\r\n" +
-                                $"Cpanel (good) найдено: {manualCheckModel.CpanelGoodCount}\r\n" +
-                                $"Cpanel (bad) найдено: {manualCheckModel.CpanelBadCount}\r\n" +
-                                $"Whm (good) найдено: {manualCheckModel.WhmGoodCount}\r\n" +
-                                $"Whm (bad) найдено: {manualCheckModel.WhmBadCount}");
+                                $"Закончена проверка логов ID: {checkModel.Id} от {checkModel.StartDateTime:dd.MM.yyyy} :\r\n" +
+                                $"Загрузил : @{checkModel.FromUsername}\r\n" +
+                                $"Затрачено всего : {Math.Round(checkModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
+                                $"Дубликатов найдено: {checkModel.DublicateFoundedCount}\r\n" +
+                                $"Webmail найдено: {checkModel.WebmailFoundedCount}\r\n" +
+                                $"Cpanel (good) найдено: {checkModel.CpanelGoodCount}\r\n" +
+                                $"Cpanel (bad) найдено: {checkModel.CpanelBadCount}\r\n" +
+                                $"Whm (good) найдено: {checkModel.WhmGoodCount}\r\n" +
+                                $"Whm (bad) найдено: {checkModel.WhmBadCount}");
                         }
                         catch (Exception)
                         {
@@ -1317,7 +1708,7 @@ namespace BotMainApp.TelegramServices
                 }
                 else
                 {
-                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.NoAnyUnique, ellapsedWatch);
+                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, CheckStatus.ManualCheckStatus.NoAnyUnique, ellapsedWatch);
                     Directory.Delete(folderPath, true);
                     return;
                 }
@@ -1327,8 +1718,8 @@ namespace BotMainApp.TelegramServices
 
             #region after checks set status to dublicate deleted
 
-            manualCheckModel.Status = CheckStatus.ManualCheckStatus.SendedToSoftCheck;
-            await CpanelWhmCheckController.PutCheckAsync(manualCheckModel, aggregator);
+            checkModel.Status = CheckStatus.ManualCheckStatus.SendedToSoftCheck;
+            await CpanelWhmCheckController.PutCheckAsync(checkModel, aggregator);
 
             #endregion after checks set status to dublicate deleted
 
@@ -1351,7 +1742,7 @@ namespace BotMainApp.TelegramServices
                     try
                     {
                         await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
-                                                                               .Replace("@ID", manualCheckModel.Id.ToString()));
+                                                                               .Replace("@ID", checkModel.Id.ToString()));
                     }
                     catch (Exception)
                     {
@@ -1361,14 +1752,14 @@ namespace BotMainApp.TelegramServices
                 {
                     try
                     {
-                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{dublicateData}");
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{cpanelDataJson}");
                     }
                     catch (Exception)
                     {
                     }
                 }
 
-                MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.Error, ellapsedWatch);
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.Error, ellapsedWatch);
                 Directory.Delete(folderPath, true);
                 return;
             }
@@ -1377,18 +1768,18 @@ namespace BotMainApp.TelegramServices
 
             #region set to copying files
 
-            manualCheckModel.CpanelGoodFilePath = cpanelDataJson["CpanelGood"].ToString();
-            manualCheckModel.CpanelBadFilePath = cpanelDataJson["CpanelBad"].ToString();
-            manualCheckModel.WhmGoodFilePath = cpanelDataJson["WhmGood"].ToString();
-            manualCheckModel.WhmBadFilePath = cpanelDataJson["WhmBad"].ToString();
+            checkModel.CpanelGoodFilePath = cpanelDataJson["CpanelGood"].ToString();
+            checkModel.CpanelBadFilePath = cpanelDataJson["CpanelBad"].ToString();
+            checkModel.WhmGoodFilePath = cpanelDataJson["WhmGood"].ToString();
+            checkModel.WhmBadFilePath = cpanelDataJson["WhmBad"].ToString();
 
-            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.CopyingFiles, ellapsedWatch);
+            MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.CopyingFiles, ellapsedWatch);
 
             #endregion set to copying files
 
             #region fill valid db
 
-            string fillValidData = await Runner.RunValidFiller(dbUser.Id, manualCheckModel.CpanelGoodFilePath, manualCheckModel.WhmGoodFilePath);
+            string fillValidData = await Runner.RunValidFiller(dbUser.Id, checkModel.CpanelGoodFilePath, checkModel.WhmGoodFilePath, null, null, null, null);
             JObject fillValidDataJson = JObject.Parse(fillValidData);
             if (fillValidDataJson.ContainsKey("Error"))
             {
@@ -1396,7 +1787,7 @@ namespace BotMainApp.TelegramServices
                 {
                     try
                     {
-                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при заполнении валида:\r\n{dublicateData}");
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при заполнении валида:\r\n{fillValidData}");
                     }
                     catch (Exception)
                     {
@@ -1430,22 +1821,22 @@ namespace BotMainApp.TelegramServices
 
             #region copying last files and set to checked by soft status
 
-            MoveFilesToChecksIdFolderAndUpateCountAndPathes(manualCheckModel, CheckStatus.ManualCheckStatus.CheckedBySoft, null);
+            MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.CheckedBySoft, null);
             Directory.Delete(folderPath, true);
             if (config.Chats.NotifyWhenCheckerEndWorkChat != 0)
             {
                 try
                 {
                     await botClient.SendTextMessageAsync(config.Chats.NotifyWhenCheckerEndWorkChat,
-                        $"Закончена проверка логов ID: {manualCheckModel.Id} от {manualCheckModel.StartDateTime:dd.MM.yyyy} :\r\n" +
-                        $"Загрузил : @{manualCheckModel.FromUsername}\r\n" +
-                        $"Затрачено всего : {Math.Round(manualCheckModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
-                        $"Дубликатов найдено: {manualCheckModel.DublicateFoundedCount}\r\n" +
-                        $"Webmail найдено: {manualCheckModel.WebmailFoundedCount}\r\n" +
-                        $"Cpanel (good) найдено: {manualCheckModel.CpanelGoodCount}\r\n" +
-                        $"Cpanel (bad) найдено: {manualCheckModel.CpanelBadCount}\r\n" +
-                        $"Whm (good) найдено: {manualCheckModel.WhmGoodCount}\r\n" +
-                        $"Whm (bad) найдено: {manualCheckModel.WhmBadCount}");
+                        $"Закончена проверка логов ID: {checkModel.Id} от {checkModel.StartDateTime:dd.MM.yyyy} :\r\n" +
+                        $"Загрузил : @{checkModel.FromUsername}\r\n" +
+                        $"Затрачено всего : {Math.Round(checkModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
+                        $"Дубликатов найдено: {checkModel.DublicateFoundedCount}\r\n" +
+                        $"Webmail найдено: {checkModel.WebmailFoundedCount}\r\n" +
+                        $"Cpanel (good) найдено: {checkModel.CpanelGoodCount}\r\n" +
+                        $"Cpanel (bad) найдено: {checkModel.CpanelBadCount}\r\n" +
+                        $"Whm (good) найдено: {checkModel.WhmGoodCount}\r\n" +
+                        $"Whm (bad) найдено: {checkModel.WhmBadCount}");
                 }
                 catch (Exception)
                 {
@@ -1456,9 +1847,9 @@ namespace BotMainApp.TelegramServices
             #endregion copying last files and set to checked by soft status
         }
 
-        private async void MoveFilesToChecksIdFolderAndUpateCountAndPathes(CpanelWhmCheckModel manualCheck, CheckStatus.ManualCheckStatus endStatus, Stopwatch ellapsedWatch)
+        private async void MoveFilesToChecksIdFolderAndUpateCountAndPathes(CpanelWhmCheckModel checkModel, ManualCheckStatus endStatus, Stopwatch ellapsedWatch)
         {
-            string destinationFolderPath = PathCollection.ChecksFolderPath + manualCheck.Id + "/";
+            string destinationFolderPath = PathCollection.CpanelAndWhmFolderPath + checkModel.Id + "/";
             if (!Directory.Exists(destinationFolderPath)) Directory.CreateDirectory(destinationFolderPath);
 
             string dublicatePath = destinationFolderPath + "dublicates.txt";
@@ -1468,54 +1859,360 @@ namespace BotMainApp.TelegramServices
             string whmGoodPath = destinationFolderPath + "whm_good.txt";
             string whmBadPath = destinationFolderPath + "whm_bad.txt";
 
-            if (System.IO.File.Exists(manualCheck.DublicateFilePath) && manualCheck.DublicateFilePath != dublicatePath)
+            if (System.IO.File.Exists(checkModel.DublicateFilePath) && checkModel.DublicateFilePath != dublicatePath)
             {
-                System.IO.File.Copy(manualCheck.DublicateFilePath, dublicatePath, true);
-                manualCheck.DublicateFilePath = dublicatePath;
-                manualCheck.DublicateFoundedCount = System.IO.File.ReadAllLines(manualCheck.DublicateFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+                System.IO.File.Copy(checkModel.DublicateFilePath, dublicatePath, true);
+                checkModel.DublicateFilePath = dublicatePath;
+                checkModel.DublicateFoundedCount = System.IO.File.ReadAllLines(checkModel.DublicateFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
-            if (System.IO.File.Exists(manualCheck.WebmailFilePath) && manualCheck.WebmailFilePath != webmailPath)
+            if (System.IO.File.Exists(checkModel.WebmailFilePath) && checkModel.WebmailFilePath != webmailPath)
             {
-                System.IO.File.Copy(manualCheck.WebmailFilePath, webmailPath, true);
-                manualCheck.WebmailFilePath = webmailPath;
-                manualCheck.WebmailFoundedCount = System.IO.File.ReadAllLines(manualCheck.WebmailFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+                System.IO.File.Copy(checkModel.WebmailFilePath, webmailPath, true);
+                checkModel.WebmailFilePath = webmailPath;
+                checkModel.WebmailFoundedCount = System.IO.File.ReadAllLines(checkModel.WebmailFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
-            if (System.IO.File.Exists(manualCheck.CpanelGoodFilePath) && manualCheck.CpanelGoodFilePath != cpanelGoodPath)
+            if (System.IO.File.Exists(checkModel.CpanelGoodFilePath) && checkModel.CpanelGoodFilePath != cpanelGoodPath)
             {
-                System.IO.File.Copy(manualCheck.CpanelGoodFilePath, cpanelGoodPath, true);
-                manualCheck.CpanelGoodFilePath = cpanelGoodPath;
-                manualCheck.CpanelGoodCount = System.IO.File.ReadAllLines(manualCheck.CpanelGoodFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+                System.IO.File.Copy(checkModel.CpanelGoodFilePath, cpanelGoodPath, true);
+                checkModel.CpanelGoodFilePath = cpanelGoodPath;
+                checkModel.CpanelGoodCount = System.IO.File.ReadAllLines(checkModel.CpanelGoodFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
-            if (System.IO.File.Exists(manualCheck.CpanelBadFilePath) && manualCheck.CpanelBadFilePath != cpanelBadPath)
+            if (System.IO.File.Exists(checkModel.CpanelBadFilePath) && checkModel.CpanelBadFilePath != cpanelBadPath)
             {
-                System.IO.File.Copy(manualCheck.CpanelBadFilePath, cpanelBadPath, true);
-                manualCheck.CpanelBadFilePath = cpanelBadPath;
-                manualCheck.CpanelBadCount = System.IO.File.ReadAllLines(manualCheck.CpanelBadFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+                System.IO.File.Copy(checkModel.CpanelBadFilePath, cpanelBadPath, true);
+                checkModel.CpanelBadFilePath = cpanelBadPath;
+                checkModel.CpanelBadCount = System.IO.File.ReadAllLines(checkModel.CpanelBadFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
-            if (System.IO.File.Exists(manualCheck.WhmGoodFilePath) && manualCheck.WhmGoodFilePath != whmGoodPath)
+            if (System.IO.File.Exists(checkModel.WhmGoodFilePath) && checkModel.WhmGoodFilePath != whmGoodPath)
             {
-                System.IO.File.Copy(manualCheck.WhmGoodFilePath, whmGoodPath, true);
-                manualCheck.WhmGoodFilePath = whmGoodPath;
-                manualCheck.WhmGoodCount = System.IO.File.ReadAllLines(manualCheck.WhmGoodFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+                System.IO.File.Copy(checkModel.WhmGoodFilePath, whmGoodPath, true);
+                checkModel.WhmGoodFilePath = whmGoodPath;
+                checkModel.WhmGoodCount = System.IO.File.ReadAllLines(checkModel.WhmGoodFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
-            if (System.IO.File.Exists(manualCheck.WhmBadFilePath) && manualCheck.WhmBadFilePath != whmBadPath)
+            if (System.IO.File.Exists(checkModel.WhmBadFilePath) && checkModel.WhmBadFilePath != whmBadPath)
             {
-                System.IO.File.Copy(manualCheck.WhmBadFilePath, whmBadPath, true);
-                manualCheck.WhmBadFilePath = whmBadPath;
-                manualCheck.WhmBadCount = System.IO.File.ReadAllLines(manualCheck.WhmBadFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+                System.IO.File.Copy(checkModel.WhmBadFilePath, whmBadPath, true);
+                checkModel.WhmBadFilePath = whmBadPath;
+                checkModel.WhmBadCount = System.IO.File.ReadAllLines(checkModel.WhmBadFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
             }
 
-            manualCheck.Status = endStatus;
+            checkModel.Status = endStatus;
             if (ellapsedWatch != null)
             {
                 ellapsedWatch.Stop();
-                manualCheck.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
-                manualCheck.EndDateTime = DateTime.Now;
+                checkModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                checkModel.EndDateTime = DateTime.Now;
             }
-            await CpanelWhmCheckController.PutCheckAsync(manualCheck, aggregator);
+            await CpanelWhmCheckController.PutCheckAsync(checkModel, aggregator);
         }
 
         #endregion cpanel and whm checking
+
+        #region wp login checking
+
+        private async Task StandartCheckProcessForWpLogin(UserModel dbUser, string filename, WpLoginCheckModel checkModel, bool fillDublicates)
+        {
+            #region init
+
+            string inputFilename = filename;
+            string folderPath = PathCollection.TempFolderPath + $"u_{dbUser.Id}_d_{DateTime.Now:dd_MM_yyyy_HH_mm_ss}/";
+            Directory.CreateDirectory(folderPath);
+            System.IO.File.Copy(inputFilename, folderPath + "input.txt", true);
+            Stopwatch ellapsedWatch = Stopwatch.StartNew();
+            string workingFile = folderPath + "input.txt";
+
+            #endregion init
+
+            #region check dublicates
+
+            string preparedFileData = await Runner.RunWpLoginFilePreparer(folderPath, workingFile);
+            JObject preparedFileJson = JObject.Parse(preparedFileData);
+            if (preparedFileJson.ContainsKey("Error"))
+            {
+                if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
+                                                                               .Replace("@ID", checkModel.Id.ToString()));
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.Error, ellapsedWatch);
+                Directory.Delete(folderPath, true);
+                if (config.Chats.ErrorNotificationChat != 0)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при подготовке wp-login файла:\r\n{preparedFileJson}");
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                return;
+            }
+            checkModel.DublicateFilePath = preparedFileJson["Dublicates"].ToString();
+            workingFile = preparedFileJson["Unique"].ToString();
+
+            #endregion check dublicates
+
+            #region fill logs db
+
+            string fillData = await Runner.RunDublicateFiller(dbUser.Id, null, null, null, workingFile, fillDublicates);
+            JObject fillDataJson = JObject.Parse(fillData);
+            if (fillDataJson.ContainsKey("Error"))
+            {
+                if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
+                                                                               .Replace("@ID", checkModel.Id.ToString()));
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                if (config.Chats.ErrorNotificationChat != 0)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{fillData}");
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.Error, ellapsedWatch);
+                Directory.Delete(folderPath, true);
+                return;
+            }
+
+            #endregion fill logs db
+
+            #region no any unique
+
+            int wpLoginAddedCount = fillDataJson.Value<int>("WpLoginAddedCount");
+
+            if (fillDublicates)
+            {
+                if (wpLoginAddedCount == 0)
+                {
+                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileUniqueEmptyError", dbUser.Language)
+                                                                           .Replace("@ID", checkModel.Id.ToString()));
+
+                    MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.NoAnyUnique, ellapsedWatch);
+                    Directory.Delete(folderPath, true);
+                    return;
+                }
+            }
+
+            #endregion no any unique
+
+            #region notify when any inserted
+
+            if (fillDublicates)
+            {
+                if (config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat != 0)
+                {
+                    try
+                    {
+                        aggregator.GetEvent<DublicateUpdateEvent>().Publish();
+                        await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
+                            $"В базу данных дубликатов было добавлено {wpLoginAddedCount} записей:\r\n" +
+                            $"Новый записей в категории wp-login: {wpLoginAddedCount}");
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            #endregion notify when any inserted
+
+            #region after checks set status to dublicate deleted
+
+            checkModel.Status = ManualCheckStatus.SendedToSoftCheck;
+            await WpLoginCheckController.PutCheckAsync(checkModel, aggregator);
+
+            #endregion after checks set status to dublicate deleted
+
+            #region check wp-login
+
+            string wpLoginCheckingData = await Runner.RunFoxChecker(folderPath, workingFile, config.FoxCheckerMaxForThread);
+            JObject wpLoginCheckingJson = JObject.Parse(wpLoginCheckingData);
+            if (wpLoginCheckingJson.ContainsKey("Error"))
+            {
+                if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("FileCheckingError", dbUser.Language)
+                                                                               .Replace("@ID", checkModel.Id.ToString()));
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                if (config.Chats.ErrorNotificationChat != 0)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при проверке файла:\r\n{wpLoginCheckingData}");
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.Error, ellapsedWatch);
+                Directory.Delete(folderPath, true);
+                return;
+            }
+
+            #endregion check wp-login
+
+            #region set to copying files
+
+            checkModel.ShellsFilePath = wpLoginCheckingJson["Shells"].ToString();
+            checkModel.CpanelsFilePath = wpLoginCheckingJson["CpanelsReseted"].ToString();
+            checkModel.SmtpsFilePath = wpLoginCheckingJson["Smtps"].ToString();
+            checkModel.LoggedWordpressFilePath = wpLoginCheckingJson["LoggedWordpress"].ToString();
+
+            MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.CopyingFiles, ellapsedWatch);
+
+            #endregion set to copying files
+
+            #region fill valid db
+
+            string fillValidData = await Runner.RunValidFiller(dbUser.Id, null, null, checkModel.ShellsFilePath, checkModel.CpanelsFilePath, checkModel.SmtpsFilePath, checkModel.LoggedWordpressFilePath);
+            JObject fillValidDataJson = JObject.Parse(fillValidData);
+            if (fillValidDataJson.ContainsKey("Error"))
+            {
+                if (config.Chats.ErrorNotificationChat != 0)
+                {
+                    try
+                    {
+                        await botClient.SendTextMessageAsync(config.Chats.ErrorNotificationChat, $"Ошибка при заполнении валида:\r\n{fillValidData}");
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                return;
+            }
+
+            int shellsAddedCount = fillValidDataJson.Value<int>("ShellsAddedCount");
+            int cpanelsAddedCount = fillValidDataJson.Value<int>("CpanelsResetedAddedCount");
+            int smtpsAddedCount = fillValidDataJson.Value<int>("SmtpsAddedCount");
+            int loggedWordpressAddedCount = fillValidDataJson.Value<int>("LoggedWordpressAddedCount");
+            int totalAddedCount = shellsAddedCount + cpanelsAddedCount + smtpsAddedCount + loggedWordpressAddedCount;
+            if (totalAddedCount != 0)
+            {
+                if (config.Chats.NotifyWhenDatabaseFillNewValidRecordsChat != 0)
+                {
+                    try
+                    {
+                        aggregator.GetEvent<DublicateUpdateEvent>().Publish();
+                        await botClient.SendTextMessageAsync(config.Chats.NotifyWhenDatabaseFillNewLogRecordsChat,
+                            $"В базу данных валида было добавлено {totalAddedCount} записей:\r\n" +
+                            $"Новый записей в категории Shells: {shellsAddedCount}\r\n" +
+                            $"Новый записей в категории Cpanels_Reseted: {cpanelsAddedCount}\r\n" +
+                            $"Новый записей в категории SMTPs: {smtpsAddedCount}\r\n" +
+                            $"Новый записей в категории Logged_Wordpress: {loggedWordpressAddedCount}\r\n");
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            #endregion fill valid db
+
+            #region copying last files and set to checked by soft status
+
+            MoveFilesToChecksIdFolderAndUpateCountAndPathes(checkModel, ManualCheckStatus.CheckedBySoft, null);
+            Directory.Delete(folderPath, true);
+            if (config.Chats.NotifyWhenCheckerEndWorkChat != 0)
+            {
+                try
+                {
+                    await botClient.SendTextMessageAsync(config.Chats.NotifyWhenCheckerEndWorkChat,
+                        $"Закончена проверка логов ID: {checkModel.Id} от {checkModel.StartDateTime:dd.MM.yyyy} :\r\n" +
+                        $"Загрузил : @{checkModel.FromUsername}\r\n" +
+                        $"Затрачено всего : {Math.Round(checkModel.CheckingTimeEllapsed.TotalMinutes, 2)} минут\r\n" +
+                        $"Дубликатов найдено: {checkModel.DublicateFoundedCount}\r\n" +
+                        $"Shells найдено: {checkModel.ShellsFoundedCount}\r\n" +
+                        $"CpanelsReseted найдено: {checkModel.CpanelsResetedFoundedCount}\r\n" +
+                        $"SMTP найдено: {checkModel.SmtpsFoundedCount}\r\n" +
+                        $"Logged Wordpress найдено: {checkModel.LoggedWordpressFoundedCount}");
+                }
+                catch (Exception)
+                {
+                }
+            }
+
+            #endregion copying last files and set to checked by soft status
+        }
+
+        private async void MoveFilesToChecksIdFolderAndUpateCountAndPathes(WpLoginCheckModel checkModel, ManualCheckStatus endStatus, Stopwatch ellapsedWatch)
+        {
+            string destinationFolderPath = PathCollection.WpLoginFolderPath + checkModel.Id + "/";
+            if (!Directory.Exists(destinationFolderPath)) Directory.CreateDirectory(destinationFolderPath);
+
+            string dublicatePath = destinationFolderPath + "dublicates.txt";
+            string shellsPath = destinationFolderPath + "shells.txt";
+            string cpanelsResetedPath = destinationFolderPath + "cpanels_reseted.txt";
+            string smtpsPath = destinationFolderPath + "smtps.txt";
+            string loggedWordpressPath = destinationFolderPath + "logged_wordpress.txt";
+
+            if (System.IO.File.Exists(checkModel.DublicateFilePath) && checkModel.DublicateFilePath != dublicatePath)
+            {
+                System.IO.File.Copy(checkModel.DublicateFilePath, dublicatePath, true);
+                checkModel.DublicateFilePath = dublicatePath;
+                checkModel.DublicateFoundedCount = System.IO.File.ReadAllLines(checkModel.DublicateFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+            }
+            if (System.IO.File.Exists(checkModel.ShellsFilePath) && checkModel.ShellsFilePath != shellsPath)
+            {
+                System.IO.File.Copy(checkModel.ShellsFilePath, shellsPath, true);
+                checkModel.ShellsFilePath = shellsPath;
+                checkModel.ShellsFoundedCount = System.IO.File.ReadAllLines(checkModel.ShellsFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+            }
+            if (System.IO.File.Exists(checkModel.CpanelsFilePath) && checkModel.CpanelsFilePath != cpanelsResetedPath)
+            {
+                System.IO.File.Copy(checkModel.CpanelsFilePath, cpanelsResetedPath, true);
+                checkModel.CpanelsFilePath = cpanelsResetedPath;
+                checkModel.CpanelsResetedFoundedCount = System.IO.File.ReadAllLines(checkModel.CpanelsFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+            }
+            if (System.IO.File.Exists(checkModel.SmtpsFilePath) && checkModel.SmtpsFilePath != smtpsPath)
+            {
+                System.IO.File.Copy(checkModel.SmtpsFilePath, smtpsPath, true);
+                checkModel.SmtpsFilePath = smtpsPath;
+                checkModel.SmtpsFoundedCount = System.IO.File.ReadAllLines(checkModel.SmtpsFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+            }
+            if (System.IO.File.Exists(checkModel.LoggedWordpressFilePath) && checkModel.LoggedWordpressFilePath != loggedWordpressPath)
+            {
+                System.IO.File.Copy(checkModel.LoggedWordpressFilePath, loggedWordpressPath, true);
+                checkModel.LoggedWordpressFilePath = loggedWordpressPath;
+                checkModel.LoggedWordpressFoundedCount = System.IO.File.ReadAllLines(checkModel.LoggedWordpressFilePath).Where(l => !l.IsNullOrEmptyString()).Count();
+            }
+
+            checkModel.Status = endStatus;
+            if (ellapsedWatch != null)
+            {
+                ellapsedWatch.Stop();
+                checkModel.CheckingTimeEllapsed = ellapsedWatch.Elapsed;
+                checkModel.EndDateTime = DateTime.Now;
+            }
+            await WpLoginCheckController.PutCheckAsync(checkModel, aggregator);
+        }
+
+        #endregion wp login checking
 
         #region user managment
 

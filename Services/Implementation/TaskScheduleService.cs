@@ -101,16 +101,26 @@ namespace Services.Implementation
             if (!tokens[taskWithId.Id].IsCancellationRequested)
             {
                 TaskStarted?.Invoke(taskWithId.Id, Name());
-                string result;
+                string result = string.Empty;
                 if (!taskWithId.IsRunAsync)
                 {
                     result = await Task.Run(() => taskWithId.Body(taskWithId.Parameters), tokens[taskWithId.Id].Token);
                 }
                 else
                 {
-                    result = await Task.Run(async () => await taskWithId.AsyncBody(taskWithId.Parameters), tokens[taskWithId.Id].Token);
+                    if (taskWithId.AsyncBody != null)
+                    {
+                        result = await Task.Run(async () => await taskWithId.AsyncBody(taskWithId.Parameters), tokens[taskWithId.Id].Token);
+                    }
+                    else
+                    {
+                        await Task.Run(async () => await taskWithId.AsyncBodyWithoutResult(taskWithId.Parameters), tokens[taskWithId.Id].Token);
+                    }
                 }
-                results.Add(taskWithId.Id, result);
+                if ((taskWithId.IsRunAsync && taskWithId.AsyncBody != null) || !taskWithId.IsRunAsync)
+                {
+                    results.Add(taskWithId.Id, result);
+                }
                 TaskCompleted?.Invoke(taskWithId.Id, Name());
             }
             tasks.Remove(taskWithId);
@@ -140,7 +150,22 @@ namespace Services.Implementation
             TaskWithId taskWithId = new(true)
             {
                 Id = Guid.NewGuid(),
-                AsyncBody = body
+                AsyncBody = body,
+                AsyncBodyWithoutResult = null
+            };
+            tokens.Add(taskWithId.Id, cts);
+            IScheduledTask scheduledTask = new ScheduledTask(taskWithId, tasks);
+            return scheduledTask;
+        }
+
+        public IScheduledTask ScheduleTask(Func<object[], Task> body)
+        {
+            CancellationTokenSource cts = new();
+            TaskWithId taskWithId = new(true)
+            {
+                Id = Guid.NewGuid(),
+                AsyncBody = null,
+                AsyncBodyWithoutResult = body
             };
             tokens.Add(taskWithId.Id, cts);
             IScheduledTask scheduledTask = new ScheduledTask(taskWithId, tasks);
@@ -161,6 +186,15 @@ namespace Services.Implementation
         public async Task WaitForSchedulerFinish()
         {
             while (tasks.Count > 0)
+            {
+                await Task.Delay(1);
+            }
+            return;
+        }
+
+        public async Task WaitForTaskFinish(Guid taskId)
+        {
+            while (tasks.Any(t => t.Id == taskId))
             {
                 await Task.Delay(1);
             }
@@ -228,6 +262,7 @@ namespace Services.Implementation
         public Guid Id { get; set; }
         public Func<object[], string> Body { get; set; }
         public Func<object[], Task<string>> AsyncBody { get; set; }
+        public Func<object[], Task> AsyncBodyWithoutResult { get; set; }
         public int TaskCount { get; set; }
         public object[] Parameters { get; set; }
 

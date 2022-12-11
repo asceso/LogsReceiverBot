@@ -14,8 +14,12 @@ namespace DatabaseValidFillerApp
             string userId;
             string cpanelFilePath;
             string whmFilePath;
+            string shellsFilePath;
+            string cpanelsResetedFilePath;
+            string smtpsFilePath;
+            string loggedWordpressFilePath;
 
-            if (arguments.Length < 4)
+            if (arguments.Length < 8)
             {
                 return;
             }
@@ -23,7 +27,11 @@ namespace DatabaseValidFillerApp
             userId = arguments[1];
             cpanelFilePath = arguments[2];
             whmFilePath = arguments[3];
-            bool showOutput = arguments.Length > 4 && arguments[4] == "true";
+            shellsFilePath = arguments[4];
+            cpanelsResetedFilePath = arguments[5];
+            smtpsFilePath = arguments[6];
+            loggedWordpressFilePath = arguments[7];
+            bool showOutput = arguments.Length > 8 && arguments[8] == "true";
 
             try
             {
@@ -31,6 +39,10 @@ namespace DatabaseValidFillerApp
                 UserModel user = await UsersController.GetUserByIdAsync(long.Parse(userId));
                 answer.CpanelAddedCount = await CheckFileAndPostValidAsync(user, cpanelFilePath, "cpanel");
                 answer.WhmAddedCount = await CheckFileAndPostValidAsync(user, whmFilePath, "whm");
+                answer.ShellsAddedCount = await CheckFileAndPostValidAsync(user, shellsFilePath, "shells");
+                answer.CpanelsResetedAddedCount = await CheckFileAndPostValidAsync(user, cpanelsResetedFilePath, "cpanels-reseted");
+                answer.SmtpsAddedCount = await CheckFileAndPostValidAsync(user, smtpsFilePath, "smtps");
+                answer.LoggedWordpressAddedCount = await CheckFileAndPostValidAsync(user, loggedWordpressFilePath, "logged-wordpress");
                 Console.WriteLine(JsonConvert.SerializeObject(answer));
             }
             catch (Exception ex)
@@ -76,5 +88,9 @@ namespace DatabaseValidFillerApp
     {
         public int CpanelAddedCount { get; set; }
         public int WhmAddedCount { get; set; }
+        public int ShellsAddedCount { get; set; }
+        public int CpanelsResetedAddedCount { get; set; }
+        public int SmtpsAddedCount { get; set; }
+        public int LoggedWordpressAddedCount { get; set; }
     }
 }

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FoxCheckerRunner": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Programming\\Work\\LogsReceiverBot\\FoxCheckerRunner\\bin\\Debug\\net6.0\\TEST\r\nC:\\Programming\\Work\\LogsReceiverBot\\FoxCheckerRunner\\bin\\Debug\\net6.0\\TEST\\unique.txt\r\n4\r\ntrue"
+    }
+  }
+}

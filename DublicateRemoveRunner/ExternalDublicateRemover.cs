@@ -144,9 +144,17 @@ namespace DublicateRemoveRunner
                     if (list.Any())
                     {
                         using TextWriter writer = new StreamWriter(filename);
-                        foreach (var line in list)
+                        for (int i = 0; i < list.Count; i++)
                         {
-                            writer.WriteLine(line);
+                            string line = list[i];
+                            if (i == list.Count - 1)
+                            {
+                                writer.Write(line);
+                            }
+                            else
+                            {
+                                writer.WriteLine(line);
+                            }
                         }
                         writer.Close();
                     }

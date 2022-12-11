@@ -62,6 +62,22 @@ namespace DataAdapter.Controllers
             }
         }
 
+        public static List<string> GetLogsDataByCategory(string category)
+        {
+            try
+            {
+                using DataContext data = new();
+                var logsData = from l in data.Dublicates
+                               where category == l.Category
+                               select l.ToString();
+                return logsData.ToList();
+            }
+            catch (Exception)
+            {
+                return new List<string>();
+            }
+        }
+
         public static List<string> GetLogsCategories()
         {
             try

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using OpenQA.Selenium;
 using SeleniumExtensionLibrary;
+using System.Collections.ObjectModel;
 using System.Text;
 
 namespace DropMeLoader
@@ -10,11 +11,12 @@ namespace DropMeLoader
         public string Filesize { get; set; }
         public string Unit { get; set; }
         public bool IsOnlyTxtFiles { get; set; }
+        public bool FilesDownloaded { get; set; }
     }
 
     public class Program
     {
-        private static void Main()
+        private static async Task Main()
         {
             Environment.CurrentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             string[] arguments = Environment.GetCommandLineArgs();
@@ -68,16 +70,18 @@ namespace DropMeLoader
             {
                 JsonAnswer answer = new();
                 driver.GoToUrl(fileLink);
+                await Task.Delay(TimeSpan.FromSeconds(1));
                 if (checkOnlyTxtFile)
                 {
-                    IWebElement expandBtn = driver.FindElementOrGetNull(By.ClassName("expand"));
+                    IWebElement expandBtn = driver.FindElementOrGetNullWithTimeout(By.ClassName("expand"), 2);
+                    await Task.Delay(TimeSpan.FromSeconds(1));
                     if (expandBtn == null)
                     {
                         throw new NotFoundException("not found expand button");
                     }
                     expandBtn.Click();
 
-                    var files = driver.FindElements(By.XPath("//li[@class='fileDownload dragout']"));
+                    ReadOnlyCollection<IWebElement> files = driver.FindElements(By.XPath("//li[@class='fileDownload dragout']"));
                     answer.IsOnlyTxtFiles = true;
                     foreach (IWebElement fileInfo in files)
                     {
@@ -97,7 +101,15 @@ namespace DropMeLoader
                         List<string> loadedFilenames = new();
                         foreach (IWebElement fileInfo in files)
                         {
-                            toLoadFilenames.Add(fileInfo.Text.Split(Environment.NewLine).LastOrDefault());
+                            try
+                            {
+                                IWebElement spanElement = fileInfo.FindElement(By.XPath(".//span"));
+                                toLoadFilenames.Add(spanElement.GetAttribute("title"));
+                            }
+                            catch (Exception)
+                            {
+                                toLoadFilenames.Add(fileInfo.Text.Split(Environment.NewLine).LastOrDefault());
+                            }
                         }
 
                         using FileSystemWatcher watcher = new(Environment.CurrentDirectory + "/chrome_downloads");
@@ -137,12 +149,15 @@ namespace DropMeLoader
                         using StreamWriter writer = new(uploadFileToDirectory + "/" + uploadFileSaveName);
                         writer.Write(builder.ToString());
                         writer.Close();
+
+                        answer.FilesDownloaded = true;
                     }
 
                     #endregion loading all txt
                 }
 
-                IWebElement fileSizeElement = driver.FindElementOrGetNull(By.ClassName("fileSize"));
+                IWebElement fileSizeElement = driver.FindElementOrGetNullWithTimeout(By.ClassName("fileSize"), 2);
+                await Task.Delay(TimeSpan.FromSeconds(1));
                 if (fileSizeElement == null)
                 {
                     throw new NotFoundException("not found file size");

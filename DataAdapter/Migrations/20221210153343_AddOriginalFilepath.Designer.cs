@@ -3,6 +3,7 @@ using System;
 using DataAdapter;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAdapter.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20221210153343_AddOriginalFilepath")]
+    partial class AddOriginalFilepath
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -361,110 +363,6 @@ namespace DataAdapter.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("valid");
-                });
-
-            modelBuilder.Entity("Models.Database.WpLoginCheckModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<TimeSpan>("CheckingTimeEllapsed")
-                        .HasColumnType("time(6)")
-                        .HasColumnName("checking_time");
-
-                    b.Property<string>("CpanelsFilePath")
-                        .HasColumnType("longtext")
-                        .HasColumnName("cpanels_file_path");
-
-                    b.Property<int>("CpanelsResetedFoundedCount")
-                        .HasColumnType("int")
-                        .HasColumnName("cpanels_reseted_founded_count");
-
-                    b.Property<int>("CpanelsResetedFoundedCountManual")
-                        .HasColumnType("int")
-                        .HasColumnName("cpanels_reseted_founded_count_manual");
-
-                    b.Property<string>("DublicateFilePath")
-                        .HasColumnType("longtext")
-                        .HasColumnName("dublicate_file_path");
-
-                    b.Property<int>("DublicateFoundedCount")
-                        .HasColumnType("int")
-                        .HasColumnName("dublicate_founded_count");
-
-                    b.Property<int>("DublicateFoundedCountManual")
-                        .HasColumnType("int")
-                        .HasColumnName("dublicate_founded_count_manual");
-
-                    b.Property<DateTime>("EndDateTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("end_at");
-
-                    b.Property<long>("FromUserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("from_user_id");
-
-                    b.Property<string>("FromUsername")
-                        .HasColumnType("longtext")
-                        .HasColumnName("from_username");
-
-                    b.Property<bool>("IsManualCheckEnd")
-                        .HasColumnType("tinyint(1)")
-                        .HasColumnName("is_manual_check_end");
-
-                    b.Property<string>("LoggedWordpressFilePath")
-                        .HasColumnType("longtext")
-                        .HasColumnName("logged_wordpress_file_path");
-
-                    b.Property<int>("LoggedWordpressFoundedCount")
-                        .HasColumnType("int")
-                        .HasColumnName("logged_wordpress_founded_count");
-
-                    b.Property<int>("LoggedWordpressFoundedCountManual")
-                        .HasColumnType("int")
-                        .HasColumnName("logged_wordpress_founded_countmanual");
-
-                    b.Property<string>("OriginalFilePath")
-                        .HasColumnType("longtext")
-                        .HasColumnName("original_file_path");
-
-                    b.Property<string>("ShellsFilePath")
-                        .HasColumnType("longtext")
-                        .HasColumnName("shells_file_path");
-
-                    b.Property<int>("ShellsFoundedCount")
-                        .HasColumnType("int")
-                        .HasColumnName("shells_founded_count");
-
-                    b.Property<int>("ShellsFoundedCountManual")
-                        .HasColumnType("int")
-                        .HasColumnName("shells_founded_count_manual");
-
-                    b.Property<string>("SmtpsFilePath")
-                        .HasColumnType("longtext")
-                        .HasColumnName("smtps_file_path");
-
-                    b.Property<int>("SmtpsFoundedCount")
-                        .HasColumnType("int")
-                        .HasColumnName("smtps_founded_count");
-
-                    b.Property<int>("SmtpsFoundedCountManual")
-                        .HasColumnType("int")
-                        .HasColumnName("smtps_founded_count_manual");
-
-                    b.Property<DateTime>("StartDateTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("start_at");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int")
-                        .HasColumnName("status");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("wp_login_checks");
                 });
 #pragma warning restore 612, 618
         }

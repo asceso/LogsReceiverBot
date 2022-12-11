@@ -10,7 +10,7 @@
     },
     "LoadFiles": {
       "commandName": "Project",
-      "commandLineArgs": "https://dropmefiles.com/N8Bna\r\ntrue\r\nC:\\Users\\asces\\Downloads\\folder\r\nresult.txt\r\nfalse\r\nfalse"
+      "commandLineArgs": "https://dropmefiles.com/F3nDs\r\ntrue\r\nC:\\Programming\\Work\\LogsReceiverBot\\BotMainApp\\bin\\Debug\\net6.0-windows\\temp\r\nresult.txt\r\nfalse\r\ntrue"
     }
   }
 }
