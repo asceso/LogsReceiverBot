@@ -36,7 +36,11 @@ namespace Extensions
                 split.Add(source);
                 return split;
             }
-            int partCount = (int)source.Count / splitCount;
+            if (splitCount == 0)
+            {
+                splitCount = 1;
+            }
+            int partCount = source.Count / splitCount;
             if (splitCount * partCount < source.Count)
             {
                 partCount++;

@@ -18,6 +18,7 @@ namespace Models.App
         private string webmailRegex;
         private int pageMaxCount;
         private int checkerMaxForThread;
+        private int foxCheckerSplitCheckingBySize;
         private int foxCheckerMaxForThread;
         private double minAcceptingFileSize;
         private bool useOwnCpanelChecker;
@@ -39,6 +40,7 @@ namespace Models.App
         public string WebmailRegex { get => webmailRegex; set => SetProperty(ref webmailRegex, value); }
         public int PageMaxCount { get => pageMaxCount; set => SetProperty(ref pageMaxCount, value); }
         public int CheckerMaxForThread { get => checkerMaxForThread; set => SetProperty(ref checkerMaxForThread, value); }
+        public int FoxCheckerSplitCheckingBySize { get => foxCheckerSplitCheckingBySize; set => SetProperty(ref foxCheckerSplitCheckingBySize, value); }
         public int FoxCheckerMaxForThread { get => foxCheckerMaxForThread; set => SetProperty(ref foxCheckerMaxForThread, value); }
         public double MinAcceptingFileSize { get => minAcceptingFileSize; set => SetProperty(ref minAcceptingFileSize, value); }
         public bool UseOwnCpanelChecker { get => useOwnCpanelChecker; set => SetProperty(ref useOwnCpanelChecker, value); }

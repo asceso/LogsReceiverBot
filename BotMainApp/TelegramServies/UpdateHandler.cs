@@ -575,8 +575,7 @@ namespace BotMainApp.TelegramServices
                                     await taskSchedule.In(ConstStrings.SeleniumThread).WaitForTaskFinish(taskId).ConfigureAwait(false);
                                     string dropmelinkCheckerInfo = taskSchedule.In(ConstStrings.SeleniumThread).GetResult(taskId);
 
-                                    JObject dropmelinkCheckerJson = JObject.Parse(dropmelinkCheckerInfo);
-                                    if (dropmelinkCheckerJson.ContainsKey("Error"))
+                                    if (!dropmelinkCheckerInfo.TryParseToJObject(out JObject dropmelinkCheckerJson) || dropmelinkCheckerJson.ContainsKey("Error"))
                                     {
                                         try
                                         {
@@ -616,7 +615,7 @@ namespace BotMainApp.TelegramServices
                                         }
 
                                         List<int> checkingModelsList = new();
-                                        List<List<string>> partitions = mainFileList.Split(50000);
+                                        List<List<string>> partitions = mainFileList.Split(config.FoxCheckerSplitCheckingBySize);
                                         foreach (List<string> partition in partitions)
                                         {
                                             WpLoginCheckModel checkModel = new()
@@ -725,7 +724,7 @@ namespace BotMainApp.TelegramServices
                                     }
 
                                     List<int> checkingModelsList = new();
-                                    List<List<string>> partitions = mainFileList.Split(50000);
+                                    List<List<string>> partitions = mainFileList.Split(config.FoxCheckerSplitCheckingBySize);
                                     foreach (List<string> partition in partitions)
                                     {
                                         WpLoginCheckModel checkModel = new()
@@ -862,8 +861,7 @@ namespace BotMainApp.TelegramServices
                                     await taskSchedule.In(ConstStrings.SeleniumThread).WaitForTaskFinish(taskId).ConfigureAwait(false);
                                     string dropmelinkCheckerInfo = taskSchedule.In(ConstStrings.SeleniumThread).GetResult(taskId);
 
-                                    JObject dropmelinkCheckerJson = JObject.Parse(dropmelinkCheckerInfo);
-                                    if (dropmelinkCheckerJson.ContainsKey("Error"))
+                                    if (!dropmelinkCheckerInfo.TryParseToJObject(out JObject dropmelinkCheckerJson) || dropmelinkCheckerJson.ContainsKey("Error"))
                                     {
                                         try
                                         {
@@ -903,7 +901,7 @@ namespace BotMainApp.TelegramServices
                                         }
 
                                         List<int> checkingModelsList = new();
-                                        List<List<string>> partitions = mainFileList.Split(50000);
+                                        List<List<string>> partitions = mainFileList.Split(config.FoxCheckerSplitCheckingBySize);
                                         foreach (List<string> partition in partitions)
                                         {
                                             WpLoginCheckModel checkModel = new()
@@ -1012,7 +1010,7 @@ namespace BotMainApp.TelegramServices
                                     }
 
                                     List<int> checkingModelsList = new();
-                                    List<List<string>> partitions = mainFileList.Split(50000);
+                                    List<List<string>> partitions = mainFileList.Split(config.FoxCheckerSplitCheckingBySize);
                                     foreach (List<string> partition in partitions)
                                     {
                                         WpLoginCheckModel checkModel = new()
@@ -1145,8 +1143,7 @@ namespace BotMainApp.TelegramServices
                                     #region check drop me link info
 
                                     string fileInfoData = await Runner.RunDropMeLinkChecker(argument, false, null, null);
-                                    JObject fileInfoJson = JObject.Parse(fileInfoData);
-                                    if (fileInfoJson.ContainsKey("Error"))
+                                    if (!fileInfoData.TryParseToJObject(out JObject fileInfoJson) || fileInfoJson.ContainsKey("Error"))
                                     {
                                         try
                                         {
@@ -1857,8 +1854,7 @@ namespace BotMainApp.TelegramServices
             #region check dublicates
 
             string dublicateData = await Runner.RunDublicateChecker(folderPath, inputFilename, config);
-            JObject dublicateDataJson = JObject.Parse(dublicateData);
-            if (dublicateDataJson.ContainsKey("Error"))
+            if (!dublicateData.TryParseToJObject(out JObject dublicateDataJson) || dublicateDataJson.ContainsKey("Error"))
             {
                 if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
                 {
@@ -1898,8 +1894,7 @@ namespace BotMainApp.TelegramServices
             #region fill logs db
 
             string fillData = await Runner.RunDublicateFiller(dbUser.Id, checkModel.WebmailFilePath, cpanelDataFilePath, whmDataFilePath, null, fillDublicates);
-            JObject fillDataJson = JObject.Parse(fillData);
-            if (fillDataJson.ContainsKey("Error"))
+            if (!fillData.TryParseToJObject(out JObject fillDataJson) || fillDataJson.ContainsKey("Error"))
             {
                 if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
                 {
@@ -2035,8 +2030,7 @@ namespace BotMainApp.TelegramServices
             {
                 cpanelData = await Runner.RunCpanelChecker(folderPath, cpanelDataFilePath, whmDataFilePath, config.CheckerMaxForThread);
             }
-            JObject cpanelDataJson = JObject.Parse(cpanelData);
-            if (cpanelDataJson.ContainsKey("Error"))
+            if (!cpanelData.TryParseToJObject(out JObject cpanelDataJson) || cpanelDataJson.ContainsKey("Error"))
             {
                 if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
                 {
@@ -2081,8 +2075,7 @@ namespace BotMainApp.TelegramServices
             #region fill valid db
 
             string fillValidData = await Runner.RunValidFiller(dbUser.Id, checkModel.CpanelGoodFilePath, checkModel.WhmGoodFilePath, null, null, null, null);
-            JObject fillValidDataJson = JObject.Parse(fillValidData);
-            if (fillValidDataJson.ContainsKey("Error"))
+            if (!fillValidData.TryParseToJObject(out JObject fillValidDataJson) || fillValidDataJson.ContainsKey("Error"))
             {
                 if (config.Chats.ErrorNotificationChat != 0)
                 {
@@ -2227,8 +2220,7 @@ namespace BotMainApp.TelegramServices
             #region check dublicates
 
             string preparedFileData = await Runner.RunWpLoginFilePreparer(folderPath, workingFile);
-            JObject preparedFileJson = JObject.Parse(preparedFileData);
-            if (preparedFileJson.ContainsKey("Error"))
+            if (!preparedFileData.TryParseToJObject(out JObject preparedFileJson) || preparedFileJson.ContainsKey("Error"))
             {
                 if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
                 {
@@ -2264,8 +2256,7 @@ namespace BotMainApp.TelegramServices
             #region fill logs db
 
             string fillData = await Runner.RunDublicateFiller(dbUser.Id, null, null, null, workingFile, fillDublicates);
-            JObject fillDataJson = JObject.Parse(fillData);
-            if (fillDataJson.ContainsKey("Error"))
+            if (!fillData.TryParseToJObject(out JObject fillDataJson) || fillDataJson.ContainsKey("Error"))
             {
                 if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
                 {
@@ -2347,8 +2338,7 @@ namespace BotMainApp.TelegramServices
             #region check wp-login
 
             string wpLoginCheckingData = await Runner.RunFoxChecker(folderPath, workingFile, config.FoxCheckerMaxForThread);
-            JObject wpLoginCheckingJson = JObject.Parse(wpLoginCheckingData);
-            if (wpLoginCheckingJson.ContainsKey("Error"))
+            if (!wpLoginCheckingData.TryParseToJObject(out JObject wpLoginCheckingJson) || wpLoginCheckingJson.ContainsKey("Error"))
             {
                 if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
                 {
@@ -2393,8 +2383,7 @@ namespace BotMainApp.TelegramServices
             #region fill valid db
 
             string fillValidData = await Runner.RunValidFiller(dbUser.Id, null, null, checkModel.ShellsFilePath, checkModel.CpanelsFilePath, checkModel.SmtpsFilePath, checkModel.LoggedWordpressFilePath);
-            JObject fillValidDataJson = JObject.Parse(fillValidData);
-            if (fillValidDataJson.ContainsKey("Error"))
+            if (!fillValidData.TryParseToJObject(out JObject fillValidDataJson) || fillValidDataJson.ContainsKey("Error"))
             {
                 if (config.Chats.ErrorNotificationChat != 0)
                 {

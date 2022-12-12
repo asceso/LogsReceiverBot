@@ -111,6 +111,12 @@ namespace FoxCheckerRunner
             {
                 waitingTasks.Add(Task.Run(async () =>
                 {
+                    DirectoryInfo di = new(folder);
+                    using StreamReader reader = new(di.FullName + "/input.txt");
+                    string buffer = await reader.ReadToEndAsync();
+                    int linesCount = buffer.Split(Environment.NewLine).Length;
+                    reader.Close();
+
                     ProcessStartInfo psi = new()
                     {
                         FileName = "python.exe",
@@ -134,7 +140,11 @@ namespace FoxCheckerRunner
                     await writer.WriteLineAsync();
                     writer.Close();
 
-                    await process.WaitForExitAsync();
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                    process.WaitForExit(300000 * linesCount);
+                    process.Kill();
+                    await Task.Delay(TimeSpan.FromSeconds(2));
+
                     if (File.Exists(folder + ShellsOutFilename))
                     {
                         string[] lines = File.ReadAllLines(folder + ShellsOutFilename);
