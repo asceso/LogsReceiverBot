@@ -4,7 +4,7 @@
     {
         public enum ManualCheckStatus
         {
-            Created, Error, FillingDb, SendedToSoftCheck, OnlyWebmail, NoAnyUnique, CopyingFiles, CheckedBySoft, SendToManualChecking, End, EndNoValid
+            Created, Error, FillingDb, SendedToSoftCheck, OnlyWebmail, NoAnyUnique, CopyingFiles, CheckedBySoft, SendToManualChecking, End, EndNoValid, WainInQueue
         }
 
         public enum CookieCheckStatus
@@ -27,6 +27,7 @@
                 ManualCheckStatus.SendToManualChecking => "обрабатывается",
                 ManualCheckStatus.End => "завершена",
                 ManualCheckStatus.EndNoValid => "завершена, нет валида",
+                ManualCheckStatus.WainInQueue => "в очереди для проверки",
                 _ => "неизвестно",
             };
         }

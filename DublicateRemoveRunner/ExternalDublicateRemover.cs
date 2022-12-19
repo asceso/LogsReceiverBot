@@ -1,4 +1,5 @@
 ﻿using DataAdapter.Controllers;
+using Extensions;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
@@ -61,6 +62,8 @@ namespace DublicateRemoveRunner
                 while (!reader.EndOfStream)
                 {
                     string log = reader.ReadLine().Trim();
+                    if (log.IsNullOrEmptyString()) continue;
+
                     string[] parts = log.Split('|', ':');
 
                     string url = string.Empty, login = string.Empty, password = string.Empty;

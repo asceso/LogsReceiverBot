@@ -141,8 +141,7 @@ namespace FoxCheckerRunner
                     writer.Close();
 
                     await Task.Delay(TimeSpan.FromSeconds(10));
-                    process.WaitForExit(300000 * linesCount);
-                    process.Kill();
+                    await process.WaitForExitAsync();
                     await Task.Delay(TimeSpan.FromSeconds(2));
 
                     if (File.Exists(folder + ShellsOutFilename))

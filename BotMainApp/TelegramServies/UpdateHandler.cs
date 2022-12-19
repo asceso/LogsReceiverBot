@@ -1016,7 +1016,7 @@ namespace BotMainApp.TelegramServices
                                         WpLoginCheckModel checkModel = new()
                                         {
                                             StartDateTime = DateTime.Now,
-                                            Status = ManualCheckStatus.Created,
+                                            Status = ManualCheckStatus.WainInQueue,
                                             FromUserId = dbUser.Id,
                                             FromUsername = dbUser.Username,
                                         };
