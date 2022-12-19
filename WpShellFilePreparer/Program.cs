@@ -19,15 +19,18 @@ namespace WpShellFilePreparer
             string[] arguments = Environment.GetCommandLineArgs();
             string resultDirPath;
             string sourceFilename;
+            bool loadDbRecords;
 
-            if (arguments.Length < 3)
+            if (arguments.Length < 4)
             {
                 return;
             }
 
             resultDirPath = arguments[1];
             sourceFilename = arguments[2];
-            bool showOutput = arguments.Length > 3 && arguments[3] == "true";
+            loadDbRecords = arguments.Length > 3 && arguments[3] == "true";
+            bool showOutput = arguments.Length > 4 && arguments[4] == "true";
+
             try
             {
                 FileInfo sourceFileInfo = new(sourceFilename);
@@ -50,7 +53,11 @@ namespace WpShellFilePreparer
 
                 #region checking dublicates and format string
 
-                List<string> dbLogsData = DublicatesController.GetLogsDataByCategory("wp-login");
+                List<string> dbLogsData = new();
+                if (loadDbRecords)
+                {
+                    dbLogsData = DublicatesController.GetLogsDataByCategory("wp-login");
+                }
                 List<string> dublicateList = new();
                 List<string> uniqueList = new();
                 foreach (string row in clearRows)

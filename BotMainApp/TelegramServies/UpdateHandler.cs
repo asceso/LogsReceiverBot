@@ -469,7 +469,7 @@ namespace BotMainApp.TelegramServices
 
                                 manualCheckModel.OriginalFilePath = CopyOriginalTelegramFileToChecksFolder(filename, dbUser, manualCheckModel.Id.ToString(), PathCollection.CpanelAndWhmFolderPath, ".txt");
                                 await CpanelWhmCheckController.PutCheckAsync(manualCheckModel, aggregator);
-                                await Task.Factory.StartNew(async () => await StandartCheckProcessForPort20(dbUser, filename, manualCheckModel, true)).ConfigureAwait(false);
+                                await Task.Factory.StartNew(async () => await StandartCheckProcessForPort20(dbUser, filename, manualCheckModel, true, true)).ConfigureAwait(false);
                                 return;
 
                                 #endregion start async task and create model
@@ -517,7 +517,7 @@ namespace BotMainApp.TelegramServices
 
                                 manualCheckModel.OriginalFilePath = CopyOriginalTelegramFileToChecksFolder(filename, dbUser, manualCheckModel.Id.ToString(), PathCollection.CpanelAndWhmFolderPath, ".txt");
                                 await CpanelWhmCheckController.PutCheckAsync(manualCheckModel, aggregator);
-                                await Task.Factory.StartNew(async () => await StandartCheckProcessForPort20(dbUser, filename, manualCheckModel, false)).ConfigureAwait(false);
+                                await Task.Factory.StartNew(async () => await StandartCheckProcessForPort20(dbUser, filename, manualCheckModel, false, false)).ConfigureAwait(false);
                                 return;
 
                                 #endregion start async task and create model
@@ -636,12 +636,13 @@ namespace BotMainApp.TelegramServices
 
                                             taskSchedule.In(ConstStrings.FoxCheckerThread)
                                                         .ScheduleTask(FoxThreadAsync)
-                                                        .AddParameters(dbUser, checkModelOriginalFilename, checkModel, true)
+                                                        .AddParameters(dbUser, checkModelOriginalFilename, checkModel, true, true)
                                                         .StartNext();
                                             async Task FoxThreadAsync(object[] args) => await StandartCheckProcessForWpLogin((UserModel)args[0],
                                                                                                                              (string)args[1],
                                                                                                                              (WpLoginCheckModel)args[2],
-                                                                                                                             (bool)args[3]);
+                                                                                                                             (bool)args[3],
+                                                                                                                             (bool)args[4]);
                                             checkingModelsList.Add(checkModel.Id);
                                         }
 
@@ -745,12 +746,13 @@ namespace BotMainApp.TelegramServices
 
                                         taskSchedule.In(ConstStrings.FoxCheckerThread)
                                                     .ScheduleTask(FoxThreadAsync)
-                                                    .AddParameters(dbUser, checkModelOriginalFilename, checkModel, true)
+                                                    .AddParameters(dbUser, checkModelOriginalFilename, checkModel, true, true)
                                                     .StartNext();
                                         async Task FoxThreadAsync(object[] args) => await StandartCheckProcessForWpLogin((UserModel)args[0],
                                                                                                                          (string)args[1],
                                                                                                                          (WpLoginCheckModel)args[2],
-                                                                                                                         (bool)args[3]);
+                                                                                                                         (bool)args[3],
+                                                                                                                         (bool)args[4]);
                                         checkingModelsList.Add(checkModel.Id);
                                     }
 
@@ -922,12 +924,13 @@ namespace BotMainApp.TelegramServices
 
                                             taskSchedule.In(ConstStrings.FoxCheckerThread)
                                                         .ScheduleTask(FoxThreadAsync)
-                                                        .AddParameters(dbUser, checkModelOriginalFilename, checkModel, false)
+                                                        .AddParameters(dbUser, checkModelOriginalFilename, checkModel, false, false)
                                                         .StartNext();
                                             async Task FoxThreadAsync(object[] args) => await StandartCheckProcessForWpLogin((UserModel)args[0],
                                                                                                                              (string)args[1],
                                                                                                                              (WpLoginCheckModel)args[2],
-                                                                                                                             (bool)args[3]);
+                                                                                                                             (bool)args[3],
+                                                                                                                             (bool)args[4]);
                                             checkingModelsList.Add(checkModel.Id);
                                         }
 
@@ -1031,12 +1034,13 @@ namespace BotMainApp.TelegramServices
 
                                         taskSchedule.In(ConstStrings.FoxCheckerThread)
                                                     .ScheduleTask(FoxThreadAsync)
-                                                    .AddParameters(dbUser, checkModelOriginalFilename, checkModel, false)
+                                                    .AddParameters(dbUser, checkModelOriginalFilename, checkModel, false, false)
                                                     .StartNext();
                                         async Task FoxThreadAsync(object[] args) => await StandartCheckProcessForWpLogin((UserModel)args[0],
                                                                                                                          (string)args[1],
                                                                                                                          (WpLoginCheckModel)args[2],
-                                                                                                                         (bool)args[3]);
+                                                                                                                         (bool)args[3],
+                                                                                                                         (bool)args[4]);
                                         checkingModelsList.Add(checkModel.Id);
                                     }
 
@@ -1840,7 +1844,7 @@ namespace BotMainApp.TelegramServices
 
         #region cpanel and whm checking
 
-        private async Task StandartCheckProcessForPort20(UserModel dbUser, string filename, CpanelWhmCheckModel checkModel, bool fillDublicates)
+        private async Task StandartCheckProcessForPort20(UserModel dbUser, string filename, CpanelWhmCheckModel checkModel, bool fillDublicates, bool loadDbRecords)
         {
             #region init
 
@@ -1853,7 +1857,7 @@ namespace BotMainApp.TelegramServices
 
             #region check dublicates
 
-            string dublicateData = await Runner.RunDublicateChecker(folderPath, inputFilename, config);
+            string dublicateData = await Runner.RunDublicateChecker(folderPath, inputFilename, config, loadDbRecords);
             if (!dublicateData.TryParseToJObject(out JObject dublicateDataJson) || dublicateDataJson.ContainsKey("Error"))
             {
                 if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)
@@ -2204,7 +2208,7 @@ namespace BotMainApp.TelegramServices
 
         #region wp login checking
 
-        private async Task StandartCheckProcessForWpLogin(UserModel dbUser, string filename, WpLoginCheckModel checkModel, bool fillDublicates)
+        private async Task StandartCheckProcessForWpLogin(UserModel dbUser, string filename, WpLoginCheckModel checkModel, bool fillDublicates, bool loadDbRecords)
         {
             #region init
 
@@ -2219,7 +2223,7 @@ namespace BotMainApp.TelegramServices
 
             #region check dublicates
 
-            string preparedFileData = await Runner.RunWpLoginFilePreparer(folderPath, workingFile);
+            string preparedFileData = await Runner.RunWpLoginFilePreparer(folderPath, workingFile, loadDbRecords);
             if (!preparedFileData.TryParseToJObject(out JObject preparedFileJson) || preparedFileJson.ContainsKey("Error"))
             {
                 if (config.NotifyUserWhenAnyErrorOcuredInCheckingProcess)

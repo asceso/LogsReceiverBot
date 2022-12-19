@@ -18,7 +18,8 @@ namespace BotMainApp.External
         /// <returns>json with path collection</returns>
         public static async Task<string> RunDublicateChecker(string resultDirectoryPath,
                                                              string filename,
-                                                             ConfigModel config)
+                                                             ConfigModel config,
+                                                             bool loadDbRecords)
         {
             ProcessStartInfo psi = new()
             {
@@ -29,7 +30,8 @@ namespace BotMainApp.External
                 $"\"{filename}\" " +
                 $"\"{config.CpanelRegex}\" " +
                 $"\"{config.WhmRegex}\" " +
-                $"\"{config.WebmailRegex}\"",
+                $"\"{config.WebmailRegex}\" " +
+                $"\"{loadDbRecords.ToString().ToLower()}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -318,7 +320,8 @@ namespace BotMainApp.External
         /// <param name="filename">file for checking</param>
         /// <returns>json with dublicate and unique</returns>
         public static async Task<string> RunWpLoginFilePreparer(string resultDirectoryPath,
-                                                                string filename)
+                                                                string filename,
+                                                                bool loadDbRecords)
         {
             ProcessStartInfo psi = new()
             {
@@ -326,7 +329,8 @@ namespace BotMainApp.External
                 FileName = "WpShellFilePreparer.exe",
                 Arguments =
                 $"\"{resultDirectoryPath}\" " +
-                $"\"{filename}\"",
+                $"\"{filename}\" " +
+                $"\"{loadDbRecords.ToString().ToLower()}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,

@@ -24,8 +24,9 @@ namespace DublicateRemoveRunner
             string cpanelRegexFormat;
             string whmRegexFormat;
             string webmailRegexFormat;
+            bool loadDbRecords;
 
-            if (arguments.Length < 6)
+            if (arguments.Length < 7)
             {
                 return;
             }
@@ -35,7 +36,8 @@ namespace DublicateRemoveRunner
             cpanelRegexFormat = arguments[3];
             whmRegexFormat = arguments[4];
             webmailRegexFormat = arguments[5];
-            bool showOutput = arguments.Length > 6 && arguments[6] == "true";
+            loadDbRecords = arguments.Length > 6 && arguments[6] == "true";
+            bool showOutput = arguments.Length > 7 && arguments[7] == "true";
 
             try
             {
@@ -53,7 +55,11 @@ namespace DublicateRemoveRunner
                 Regex webmailRegex = new(webmailRegexFormat);
                 using StreamReader reader = new(filename);
 
-                List<string> dbLogsData = DublicatesController.GetLogsData();
+                List<string> dbLogsData = new();
+                if (loadDbRecords)
+                {
+                    dbLogsData = DublicatesController.GetLogsData();
+                }
                 List<string> dublicateList = new();
                 List<string> cpanelList = new();
                 List<string> whmList = new();
