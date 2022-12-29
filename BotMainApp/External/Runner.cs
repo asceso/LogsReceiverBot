@@ -21,29 +21,36 @@ namespace BotMainApp.External
                                                              ConfigModel config,
                                                              bool loadDbRecords)
         {
-            ProcessStartInfo psi = new()
+            try
             {
-                WorkingDirectory = Environment.CurrentDirectory,
-                FileName = "DublicateRemoveRunner.exe",
-                Arguments =
-                $"\"{resultDirectoryPath}\" " +
-                $"\"{filename}\" " +
-                $"\"{config.CpanelRegex}\" " +
-                $"\"{config.WhmRegex}\" " +
-                $"\"{config.WebmailRegex}\" " +
-                $"\"{loadDbRecords.ToString().ToLower()}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            Process process = Process.Start(psi);
-            await process.WaitForExitAsync();
-            StreamReader reader = process.StandardOutput;
-            string jsonResult = await reader.ReadToEndAsync();
-            reader.Close();
-            process.Close();
-            return jsonResult;
+                ProcessStartInfo psi = new()
+                {
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    FileName = "DublicateRemoveRunner.exe",
+                    Arguments =
+                    $"\"{resultDirectoryPath}\" " +
+                    $"\"{filename}\" " +
+                    $"\"{config.CpanelRegex}\" " +
+                    $"\"{config.WhmRegex}\" " +
+                    $"\"{config.WebmailRegex}\" " +
+                    $"\"{loadDbRecords.ToString().ToLower()}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                Process process = Process.Start(psi);
+                await process.WaitForExitAsync();
+                StreamReader reader = process.StandardOutput;
+                string jsonResult = await reader.ReadToEndAsync();
+                reader.Close();
+                process.Close();
+                return jsonResult;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -59,28 +66,35 @@ namespace BotMainApp.External
                                                           string whmFilepath,
                                                           int maxForThread)
         {
-            ProcessStartInfo psi = new()
+            try
             {
-                WorkingDirectory = Environment.CurrentDirectory,
-                FileName = "CheckerRunner.exe",
-                Arguments =
-                $"\"{folderPath}\" " +
-                $"\"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)}\" " +
-                $"\"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)}\" " +
-                $"\"{maxForThread}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            Process process = Process.Start(psi);
-            var processId = process.Id;
-            await process.WaitForExitAsync();
-            StreamReader reader = process.StandardOutput;
-            string jsonResult = await reader.ReadToEndAsync();
-            reader.Close();
-            process.Close();
-            return jsonResult;
+                ProcessStartInfo psi = new()
+                {
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    FileName = "CheckerRunner.exe",
+                    Arguments =
+                        $"\"{folderPath}\" " +
+                        $"\"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)}\" " +
+                        $"\"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)}\" " +
+                        $"\"{maxForThread}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                Process process = Process.Start(psi);
+                var processId = process.Id;
+                await process.WaitForExitAsync();
+                StreamReader reader = process.StandardOutput;
+                string jsonResult = await reader.ReadToEndAsync();
+                reader.Close();
+                process.Close();
+                return jsonResult;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -96,27 +110,34 @@ namespace BotMainApp.External
                                                              string folderPath,
                                                              int maxForThread)
         {
-            ProcessStartInfo psi = new()
+            try
             {
-                WorkingDirectory = Environment.CurrentDirectory,
-                FileName = "CpanelChecker.exe",
-                Arguments =
-                $"\"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)}\" " +
-                $"\"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)}\" " +
-                $"\"{folderPath}\" " +
-                $"\"{maxForThread}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            Process process = Process.Start(psi);
-            await process.WaitForExitAsync();
-            StreamReader reader = process.StandardOutput;
-            string jsonResult = await reader.ReadToEndAsync();
-            reader.Close();
-            process.Close();
-            return jsonResult;
+                ProcessStartInfo psi = new()
+                {
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    FileName = "CpanelChecker.exe",
+                    Arguments =
+                   $"\"{(cpanelFilepath.IsNullOrEmptyString() ? "none" : cpanelFilepath)}\" " +
+                   $"\"{(whmFilepath.IsNullOrEmptyString() ? "none" : whmFilepath)}\" " +
+                   $"\"{folderPath}\" " +
+                   $"\"{maxForThread}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                Process process = Process.Start(psi);
+                await process.WaitForExitAsync();
+                StreamReader reader = process.StandardOutput;
+                string jsonResult = await reader.ReadToEndAsync();
+                reader.Close();
+                process.Close();
+                return jsonResult;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -134,29 +155,36 @@ namespace BotMainApp.External
                                                             string wpLoginFilePath,
                                                             bool fillRecords)
         {
-            ProcessStartInfo psi = new()
+            try
             {
-                WorkingDirectory = Environment.CurrentDirectory,
-                FileName = "DatabaseFillerApp.exe",
-                Arguments =
-                $"\"{userId}\" " +
-                $"\"{(webmailFilePath.IsNullOrEmptyString() ? "none" : webmailFilePath)}\" " +
-                $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
-                $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\" " +
-                $"\"{(wpLoginFilePath.IsNullOrEmptyString() ? "none" : wpLoginFilePath)}\" " +
-                $"\"{fillRecords.ToString().ToLower()}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            Process process = Process.Start(psi);
-            await process.WaitForExitAsync();
-            StreamReader reader = process.StandardOutput;
-            string jsonResult = await reader.ReadToEndAsync();
-            reader.Close();
-            process.Close();
-            return jsonResult;
+                ProcessStartInfo psi = new()
+                {
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    FileName = "DatabaseFillerApp.exe",
+                    Arguments =
+                      $"\"{userId}\" " +
+                      $"\"{(webmailFilePath.IsNullOrEmptyString() ? "none" : webmailFilePath)}\" " +
+                      $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
+                      $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\" " +
+                      $"\"{(wpLoginFilePath.IsNullOrEmptyString() ? "none" : wpLoginFilePath)}\" " +
+                      $"\"{fillRecords.ToString().ToLower()}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                Process process = Process.Start(psi);
+                await process.WaitForExitAsync();
+                StreamReader reader = process.StandardOutput;
+                string jsonResult = await reader.ReadToEndAsync();
+                reader.Close();
+                process.Close();
+                return jsonResult;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -174,30 +202,37 @@ namespace BotMainApp.External
                                                         string smtpsFilePath,
                                                         string loggedWordpressFilePath)
         {
-            ProcessStartInfo psi = new()
+            try
             {
-                WorkingDirectory = Environment.CurrentDirectory,
-                FileName = "DatabaseValidFillerApp.exe",
-                Arguments =
-                $"\"{userId}\" " +
-                $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
-                $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\" " +
-                $"\"{(shellsFilePath.IsNullOrEmptyString() ? "none" : shellsFilePath)}\" " +
-                $"\"{(cpanelsResetedFilePath.IsNullOrEmptyString() ? "none" : cpanelsResetedFilePath)}\" " +
-                $"\"{(smtpsFilePath.IsNullOrEmptyString() ? "none" : smtpsFilePath)}\" " +
-                $"\"{(loggedWordpressFilePath.IsNullOrEmptyString() ? "none" : loggedWordpressFilePath)}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            Process process = Process.Start(psi);
-            await process.WaitForExitAsync();
-            StreamReader reader = process.StandardOutput;
-            string jsonResult = await reader.ReadToEndAsync();
-            reader.Close();
-            process.Close();
-            return jsonResult;
+                ProcessStartInfo psi = new()
+                {
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    FileName = "DatabaseValidFillerApp.exe",
+                    Arguments =
+                      $"\"{userId}\" " +
+                      $"\"{(cpanelFilePath.IsNullOrEmptyString() ? "none" : cpanelFilePath)}\" " +
+                      $"\"{(whmFilePath.IsNullOrEmptyString() ? "none" : whmFilePath)}\" " +
+                      $"\"{(shellsFilePath.IsNullOrEmptyString() ? "none" : shellsFilePath)}\" " +
+                      $"\"{(cpanelsResetedFilePath.IsNullOrEmptyString() ? "none" : cpanelsResetedFilePath)}\" " +
+                      $"\"{(smtpsFilePath.IsNullOrEmptyString() ? "none" : smtpsFilePath)}\" " +
+                      $"\"{(loggedWordpressFilePath.IsNullOrEmptyString() ? "none" : loggedWordpressFilePath)}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                Process process = Process.Start(psi);
+                await process.WaitForExitAsync();
+                StreamReader reader = process.StandardOutput;
+                string jsonResult = await reader.ReadToEndAsync();
+                reader.Close();
+                process.Close();
+                return jsonResult;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -289,28 +324,35 @@ namespace BotMainApp.External
                                                               string directoryToSaveFile,
                                                               string saveFilename)
         {
-            ProcessStartInfo psi = new()
+            try
             {
-                WorkingDirectory = Environment.CurrentDirectory,
-                FileName = "DropMeLinkChecker.exe",
-                Arguments =
-                $"\"{(fileLink.IsNullOrEmptyString() ? "none" : fileLink)}\" " +
-                $"\"{checkFileExtensions.ToString().ToLower()}\" " +
-                $"\"{(directoryToSaveFile.IsNullOrEmptyString() ? "none" : directoryToSaveFile)}\" " +
-                $"\"{(saveFilename.IsNullOrEmptyString() ? "none" : saveFilename)}\" " +
-                $"\"false\" ",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            Process process = Process.Start(psi);
-            await process.WaitForExitAsync();
-            StreamReader reader = process.StandardOutput;
-            string jsonResult = await reader.ReadToEndAsync();
-            reader.Close();
-            process.Close();
-            return jsonResult;
+                ProcessStartInfo psi = new()
+                {
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    FileName = "DropMeLinkChecker.exe",
+                    Arguments =
+                   $"\"{(fileLink.IsNullOrEmptyString() ? "none" : fileLink)}\" " +
+                   $"\"{checkFileExtensions.ToString().ToLower()}\" " +
+                   $"\"{(directoryToSaveFile.IsNullOrEmptyString() ? "none" : directoryToSaveFile)}\" " +
+                   $"\"{(saveFilename.IsNullOrEmptyString() ? "none" : saveFilename)}\" " +
+                   $"\"false\" ",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                Process process = Process.Start(psi);
+                await process.WaitForExitAsync();
+                StreamReader reader = process.StandardOutput;
+                string jsonResult = await reader.ReadToEndAsync();
+                reader.Close();
+                process.Close();
+                return jsonResult;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -323,26 +365,33 @@ namespace BotMainApp.External
                                                                 string filename,
                                                                 bool loadDbRecords)
         {
-            ProcessStartInfo psi = new()
+            try
             {
-                WorkingDirectory = Environment.CurrentDirectory,
-                FileName = "WpShellFilePreparer.exe",
-                Arguments =
-                $"\"{resultDirectoryPath}\" " +
-                $"\"{filename}\" " +
-                $"\"{loadDbRecords.ToString().ToLower()}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            Process process = Process.Start(psi);
-            await process.WaitForExitAsync();
-            StreamReader reader = process.StandardOutput;
-            string jsonResult = await reader.ReadToEndAsync();
-            reader.Close();
-            process.Close();
-            return jsonResult;
+                ProcessStartInfo psi = new()
+                {
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    FileName = "WpShellFilePreparer.exe",
+                    Arguments =
+                    $"\"{resultDirectoryPath}\" " +
+                    $"\"{filename}\" " +
+                    $"\"{loadDbRecords.ToString().ToLower()}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                Process process = Process.Start(psi);
+                await process.WaitForExitAsync();
+                StreamReader reader = process.StandardOutput;
+                string jsonResult = await reader.ReadToEndAsync();
+                reader.Close();
+                process.Close();
+                return jsonResult;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -355,23 +404,30 @@ namespace BotMainApp.External
                                                        string workingFilePath,
                                                        int maxForThread)
         {
-            ProcessStartInfo psi = new()
+            try
             {
-                WorkingDirectory = Environment.CurrentDirectory,
-                FileName = "FoxCheckerRunner.exe",
-                Arguments =
-                $"\"{folderPath}\" " +
-                $"\"{(workingFilePath.IsNullOrEmptyString() ? "none" : workingFilePath)}\" " +
-                $"\"{maxForThread}\""
-            };
-            Process process = Process.Start(psi);
-            var processId = process.Id;
-            await process.WaitForExitAsync();
-            StreamReader reader = new(folderPath + "/answer.json");
-            string jsonResult = await reader.ReadToEndAsync();
-            reader.Close();
-            process.Close();
-            return jsonResult;
+                ProcessStartInfo psi = new()
+                {
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    FileName = "FoxCheckerRunner.exe",
+                    Arguments =
+                     $"\"{folderPath}\" " +
+                     $"\"{(workingFilePath.IsNullOrEmptyString() ? "none" : workingFilePath)}\" " +
+                     $"\"{maxForThread}\""
+                };
+                Process process = Process.Start(psi);
+                var processId = process.Id;
+                await process.WaitForExitAsync();
+                StreamReader reader = new(folderPath + "/answer.json");
+                string jsonResult = await reader.ReadToEndAsync();
+                reader.Close();
+                process.Close();
+                return jsonResult;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
     }
 }

@@ -39,5 +39,13 @@ namespace BotMainApp.Views
         {
             DataScroller.ScrollToHorizontalOffset(e.HorizontalOffset);
         }
+
+        private void FilterTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (DataContext is UsersViewModel vm)
+            {
+                vm.DataUsersView.Refresh();
+            }
+        }
     }
 }

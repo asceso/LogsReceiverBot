@@ -35,6 +35,7 @@ namespace Models.Database
         private string whmBadFilePath;
         private string originalFilePath;
         private bool isManualCheckEnd;
+        private bool isDublicatesFilledToDb;
 
         [Column("id")]
         public int Id { get => id; set => SetProperty(ref id, value); }
@@ -117,8 +118,14 @@ namespace Models.Database
         [Column("is_manual_check_end")]
         public bool IsManualCheckEnd { get => isManualCheckEnd; set => SetProperty(ref isManualCheckEnd, value); }
 
+        [Column("is_dublicates_filled_to_db")]
+        public bool IsDublicatesFilledToDb { get => isDublicatesFilledToDb; set => SetProperty(ref isDublicatesFilledToDb, value); }
+
         [NotMapped]
         public DelegateCommand<string> OnCopyCommand { get; set; }
+
+        [NotMapped]
+        public DelegateCommand<CpanelWhmCheckModel> ResendToSoftManualCommand { get; set; }
 
         [NotMapped]
         public DelegateCommand<CpanelWhmCheckModel> OpenManualCheckCommand { get; set; }

@@ -2,7 +2,6 @@
 using Extensions;
 using Models.Database;
 using Newtonsoft.Json;
-using System.Text.RegularExpressions;
 
 namespace DatabaseFillerApp
 {

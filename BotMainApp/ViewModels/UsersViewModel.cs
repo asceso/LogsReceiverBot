@@ -15,10 +15,12 @@ using Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 
 namespace BotMainApp.ViewModels
 {
@@ -38,14 +40,41 @@ namespace BotMainApp.ViewModels
         private ObservableCollection<UserModel> dataUsers;
         private bool isHasSelectedDataUsers;
         private bool isBannedUsersShow;
+        private string userFilter;
 
         public bool IsLoading { get => isLoading; set => SetProperty(ref isLoading, value); }
         public int NotAcceptedUsersCount { get => notAcceptedUsersCount; set => SetProperty(ref notAcceptedUsersCount, value); }
         public int DataUsersCount { get => dataUsersCount; set => SetProperty(ref dataUsersCount, value); }
         public ObservableCollection<UserModel> NotAcceptedUsers { get => notAcceptedUsers; set => SetProperty(ref notAcceptedUsers, value); }
         public ObservableCollection<UserModel> DataUsers { get => dataUsers; set => SetProperty(ref dataUsers, value); }
+
+        public ICollectionView DataUsersView
+        {
+            get
+            {
+                var source = CollectionViewSource.GetDefaultView(DataUsers);
+                source.Filter = user => OnUsersFilter((UserModel)user);
+                DataUsersCount = source.Cast<object>().Count();
+                return source;
+            }
+        }
+
+        private bool OnUsersFilter(UserModel user)
+        {
+            if (UserFilter.IsNullOrEmptyString())
+            {
+                return true;
+            }
+            else
+            {
+                return user.Id.ToString().StartsWith(UserFilter) || user.Username.Contains(UserFilter);
+            }
+        }
+
         public bool IsHasSelectedDataUsers { get => isHasSelectedDataUsers; set => SetProperty(ref isHasSelectedDataUsers, value); }
         public bool IsBannedUsersShow { get => isBannedUsersShow; set => SetProperty(ref isBannedUsersShow, value); }
+
+        public string UserFilter { get => userFilter; set => SetProperty(ref userFilter, value); }
 
         public DelegateCommand RefreshCommand { get; set; }
         public DelegateCommand SelectAllUsersCommand { get; set; }
@@ -62,7 +91,6 @@ namespace BotMainApp.ViewModels
             DataUsers = new();
             IsBannedUsersShow = true;
             NotAcceptedUsers.CollectionChanged += (s, e) => UpdateNotAcceptedUsersCounter();
-            DataUsers.CollectionChanged += (s, e) => UpdateDataUsersCounter();
 
             this.memory = memory;
             this.aggregator = aggregator;
@@ -161,6 +189,7 @@ namespace BotMainApp.ViewModels
                 foreach (UserModel user in DataUsers) InitUserCommands(user);
                 RaisePropertyChanged(nameof(NotAcceptedUsers));
                 RaisePropertyChanged(nameof(DataUsers));
+                DataUsersView.Refresh();
             }
             finally
             {
@@ -320,8 +349,6 @@ namespace BotMainApp.ViewModels
         }
 
         private void UpdateNotAcceptedUsersCounter() => NotAcceptedUsersCount = NotAcceptedUsers.Count;
-
-        private void UpdateDataUsersCounter() => DataUsersCount = DataUsers.Count;
 
         public void UpdateHasSelectedDataUsers() => IsHasSelectedDataUsers = DataUsers.Any(u => u.IsSelected);
 

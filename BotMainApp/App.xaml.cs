@@ -3,6 +3,7 @@ using BotMainApp.Views;
 using Prism.Ioc;
 using Prism.Mvvm;
 using Prism.Unity;
+using Services;
 using Services.Implementation;
 using Services.Interfaces;
 using System;
@@ -39,7 +40,15 @@ namespace BotMainApp
 
         protected override Window CreateShell()
         {
-            App.Current.DispatcherUnhandledException += CurrentDispatcherUnhandledException;
+            string[] args = Environment.GetCommandLineArgs();
+            if (args.Length > 1 && args[1] == "useOwnConfig=true")
+            {
+                PathCollection.ConfigPath = PathCollection.ConfigPath.Replace("config.json", "config_my.json");
+                var manager = new Notification.Wpf.NotificationManager();
+                manager.Show("используется конфиг config_my.json");
+                manager = null;
+            }
+            Current.DispatcherUnhandledException += CurrentDispatcherUnhandledException;
             return Container.Resolve<MainView>();
         }
 

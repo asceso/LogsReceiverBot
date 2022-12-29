@@ -104,6 +104,12 @@
         /// <param name="taskId">ИД задачи</param>
         /// <returns>Ничего</returns>
         public Task WaitForTaskFinish(Guid taskId);
+
+        /// <summary>
+        /// Проверить есть ли запланированные ранее задачи
+        /// </summary>
+        /// <returns></returns>
+        public bool HasAnyPlannedTask();
     }
 
     #endregion thread interface

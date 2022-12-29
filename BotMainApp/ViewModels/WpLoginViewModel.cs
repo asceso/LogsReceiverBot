@@ -106,6 +106,7 @@ namespace BotMainApp.ViewModels
             model.OpenManualCheckCommand = new DelegateCommand<WpLoginCheckModel>(OnOpenManualCheck);
             model.OpenOriginalFileCommand = new DelegateCommand<WpLoginCheckModel>(OnOpenOriginalFile);
             model.DeleteCheckCommand = new DelegateCommand<WpLoginCheckModel>(OnDeleteManualCheck);
+            model.ResendToSoftManualCommand = new DelegateCommand<WpLoginCheckModel>(OnResendToSoftCommand);
         }
 
         private async void OnOpenManualCheck(WpLoginCheckModel model)
@@ -192,6 +193,26 @@ namespace BotMainApp.ViewModels
             {
                 Runner.RunTextFileInNotepad(config.NotepadPath, model.OriginalFilePath);
             }
+        }
+
+        private async void OnResendToSoftCommand(WpLoginCheckModel model)
+        {
+            ITaskScheduleService taskSchedule = memory.GetItem<ITaskScheduleService>("TaskScheduler");
+            UserModel modelUser = await UsersController.GetUserByIdAsync(model.FromUserId);
+
+            model.Status = taskSchedule.In(ConstStrings.FoxCheckerThread).HasAnyPlannedTask() ? CheckStatus.ManualCheckStatus.WaitInQueue : CheckStatus.ManualCheckStatus.Created;
+            await WpLoginCheckController.PutCheckAsync(model, aggregator);
+
+            taskSchedule.In(ConstStrings.FoxCheckerThread)
+                        .ScheduleTask(FoxThreadAsync)
+                        .AddParameters(modelUser, model.OriginalFilePath, model, !model.IsDublicatesFilledToDb, !model.IsDublicatesFilledToDb, true)
+                        .StartNext();
+            async Task FoxThreadAsync(object[] args) => await handler.StandartCheckProcessForWpLogin((UserModel)args[0],
+                                                                                                     (string)args[1],
+                                                                                                     (WpLoginCheckModel)args[2],
+                                                                                                     (bool)args[3],
+                                                                                                     (bool)args[4],
+                                                                                                     (bool)args[5]);
         }
 
         private void UpdateModelsCount() => ModelsCount = Models.Count;

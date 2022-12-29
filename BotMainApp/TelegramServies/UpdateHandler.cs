@@ -71,6 +71,30 @@ namespace BotMainApp.TelegramServices
             operations = memory.GetItem<ObservableCollection<OperationModel>>("Operations");
             config = memory.GetItem<ConfigModel>("Config");
             aggregator.GetEvent<BotRestartEvent>().Subscribe(OnRestartBot);
+            StartNotCompletedTasks();
+        }
+
+        private async void StartNotCompletedTasks()
+        {
+            List<WpLoginCheckModel> notCompletedWpLoginChecks = (await WpLoginCheckController.GetChecksAsync()).Where(s => s.Status != ManualCheckStatus.End && s.Status != ManualCheckStatus.EndNoValid).ToList();
+            foreach (WpLoginCheckModel model in notCompletedWpLoginChecks)
+            {
+                UserModel modelUser = await UsersController.GetUserByIdAsync(model.FromUserId);
+
+                model.Status = taskSchedule.In(ConstStrings.FoxCheckerThread).HasAnyPlannedTask() ? ManualCheckStatus.WaitInQueue : ManualCheckStatus.Created;
+                await WpLoginCheckController.PutCheckAsync(model, aggregator);
+
+                taskSchedule.In(ConstStrings.FoxCheckerThread)
+                            .ScheduleTask(FoxThreadAsync)
+                            .AddParameters(modelUser, model.OriginalFilePath, model, !model.IsDublicatesFilledToDb, !model.IsDublicatesFilledToDb, true)
+                            .StartNext();
+                async Task FoxThreadAsync(object[] args) => await StandartCheckProcessForWpLogin((UserModel)args[0],
+                                                                                                 (string)args[1],
+                                                                                                 (WpLoginCheckModel)args[2],
+                                                                                                 (bool)args[3],
+                                                                                                 (bool)args[4],
+                                                                                                 (bool)args[5]);
+            }
         }
 
         private void OnRestartBot() => botClient = memory.GetItem<TelegramBotClient>("BotClient");
@@ -81,206 +105,212 @@ namespace BotMainApp.TelegramServices
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            #region catch data
-
-            TempTelegram temp = new(update);
-            if (userRequests.Count(ur => ur.Item2 == temp.Uid) >= config.RequestsPerMinuteAutoBan)
+            try
             {
-                await UsersController.PostUserAsync(new()
-                {
-                    Id = temp.Uid,
-                    Firstname = temp.Firstname,
-                    Lastname = temp.Lastname,
-                    Username = temp.Username,
-                    IsBanned = true,
-                    IsAccepted = false,
-                    RegistrationDate = DateTime.Now,
-                    Language = temp.Language,
-                    BanReason = "request per minute auto ban"
-                }, aggregator);
-                return;
-            }
-            Thread requestsThread = new(new ThreadStart(async () =>
-            {
-                Tuple<Guid, long> reqTuple = new(Guid.NewGuid(), temp.Uid);
-                userRequests.Add(reqTuple);
-                await Task.Delay(TimeSpan.FromMinutes(1));
-                userRequests.Remove(reqTuple);
-            }));
-            requestsThread.Start();
-            temp.Operation = operations.FirstOrDefault(o => o.UserId == temp.Uid);
-            UserModel dbUser = await UsersController.GetUserByIdAsync(temp.Uid);
-            if (temp.Uid == 0)
-            {
-                return;
-            }
+                #region catch data
 
-            #endregion catch data
-
-            #region first visit user
-
-            if (dbUser == null)
-            {
-                if (userCaptchas.ContainsKey(temp.Uid) && userCaptchasAttempts.ContainsKey(temp.Uid))
+                TempTelegram temp = new(update);
+                if (userRequests.Count(ur => ur.Item2 == temp.Uid) >= config.RequestsPerMinuteAutoBan)
                 {
-                    if (userCaptchas[temp.Uid] != temp.Message)
-                    {
-                        if (++userCaptchasAttempts[temp.Uid] >= config.CaptchaAttemptNum)
-                        {
-                            await UsersController.PostUserAsync(new()
-                            {
-                                Id = temp.Uid,
-                                Firstname = temp.Firstname,
-                                Lastname = temp.Lastname,
-                                Username = temp.Username,
-                                IsBanned = true,
-                                IsAccepted = false,
-                                RegistrationDate = DateTime.Now,
-                                Language = temp.Language,
-                                BanReason = "captcha wrong code max attempts"
-                            }, aggregator);
-                            userCaptchas.Remove(temp.Uid);
-                            userCaptchasAttempts.Remove(temp.Uid);
-                            return;
-                        }
-                        else
-                        {
-                            await botClient.SendTextMessageAsync(
-                                temp.Uid,
-                                locales.GetByKey("EnterCaptchaWrongCode",
-                                temp.Language),
-                                replyMarkup: emptyKeyboard
-                                );
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        userCaptchas.Remove(temp.Uid);
-                        userCaptchasAttempts.Remove(temp.Uid);
-                    }
-                }
-                else
-                {
-                    Tuple<string, string> captchaData = captcha.CreateCaptchaForUser();
-                    userCaptchas.Add(temp.Uid, captchaData.Item1);
-                    userCaptchasAttempts.Add(temp.Uid, 0);
-                    FileStream fs = new(captchaData.Item2, FileMode.Open);
-                    await botClient.SendPhotoAsync(
-                        temp.Uid,
-                        new Telegram.Bot.Types.InputFiles.InputOnlineFile(fs),
-                        locales.GetByKey("EnterCaptcha",
-                        temp.Language),
-                        replyMarkup: emptyKeyboard
-                        );
-                    fs.Close();
-                    if (System.IO.File.Exists(captchaData.Item2))
-                    {
-                        System.IO.File.Delete(captchaData.Item2);
-                    }
-                    Thread deleteCaptchaThread = new(new ThreadStart(async () =>
-                    {
-                        await Task.Delay(TimeSpan.FromMinutes(config.CaptchaTimer));
-                        if (userCaptchas.ContainsKey(temp.Uid))
-                        {
-                            userCaptchas.Remove(temp.Uid);
-                        }
-                        if (userCaptchasAttempts.ContainsKey(temp.Uid))
-                        {
-                            userCaptchasAttempts.Remove(temp.Uid);
-                        }
-                    }));
-                    deleteCaptchaThread.Start();
-                    return;
-                }
-
-                if (temp.Username.IsNullOrEmptyString())
-                {
-                    if (await UsersController.PostUserAsync(new()
-                    {
-                        Id = temp.Uid,
-                        Firstname = temp.Firstname,
-                        Lastname = temp.Lastname,
-                        Username = "",
-                        IsBanned = false,
-                        IsAccepted = false,
-                        RegistrationDate = DateTime.Now,
-                        Language = temp.Language
-                    }, aggregator))
-                    {
-                        await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("WelcomeNoName", temp.Language), replyMarkup: emptyKeyboard);
-                        operations.Add(new(temp.Uid, OperationType.NewUserWithoutNickname));
-                        return;
-                    }
-                    else
-                    {
-                        await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("DbError", temp.Language), replyMarkup: emptyKeyboard);
-                        return;
-                    }
-                }
-                else
-                {
-                    if (await UsersController.PostUserAsync(new()
+                    await UsersController.PostUserAsync(new()
                     {
                         Id = temp.Uid,
                         Firstname = temp.Firstname,
                         Lastname = temp.Lastname,
                         Username = temp.Username,
-                        IsBanned = false,
+                        IsBanned = true,
                         IsAccepted = false,
                         RegistrationDate = DateTime.Now,
-                        Language = temp.Language
-                    }, aggregator))
+                        Language = temp.Language,
+                        BanReason = "request per minute auto ban"
+                    }, aggregator);
+                    return;
+                }
+                Thread requestsThread = new(new ThreadStart(async () =>
+                {
+                    Tuple<Guid, long> reqTuple = new(Guid.NewGuid(), temp.Uid);
+                    userRequests.Add(reqTuple);
+                    await Task.Delay(TimeSpan.FromMinutes(1));
+                    userRequests.Remove(reqTuple);
+                }));
+                requestsThread.Start();
+                temp.Operation = operations.FirstOrDefault(o => o.UserId == temp.Uid);
+                UserModel dbUser = await UsersController.GetUserByIdAsync(temp.Uid);
+                if (temp.Uid == 0)
+                {
+                    return;
+                }
+
+                #endregion catch data
+
+                #region first visit user
+
+                if (dbUser == null)
+                {
+                    if (userCaptchas.ContainsKey(temp.Uid) && userCaptchasAttempts.ContainsKey(temp.Uid))
                     {
-                        await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("QuestionForumInfo", temp.Language), replyMarkup: keyboards.GetByLocale("ForumsInfoAnswers", temp.Language, false));
-                        operations.Add(new(temp.Uid, OperationType.WaitUserForumInfo));
-                        return;
+                        if (userCaptchas[temp.Uid] != temp.Message)
+                        {
+                            if (++userCaptchasAttempts[temp.Uid] >= config.CaptchaAttemptNum)
+                            {
+                                await UsersController.PostUserAsync(new()
+                                {
+                                    Id = temp.Uid,
+                                    Firstname = temp.Firstname,
+                                    Lastname = temp.Lastname,
+                                    Username = temp.Username,
+                                    IsBanned = true,
+                                    IsAccepted = false,
+                                    RegistrationDate = DateTime.Now,
+                                    Language = temp.Language,
+                                    BanReason = "captcha wrong code max attempts"
+                                }, aggregator);
+                                userCaptchas.Remove(temp.Uid);
+                                userCaptchasAttempts.Remove(temp.Uid);
+                                return;
+                            }
+                            else
+                            {
+                                await botClient.SendTextMessageAsync(
+                                    temp.Uid,
+                                    locales.GetByKey("EnterCaptchaWrongCode",
+                                    temp.Language),
+                                    replyMarkup: emptyKeyboard
+                                    );
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            userCaptchas.Remove(temp.Uid);
+                            userCaptchasAttempts.Remove(temp.Uid);
+                        }
                     }
                     else
                     {
-                        await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("DbError", temp.Language), replyMarkup: emptyKeyboard);
+                        Tuple<string, string> captchaData = captcha.CreateCaptchaForUser();
+                        userCaptchas.Add(temp.Uid, captchaData.Item1);
+                        userCaptchasAttempts.Add(temp.Uid, 0);
+                        FileStream fs = new(captchaData.Item2, FileMode.Open);
+                        await botClient.SendPhotoAsync(
+                            temp.Uid,
+                            new Telegram.Bot.Types.InputFiles.InputOnlineFile(fs),
+                            locales.GetByKey("EnterCaptcha",
+                            temp.Language),
+                            replyMarkup: emptyKeyboard
+                            );
+                        fs.Close();
+                        if (System.IO.File.Exists(captchaData.Item2))
+                        {
+                            System.IO.File.Delete(captchaData.Item2);
+                        }
+                        Thread deleteCaptchaThread = new(new ThreadStart(async () =>
+                        {
+                            await Task.Delay(TimeSpan.FromMinutes(config.CaptchaTimer));
+                            if (userCaptchas.ContainsKey(temp.Uid))
+                            {
+                                userCaptchas.Remove(temp.Uid);
+                            }
+                            if (userCaptchasAttempts.ContainsKey(temp.Uid))
+                            {
+                                userCaptchasAttempts.Remove(temp.Uid);
+                            }
+                        }));
+                        deleteCaptchaThread.Start();
                         return;
                     }
+
+                    if (temp.Username.IsNullOrEmptyString())
+                    {
+                        if (await UsersController.PostUserAsync(new()
+                        {
+                            Id = temp.Uid,
+                            Firstname = temp.Firstname,
+                            Lastname = temp.Lastname,
+                            Username = "",
+                            IsBanned = false,
+                            IsAccepted = false,
+                            RegistrationDate = DateTime.Now,
+                            Language = temp.Language
+                        }, aggregator))
+                        {
+                            await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("WelcomeNoName", temp.Language), replyMarkup: emptyKeyboard);
+                            operations.Add(new(temp.Uid, OperationType.NewUserWithoutNickname));
+                            return;
+                        }
+                        else
+                        {
+                            await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("DbError", temp.Language), replyMarkup: emptyKeyboard);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (await UsersController.PostUserAsync(new()
+                        {
+                            Id = temp.Uid,
+                            Firstname = temp.Firstname,
+                            Lastname = temp.Lastname,
+                            Username = temp.Username,
+                            IsBanned = false,
+                            IsAccepted = false,
+                            RegistrationDate = DateTime.Now,
+                            Language = temp.Language
+                        }, aggregator))
+                        {
+                            await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("QuestionForumInfo", temp.Language), replyMarkup: keyboards.GetByLocale("ForumsInfoAnswers", temp.Language, false));
+                            operations.Add(new(temp.Uid, OperationType.WaitUserForumInfo));
+                            return;
+                        }
+                        else
+                        {
+                            await botClient.SendTextMessageAsync(temp.Uid, locales.GetByKey("DbError", temp.Language), replyMarkup: emptyKeyboard);
+                            return;
+                        }
+                    }
                 }
-            }
-            if (temp.Operation != null &&
-                (temp.Operation.OperationType == OperationType.NewUserWithoutNickname ||
-                 temp.Operation.OperationType == OperationType.WaitUserForumInfo ||
-                 temp.Operation.OperationType == OperationType.WaitUserLogsOriginInfo))
-            {
-                await CheckUserOperationAsync(dbUser, temp, false).ConfigureAwait(false);
+                if (temp.Operation != null &&
+                    (temp.Operation.OperationType == OperationType.NewUserWithoutNickname ||
+                     temp.Operation.OperationType == OperationType.WaitUserForumInfo ||
+                     temp.Operation.OperationType == OperationType.WaitUserLogsOriginInfo))
+                {
+                    await CheckUserOperationAsync(dbUser, temp, false).ConfigureAwait(false);
+                    return;
+                }
+                if (dbUser.IsBanned)
+                {
+                    return;
+                }
+                if (!dbUser.IsAccepted)
+                {
+                    await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("NotAccepted", dbUser.Language), replyMarkup: emptyKeyboard);
+                    return;
+                }
+
+                bool payoutEnabled = dbUser.Balance >= config.MinBalanceForPayment;
+
+                #endregion first visit user
+
+                #region operations
+
+                if (temp.Operation != null)
+                {
+                    await CheckUserOperationAsync(dbUser, temp, payoutEnabled).ConfigureAwait(false);
+                    return;
+                }
+
+                #endregion operations
+
+                #region messages
+
+                await CheckUserMessageAsync(dbUser, temp, payoutEnabled).ConfigureAwait(false);
                 return;
+
+                #endregion messages
             }
-            if (dbUser.IsBanned)
+            catch (Exception)
             {
-                return;
             }
-            if (!dbUser.IsAccepted)
-            {
-                await botClient.SendTextMessageAsync(dbUser.Id, locales.GetByKey("NotAccepted", dbUser.Language), replyMarkup: emptyKeyboard);
-                return;
-            }
-
-            bool payoutEnabled = dbUser.Balance >= config.MinBalanceForPayment;
-
-            #endregion first visit user
-
-            #region operations
-
-            if (temp.Operation != null)
-            {
-                await CheckUserOperationAsync(dbUser, temp, payoutEnabled).ConfigureAwait(false);
-                return;
-            }
-
-            #endregion operations
-
-            #region messages
-
-            await CheckUserMessageAsync(dbUser, temp, payoutEnabled).ConfigureAwait(false);
-            return;
-
-            #endregion messages
         }
 
         #region operations
@@ -621,7 +651,7 @@ namespace BotMainApp.TelegramServices
                                             WpLoginCheckModel checkModel = new()
                                             {
                                                 StartDateTime = DateTime.Now,
-                                                Status = ManualCheckStatus.Created,
+                                                Status = taskSchedule.In(ConstStrings.FoxCheckerThread).HasAnyPlannedTask() ? ManualCheckStatus.WaitInQueue : ManualCheckStatus.Created,
                                                 FromUserId = dbUser.Id,
                                                 FromUsername = dbUser.Username,
                                             };
@@ -1019,7 +1049,7 @@ namespace BotMainApp.TelegramServices
                                         WpLoginCheckModel checkModel = new()
                                         {
                                             StartDateTime = DateTime.Now,
-                                            Status = ManualCheckStatus.WainInQueue,
+                                            Status = taskSchedule.In(ConstStrings.FoxCheckerThread).HasAnyPlannedTask() ? ManualCheckStatus.WaitInQueue : ManualCheckStatus.Created,
                                             FromUserId = dbUser.Id,
                                             FromUsername = dbUser.Username,
                                         };
@@ -1818,8 +1848,14 @@ namespace BotMainApp.TelegramServices
 
         public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
+            try
+            {
+                notificationManager.Show(exception);
+            }
+            catch (Exception)
+            {
+            }
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("ошибка", TelegramStateModel.RedBrush));
-            notificationManager.Show(exception);
             await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
             botClient.StartReceiving(this);
             aggregator.GetEvent<TelegramStateEvent>().Publish(new("работает", TelegramStateModel.GreenBrush));
@@ -1840,15 +1876,30 @@ namespace BotMainApp.TelegramServices
             return targetFilename;
         }
 
+        private static string CopyOriginalTelegramFileToTempFolder(string inputFilename, UserModel user)
+        {
+            string targetFilename = "u_" + user.Id + "_check_" + DateTime.Now.GetFilenameTimestamp() + ".txt";
+            System.IO.File.Copy(inputFilename, targetFilename, true);
+            return targetFilename;
+        }
+
         #endregion common methods
 
         #region cpanel and whm checking
 
-        private async Task StandartCheckProcessForPort20(UserModel dbUser, string filename, CpanelWhmCheckModel checkModel, bool fillDublicates, bool loadDbRecords)
+        public async Task StandartCheckProcessForPort20(UserModel dbUser, string filename, CpanelWhmCheckModel checkModel, bool fillDublicates, bool loadDbRecords, bool isRechecking = false)
         {
             #region init
 
-            string inputFilename = PathCollection.TempFolderPath + "/" + filename;
+            string inputFilename;
+            if (isRechecking)
+            {
+                inputFilename = CopyOriginalTelegramFileToTempFolder(filename, dbUser);
+            }
+            else
+            {
+                inputFilename = PathCollection.TempFolderPath + "/" + filename;
+            }
             string folderPath = PathCollection.TempFolderPath + $"u_{dbUser.Id}_d_{DateTime.Now:dd_MM_yyyy_HH_mm_ss}/";
             Directory.CreateDirectory(folderPath);
             Stopwatch ellapsedWatch = Stopwatch.StartNew();
@@ -2018,7 +2069,8 @@ namespace BotMainApp.TelegramServices
 
             #region after checks set status to dublicate deleted
 
-            checkModel.Status = CheckStatus.ManualCheckStatus.SendedToSoftCheck;
+            checkModel.IsDublicatesFilledToDb = true;
+            checkModel.Status = ManualCheckStatus.SendedToSoftCheck;
             await CpanelWhmCheckController.PutCheckAsync(checkModel, aggregator);
 
             #endregion after checks set status to dublicate deleted
@@ -2208,11 +2260,19 @@ namespace BotMainApp.TelegramServices
 
         #region wp login checking
 
-        private async Task StandartCheckProcessForWpLogin(UserModel dbUser, string filename, WpLoginCheckModel checkModel, bool fillDublicates, bool loadDbRecords)
+        public async Task StandartCheckProcessForWpLogin(UserModel dbUser, string filename, WpLoginCheckModel checkModel, bool fillDublicates, bool loadDbRecords, bool isRechecking = false)
         {
             #region init
 
-            string inputFilename = filename;
+            string inputFilename;
+            if (isRechecking)
+            {
+                inputFilename = CopyOriginalTelegramFileToTempFolder(filename, dbUser);
+            }
+            else
+            {
+                inputFilename = PathCollection.TempFolderPath + "/" + filename;
+            }
             string folderPath = PathCollection.TempFolderPath + $"u_{dbUser.Id}_d_{DateTime.Now:dd_MM_yyyy_HH_mm_ss}/";
             Directory.CreateDirectory(folderPath);
             System.IO.File.Copy(inputFilename, folderPath + "input.txt", true);
@@ -2222,6 +2282,9 @@ namespace BotMainApp.TelegramServices
             #endregion init
 
             #region check dublicates
+
+            checkModel.Status = ManualCheckStatus.Preparing;
+            await WpLoginCheckController.PutCheckAsync(checkModel, aggregator);
 
             string preparedFileData = await Runner.RunWpLoginFilePreparer(folderPath, workingFile, loadDbRecords);
             if (!preparedFileData.TryParseToJObject(out JObject preparedFileJson) || preparedFileJson.ContainsKey("Error"))
@@ -2334,6 +2397,7 @@ namespace BotMainApp.TelegramServices
 
             #region after checks set status to dublicate deleted
 
+            checkModel.IsDublicatesFilledToDb = true;
             checkModel.Status = ManualCheckStatus.SendedToSoftCheck;
             await WpLoginCheckController.PutCheckAsync(checkModel, aggregator);
 

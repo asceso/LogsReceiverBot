@@ -2,6 +2,7 @@
   "profiles": {
     "BotMainApp": {
       "commandName": "Project",
+      "commandLineArgs": "useOwnConfig=true",
       "remoteDebugEnabled": false,
       "authenticationMode": "None",
       "remoteDebugMachine": "185.174.137.37:4026",

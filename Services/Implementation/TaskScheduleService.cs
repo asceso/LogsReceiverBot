@@ -212,6 +212,8 @@ namespace Services.Implementation
             }
         }
 
+        public bool HasAnyPlannedTask() => tasks.Count > 0;
+
         #endregion public
     }
 

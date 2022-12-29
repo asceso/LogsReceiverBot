@@ -85,6 +85,13 @@
                             Command="{Binding SendQuestionsToUsersCommand}"
                             Content="Отправить анкеты"
                             Cursor="Hand" />
+                        <hc:TextBox
+                            Width="200"
+                            Margin="4"
+                            hc:InfoElement.Placeholder="искать пользователя"
+                            ShowClearButton="True"
+                            Text="{Binding UserFilter, UpdateSourceTrigger=PropertyChanged}"
+                            TextChanged="FilterTextChanged" />
                         <CheckBox
                             Width="225"
                             Margin="5,0,0,0"
@@ -157,7 +164,7 @@
                         HorizontalScrollBarVisibility="Visible"
                         ScrollChanged="ScrollViewerScrollChanged"
                         VerticalScrollBarVisibility="Visible">
-                        <ItemsControl ItemsSource="{Binding DataUsers, UpdateSourceTrigger=PropertyChanged}">
+                        <ItemsControl ItemsSource="{Binding DataUsersView, UpdateSourceTrigger=PropertyChanged}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Height="45">

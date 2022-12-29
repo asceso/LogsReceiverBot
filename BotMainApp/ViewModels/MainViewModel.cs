@@ -59,11 +59,11 @@ namespace BotMainApp.ViewModels
                              ICaptchaService captcha,
                              ITaskScheduleService taskSchedule)
         {
+            taskSchedule.Create(ConstStrings.SeleniumThread);
+            taskSchedule.Create(ConstStrings.FoxCheckerThread);
             this.aggregator = aggregator;
             this.captcha = captcha;
             this.taskSchedule = taskSchedule;
-            this.taskSchedule.Create(ConstStrings.SeleniumThread);
-            this.taskSchedule.Create(ConstStrings.FoxCheckerThread);
             Title = "Бот для приема логов";
             TelegramState = new("запуск", TelegramStateModel.BlackBrush);
             TrayIconVisibility = Visibility.Collapsed;
@@ -151,6 +151,7 @@ namespace BotMainApp.ViewModels
             TelegramBotClient botClient = new(config.BotToken);
             if (memory.ItemExist("BotClient")) memory.RemoveItem("BotClient");
             memory.StoreItem("BotClient", botClient);
+            memory.StoreItem("TaskScheduler", taskSchedule);
 
             UpdateHandler handler = new(aggregator, memory, captcha, taskSchedule);
             cancelationTokenSource = new();

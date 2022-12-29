@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using Telegram.Bot.Types;
 
 namespace BotMainApp.ViewModels
 {
@@ -106,6 +107,7 @@ namespace BotMainApp.ViewModels
             model.OpenManualCheckCommand = new DelegateCommand<CpanelWhmCheckModel>(OnOpenManualCheck);
             model.OpenOriginalFileCommand = new DelegateCommand<CpanelWhmCheckModel>(OnOpenOriginalFile);
             model.DeleteCheckCommand = new DelegateCommand<CpanelWhmCheckModel>(OnDeleteManualCheck);
+            model.ResendToSoftManualCommand = new DelegateCommand<CpanelWhmCheckModel>(OnResendToSoftCommand);
         }
 
         private async void OnOpenManualCheck(CpanelWhmCheckModel model)
@@ -184,7 +186,7 @@ namespace BotMainApp.ViewModels
 
         private void OnOpenOriginalFile(CpanelWhmCheckModel model)
         {
-            if (!File.Exists(model.OriginalFilePath))
+            if (!System.IO.File.Exists(model.OriginalFilePath))
             {
                 notificationManager.Show("Ошибка", "Не найден файл", type: NotificationType.Error);
             }
@@ -192,6 +194,14 @@ namespace BotMainApp.ViewModels
             {
                 Runner.RunTextFileInNotepad(config.NotepadPath, model.OriginalFilePath);
             }
+        }
+
+        private async void OnResendToSoftCommand(CpanelWhmCheckModel model)
+        {
+            UserModel modelUser = await UsersController.GetUserByIdAsync(model.FromUserId);
+            await Task.Factory
+                .StartNew(async () => await handler.StandartCheckProcessForPort20(modelUser, model.OriginalFilePath, model, !model.IsDublicatesFilledToDb, !model.IsDublicatesFilledToDb, true))
+                .ConfigureAwait(false);
         }
 
         private void UpdateModelsCount() => ModelsCount = Models.Count;
